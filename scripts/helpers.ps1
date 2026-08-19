@@ -8,7 +8,7 @@
 $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
 
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
-$script:ToolNames = @('gh', 'git', 'age', 'sops', 'codex', 'aria2', '7z')
+$script:ToolNames = @('gh', 'git', 'age', 'sops', 'codex', 'aria2', '7z', 'rg', 'jq', 'yq')
 
 function New-ToolDef {
     param([Parameter(Mandatory)][string]$Tool)
@@ -85,6 +85,37 @@ function New-ToolDef {
                 Bin          = '7z'
                 Exe          = '7z\7z.exe'
                 Extract      = '7z-archive'
+            }
+        }
+        'rg' {
+            @{
+                Repo         = 'BurntSushi/ripgrep'
+                AssetPattern = '^ripgrep-[0-9.]+-x86_64-pc-windows-msvc\.zip$'
+                Dir          = 'rg'
+                Bin          = 'rg'
+                Exe          = 'rg\rg.exe'
+                Extract      = 'zip'
+            }
+        }
+        'jq' {
+            @{
+                TagPrefix    = 'jq-'
+                Repo         = 'jqlang/jq'
+                AssetPattern = '^jq-windows-amd64\.exe$'
+                Dir          = 'jq'
+                Bin          = 'jq'
+                Exe          = 'jq\jq.exe'
+                Extract      = 'copy'
+            }
+        }
+        'yq' {
+            @{
+                Repo         = 'mikefarah/yq'
+                AssetPattern = '^yq_windows_amd64\.exe$'
+                Dir          = 'yq'
+                Bin          = 'yq'
+                Exe          = 'yq\yq.exe'
+                Extract      = 'copy'
             }
         }
         default { throw "未知工具: $Tool" }
@@ -357,6 +388,9 @@ function Get-InstalledVersion {
         'codex' { if ($line -match 'codex-cli\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'aria2' { if ($line -match 'aria2 version (\d+\.\d+\.\d+)') { return $Matches[1] } }
         '7z'    { if ($line -match '7-Zip\s+(\d+\.\d+)') { return $Matches[1] } }
+        'rg'    { if ($line -match 'ripgrep (\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'jq'    { if ($line -match 'jq-(\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'yq'    { if ($line -match 'version v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
     }
     $null
 }

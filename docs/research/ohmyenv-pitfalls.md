@@ -20,3 +20,11 @@
 ## 版本管理
 
 - 版本不硬编码在代码：`env.psd1` 是唯一 pin 来源；新工具先 `ohmyenv pin <tool> [-Latest | -Version X]`，之后 `ohmyenv update <tool>`（见 AGENTS.md 设计原则）
+
+## 工具接入与移交
+
+- **新增工具接入 ohmyenv 需同步四处**：`$script:ToolNames`、`New-ToolDef`（静态元数据）、`Get-InstalledVersion`（版本解析）、`ohmyenv.ps1` 的 ValidateSet（+ 帮助文本）；漏一处则 pin/status/install 报「未知工具」或版本读不到
+- **omc 工具移交要动五处并改名保留**：`omc.ps1` 的 `$ToolDefs` 注册表、`.scripts\tools\<tool>.ps1` 定义文件、`.envs\tools\bin\<tool>.exe` 二进制（三者改名 `*.removed-YYYYMMDD` 保留）、`CLAUDE.md` 文档同步；`.config\<tool>\config.json` 沿用 gh/git/7z 先例保留不动
+- **进程 PATH 与注册表 PATH 不一致**：开发沙箱/继承环境可能把额外目录（如 codex 自带 `codex-path`）注入进程 PATH 且排前；验证必须重建 PATH（Machine + User 合并，等价全新终端），否则 `Get-Command` 会命中非权威目录
+- **release tag 无 v 前缀也兼容**：`Resolve-ToolVersion` 的 TagPrefix 缺省为 `v`，tag 不匹配前缀时直接用 tag 名作版本（ripgrep 15.2.0 无 v 前缀，正常解析）
+- **单文件 exe 工具用 `copy` 解压类型**：jq / yq / sops 都是 release 单文件（如 `jq-windows-amd64.exe` / `yq_windows_amd64.exe`），`Extract='copy'` 直接拷入工具目录

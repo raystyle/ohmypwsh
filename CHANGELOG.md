@@ -20,6 +20,9 @@
 - 密钥管理：age 1.3.1、sops 3.13.3 接入 `ohmyenv` CLI（新增 `zip` 单目录展平与单文件 `copy` 解压类型）
 - 生成 age 密钥（`%APPDATA%\sops\age\keys.txt`），设置 `SOPS_AGE_KEY_FILE`，建立 `.sops.yaml` 与 `scripts\sops-test.ps1` 冒烟测试
 - 建立方案 `docs\plans\0002-codex-takeover.md`：Codex 二进制与 DeepSeek 密钥管理接管（已完成）
+- 工具接管 rg/jq/yq：ohmyenv 新增工具定义（rg zip 展平、jq/yq copy 单文件），pin 15.2.0 / 1.8.2 / 4.53.4，部署到 `D:\ohmyenv` 并前置注册 PATH（aria2 下载 + sha256 回填）
+- 交接验证脚本 `scripts\verify-tools-handover.ps1`：新终端一键验证 rg/jq/yq 解析路径与版本（PASS/FAIL）
+- 建立方案 `docs\plans\0003-tools-takeover.md`：D:\Oh-My-Claude 工具批量接管（rg/jq/yq）
 
 ### Changed
 
@@ -47,6 +50,9 @@
 - 项目目录与文件索引：`docs\README.md` 新增完整目录树（根文件 / `.secrets` / `docs` / `scripts` 逐文件说明）与外部环境目录说明，AGENTS.md 分类要点指向该索引
 - 建立对标研究 `docs\research\agents-docs-benchmark.md`：用 gh 调研 agentsmd 开放格式 / openai-agents-python / codex / zed 的 AGENTS.md 与文档结构，结论：本仓五要素齐全已属前列，建议补常用命令节、提交约定成文、根 README（待确认）
 - 对标研究三项建议落地：AGENTS.md 新增「常用命令」（ohmyenv 全家 + PATH 重建 + 日常脚本）与「提交约定」（feat/docs/fix/chore 前缀）；根目录新增 `README.md` 项目入口；`docs\README.md` 目录索引同步
+- omc 注册移除 ripgrep/jq/yq：`$ToolDefs` 清出，定义文件与二进制改名保留（`*.removed-20260819`），`CLAUDE.md` 同步标注已移交
+- ohmyenv CLI 工具清单扩展为 10 个（gh/git/age/sops/codex/aria2/7z/rg/jq/yq），帮助文本同步
+- 踩坑沉淀扩展（`docs\research\ohmyenv-pitfalls.md`）：新增工具接入四件套、omc 移交五步清单、进程 PATH 与注册表 PATH 差异、无 v 前缀 tag 兼容、单文件 copy 解压
 
 ### Fixed
 

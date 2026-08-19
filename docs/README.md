@@ -32,6 +32,7 @@
 
 - `0001-env-deps.md`：环境依赖管理（gh/git 自举安装，bootstrap 不依赖 gh）
 - `0002-codex-takeover.md`：Codex 接管（原生二进制 + 沙箱 + DeepSeek 密钥）
+- `0003-tools-takeover.md`：D:\Oh-My-Claude 工具批量接管（rg/jq/yq）
 
 ## 研究文档
 
@@ -62,6 +63,7 @@ ohmypwsh/
 │  │  ├─ 0000-template.md       方案文档模板
 │  │  ├─ 0001-env-deps.md       环境依赖管理（gh/git 自举，bootstrap 不依赖 gh）
 │  │  └─ 0002-codex-takeover.md Codex 接管方案（原生二进制 + 沙箱 + 密钥）
+│  │  └─ 0003-tools-takeover.md rg/jq/yq 工具批量接管（omc → ohmyenv）
 │  └─ research\                 研究文档（工具能力 / 踩坑沉淀 / 实测记录）
 │     ├─ gh-cli.md              gh CLI 研究（现状/认证/API 兜底/命令地图）
 │     ├─ gh-git-https-ssh.md    gh 与 git 的 HTTPS/SSH 互相配置（本机实测）
@@ -78,9 +80,10 @@ ohmypwsh/
    ├─ set-codex-statusline.ps1  Codex 状态栏幂等合并（[tui] status_line）
    ├─ sops-encrypt-deepseek.ps1 SOPS 重加密/回读验证
    ├─ sops-test.ps1             SOPS 冒烟测试
-   └─ verify-codex-handover.ps1 Codex 交接验证（原生版解析 PASS/FAIL）
+   ├─ verify-codex-handover.ps1 Codex 交接验证（原生版解析 PASS/FAIL）
+   └─ verify-tools-handover.ps1 rg/jq/yq 交接验证（解析/版本 PASS/FAIL）
 ```
 
-外部环境目录（git 之外，由 ohmyenv 管理）：`D:\ohmyenv` —— gh / git / age / sops / codex / aria2 / 7z 安装根。
+外部环境目录（git 之外，由 ohmyenv 管理）：`D:\ohmyenv` —— gh / git / age / sops / codex / aria2 / 7z / rg / jq / yq 安装根。
 
 > 目录分类规则见 `AGENTS.md`「目录与分类规范」；本索引随文件增删同步维护。

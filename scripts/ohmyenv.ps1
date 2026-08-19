@@ -1,6 +1,6 @@
 #Requires -Version 7.0
-# ohmyenv.ps1 - 环境依赖管理 CLI（gh / git）
-# 用法: pwsh -File scripts\ohmyenv.ps1 <command> [gh|git|all] [options]
+# ohmyenv.ps1 - 环境依赖管理 CLI（工具清单见 scripts\env.psd1）
+# 用法: pwsh -File scripts\ohmyenv.ps1 <command> [tool|all] [options]
 
 [CmdletBinding()]
 param(
@@ -9,7 +9,7 @@ param(
     [string]$Command = 'help',
 
     [Parameter(Position = 1)]
-    [ValidateSet('gh', 'git', 'age', 'sops', 'codex', 'aria2', '7z', 'all')]
+    [ValidateSet('gh', 'git', 'age', 'sops', 'codex', 'aria2', '7z', 'rg', 'jq', 'yq', 'all')]
     [string]$Tool = 'all',
 
     [switch]$Latest,
@@ -26,16 +26,18 @@ $tools = if ($Tool -eq 'all') { @($script:ToolNames) } else { @($Tool) }
 
 function Show-Help {
     @'
-ohmyenv - 环境依赖管理 CLI（gh / git）
+ohmyenv - 环境依赖管理 CLI
 
 用法:
-  ohmyenv.ps1 query   [gh|git|all] [-Latest | -Tag <tag> | -Version <ver>]
-  ohmyenv.ps1 install [gh|git|all] [同上下载源选项]   # 仅装入环境目录，不改 PATH
-  ohmyenv.ps1 deploy  [gh|git|all] [同上下载源选项]   # 安装 + 注册用户 PATH（默认锁定版本）
-  ohmyenv.ps1 update  [gh|git|all]                   # 更新到最新版并锁定
-  ohmyenv.ps1 pin     [gh|git|all] [-Latest | -Version <ver>]   # pin 版本（lock 为别名）
-  ohmyenv.ps1 status                                 # 锁定 vs 已安装 vs PATH
+  ohmyenv.ps1 query   [tool|all] [-Latest | -Tag <tag> | -Version <ver>]
+  ohmyenv.ps1 install [tool|all] [同上下载源选项]   # 仅装入环境目录，不改 PATH
+  ohmyenv.ps1 deploy  [tool|all] [同上下载源选项]   # 安装 + 注册用户 PATH（默认锁定版本）
+  ohmyenv.ps1 update  [tool|all]                   # 更新到最新版并锁定
+  ohmyenv.ps1 pin     [tool|all] [-Latest | -Version <ver>]   # pin 版本（lock 为别名）
+  ohmyenv.ps1 status                               # 锁定 vs 已安装 vs PATH
   ohmyenv.ps1 help
+
+工具: gh / git / age / sops / codex / aria2 / 7z / rg / jq / yq（all = 全部）
 
 示例:
   ohmyenv.ps1 query gh -Latest

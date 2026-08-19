@@ -107,5 +107,50 @@
             Extract      = '7z-archive'
             Sha256       = '6745FA76DC2EA031596D8678F6F6B99C3C1B435B4164A63485ADBBC7B8D82EF0'
         }
+        'rg' = @{
+            Version      = '15.2.0'
+            Tag          = '15.2.0'
+            TagPrefix    = ''
+            Repo         = 'BurntSushi/ripgrep'
+            AssetPattern = '^ripgrep-[0-9.]+-x86_64-pc-windows-msvc\.zip$'
+            Asset        = 'ripgrep-15.2.0-x86_64-pc-windows-msvc.zip'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'rg'
+            Bin          = 'rg'
+            Exe          = 'rg\rg.exe'
+            Extract      = 'zip'
+            Sha256       = '71B2FEF860ABE467217A538FF31DE02F5258807C0129F771846F87BD029AAFC5'
+        }
+        'jq' = @{
+            Version      = '1.8.2'
+            Tag          = 'jq-1.8.2'
+            TagPrefix    = 'jq-'
+            Repo         = 'jqlang/jq'
+            AssetPattern = '^jq-windows-amd64\.exe$'
+            Asset        = 'jq-windows-amd64.exe'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'jq'
+            Bin          = 'jq'
+            Exe          = 'jq\jq.exe'
+            Extract      = 'copy'
+            Sha256       = 'A6FC67FEDAF9128A3309A1E2EBB8B986AECCF70122EE46D2CB4849E423F0C627'
+        }
+        'yq' = @{
+            Version      = '4.53.4'
+            Tag          = 'v4.53.4'
+            TagPrefix    = ''
+            Repo         = 'mikefarah/yq'
+            AssetPattern = '^yq_windows_amd64\.exe$'
+            Asset        = 'yq_windows_amd64.exe'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'yq'
+            Bin          = 'yq'
+            Exe          = 'yq\yq.exe'
+            Extract      = 'copy'
+            Sha256       = 'ACF5C8F9B49B173A30C413636A72A0CC4ECCECC3EED137FD0B2C89587A1C8766'
+        }
     }
 }
