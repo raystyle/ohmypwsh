@@ -33,6 +33,7 @@
 - starship PowerShell 专用配置：研究文档 `docs\research\starship-config.md`（gh api 拉官方配置文档核实）+ `scripts\set-starship-config.ps1` 全模板幂等写入（唯一源，`-Force` 覆盖，保留原符号预设）
 - 研究文档 `docs\research\powershell-dotnet-vsbuild.md`：PowerShell 模块 / .NET 库 / VS Build Tools 现状与接管建议（纯研究）
 - PowerShell 模块清理完成（2026-08-19）：删除用户级 PSReadLine / WslInterop 副本与 PSFzf 残留，清空 `PSModulePath` 用户变量；pwsh 7 与 Windows PowerShell 5.1 均回到系统原生模块（pses 死路径一并移除）
+- 残留目录清除（重启后锁释放）：`Documents\PowerShell\Modules` / `Documents\WindowsPowerShell\Modules` 用户模块目录整体删除，用户模块路径归零；Pester 3.4.0 / PSReadLine 2.0.0 为系统内置保留
 
 ### Changed
 

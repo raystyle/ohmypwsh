@@ -19,15 +19,8 @@
 
 - 用户级模块已全部移除：`Documents\PowerShell\Modules` 的 PSReadLine 2.4.5 / WslInterop 0.4.1 副本、`Documents\WindowsPowerShell\Modules` 的 PSFzf 残留（WslInterop 系统无副本，删除不影响 `wsl.exe` 本体）
 - `PSModulePath` 用户环境变量已清空（原含已删除的 pses 死路径），模块解析回到系统默认（pwsh：`Program Files\PowerShell\7\Modules` 等；5.1：`Program Files\WindowsPowerShell\Modules` + `System32\WindowsPowerShell\v1.0\Modules`）
-- 实测：pwsh 的 PSReadLine 2.4.5 解析到系统路径；5.1 剩系统内置 Pester 3.4.0 / PSReadLine 2.0.0；PSFzf / PSScriptAnalyzer / WslInterop 不再出现
-- 两个被运行中会话锁定的残留已改名（惰性，不再加载），关闭所有 PowerShell 会话后执行删除：
-
-```powershell
-Remove-Item 'C:\Users\ray\Documents\PowerShell\Modules\PSReadLine.removed-20260819' -Recurse -Force
-Remove-Item 'C:\Users\ray\Documents\WindowsPowerShell\Modules\PSFzf.pending-purge-20260819' -Recurse -Force
-Remove-Item 'C:\Users\ray\Documents\PowerShell\Modules' -Force -ErrorAction SilentlyContinue
-Remove-Item 'C:\Users\ray\Documents\WindowsPowerShell\Modules' -Force -ErrorAction SilentlyContinue
-```
+- 实测：pwsh 的 PSReadLine 2.4.5 解析到系统路径；5.1 剩系统内置 Pester 3.4.0 / PSReadLine 2.0.0（均位于 `Program Files\WindowsPowerShell\Modules`，Windows 自带）；PSFzf / PSScriptAnalyzer / WslInterop 不再出现
+- 残留目录已清除（重启后锁释放，2026-08-19）：`Documents\PowerShell\Modules` 与 `Documents\WindowsPowerShell\Modules` 整体删除，用户模块路径完全归零
 
 ### 结论
 
