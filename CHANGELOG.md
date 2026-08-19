@@ -19,12 +19,16 @@
 - 初始化 git 仓库（`main` 分支，根提交 `077e6b4`，含 `.gitignore`）
 - 密钥管理：age 1.3.1、sops 3.13.3 接入 `ohmyenv` CLI（新增 `zip` 单目录展平与单文件 `copy` 解压类型）
 - 生成 age 密钥（`%APPDATA%\sops\age\keys.txt`），设置 `SOPS_AGE_KEY_FILE`，建立 `.sops.yaml` 与 `scripts\sops-test.ps1` 冒烟测试
-- 建立方案 `docs\plans\0002-codex-takeover.md`：Codex 二进制与 DeepSeek 密钥管理接管（评审中）
+- 建立方案 `docs\plans\0002-codex-takeover.md`：Codex 二进制与 DeepSeek 密钥管理接管（已完成）
 
 ### Changed
 
 - 版本管理重构：`New-ToolDef` 不再硬编码版本；`env.psd1` 为唯一 pin 来源，新增 `pin` 命令（`lock` 为别名），流程改为“先 pin 后 update”
 - 下载通道：aria2（`D:\ohmyenv\aria2` 1.37.0）多线程优先，curl / Invoke-WebRequest 兜底
+- 按研究文档补齐本机配置：`gh auth setup-git`（HTTPS 走 gh 凭据助手）、ssh-agent 启用并加载密钥、`~/.ssh/config` 增加 github.com 条目、gh token 增加 `admin:public_key` scope
+- 用户 PATH：移除 `D:\Oh-My-Claude\.envs\base\git\cmd`，前置注册 `D:\ohmyenv\gh\bin`、`D:\ohmyenv\git\cmd`
+- omc 注册表移除 gh/git（`$BaseTools` 只保留 7z / aria2）
+- GitForWindows 注册表与 `CLAUDE_CODE_GIT_BASH_PATH` 指向 `D:\ohmyenv` 的新安装
 - Codex 接管落地：0.148.0 原生二进制（`D:\ohmyenv\codex`，SHA256SUMS 校验 + targz 解压），npm 版保留双轨共存
 - 沙箱永久关闭：`sandbox_mode = "danger-full-access"` + `approval_policy = "never"` 合并写入（未覆盖原配置）
 - DeepSeek 密钥迁移：交互式设置用户级 `DEEPSEEK_API_KEY`（`scripts\set-deepseek-key.ps1`），`config.toml` 改用 `env_key`，明文清除
@@ -50,10 +54,4 @@
 - 7z 版本解析（首行为空行）
 - `Get-EnvLock` 静态元数据与锁文件同步（如 Extract 类型变更）
 - `Invoke-GitHubApi` 全局兜底扩展到 5xx 网关错误（不限于 403 限流）
-
-### Changed
-
-- 按研究文档补齐本机配置：`gh auth setup-git`（HTTPS 走 gh 凭据助手）、ssh-agent 启用并加载密钥、`~/.ssh/config` 增加 github.com 条目、gh token 增加 `admin:public_key` scope
-- 用户 PATH：移除 `D:\Oh-My-Claude\.envs\base\git\cmd`，前置注册 `D:\ohmyenv\gh\bin`、`D:\ohmyenv\git\cmd`
-- omc 注册表移除 gh/git（`$BaseTools` 只保留 7z / aria2）
-- GitForWindows 注册表与 `CLAUDE_CODE_GIT_BASH_PATH` 指向 `D:\ohmyenv` 的新安装
+- 文档状态同步：ROADMAP 阶段 3 翻转为已完成（章节标题与旧待办清理）、方案 `0002-codex-takeover.md` 状态与实施步骤同步为已完成、CHANGELOG 末尾错位的「### Changed」区块并入主区块

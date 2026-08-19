@@ -36,13 +36,13 @@
 - 生成 age 私钥 `%APPDATA%\sops\age\keys.txt`，设置 `SOPS_AGE_KEY_FILE` 用户环境变量
 - 建立 `.sops.yaml`（公钥）与 `scripts\sops-test.ps1` 冒烟测试（已通过）
 
-## 阶段 3：Codex 接管（实施中）
+## 阶段 3：Codex 接管（已完成）
 
 - 方案：`docs\plans\0002-codex-takeover.md`
 - 二进制：npm 包（0.147.0）→ ohmyenv 原生（0.148.0，`D:\ohmyenv\codex`）
 - 沙箱：`sandbox_mode=danger-full-access` + `approval_policy=never`（合并写入，已生效）
-- 密钥：`experimental_bearer_token` 明文 → `DEEPSEEK_API_KEY` 用户环境变量 + `env_key`（已生效；SOPS 加密副本待办）
-- 完成：原生部署、doctor 验证、aria2 下载通道（7.1MiB/s）
+- 密钥：`experimental_bearer_token` 明文 → `DEEPSEEK_API_KEY` 用户环境变量 + `env_key`（已生效，SOPS 加密副本见下）
+- 已完成：原生部署、doctor 验证、aria2 下载通道（7.1MiB/s）
 - 已完成：npm 交接清理（`@openai/codex` 卸载、shim 清除、doctor 确认单一原生来源）
 - 已完成：7zip 接管（`D:\ohmyenv\7z` 26.02，omc 已移除，`7z-archive` 用 tar 解包）
 - 已完成：DeepSeek key SOPS 加密副本（`.secrets\deepseek.env.enc`，换机/轮换可恢复）

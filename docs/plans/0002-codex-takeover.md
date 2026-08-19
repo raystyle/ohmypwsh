@@ -1,6 +1,6 @@
 # 0002-codex-takeover — Codex 二进制与密钥管理接管
 
-- 状态：实施中
+- 状态：已完成
 - 日期：2026-08-19
 - 关联：ROADMAP 阶段 3
 
@@ -43,7 +43,7 @@
 
 ### C. 收尾
 
-- 验证通过后可选：`npm rm -g @openai/codex`（保留 node 环境其他部分）
+- 验证通过后可选：`npm rm -g @openai/codex`（保留 node 环境其他部分）—— 已执行 ✓
 - 文档：`docs\research\codex-deepseek-config.md`（步骤与命令沉淀）、CHANGELOG、ROADMAP 阶段 3
 
 ## 实施步骤
@@ -51,9 +51,9 @@
 1. ohmyenv 增加 codex 工具定义 + `targz` 解压 + 版本识别
 2. `ohmyenv deploy codex`（下载 125MB 包 + SHA256SUMS 校验 + 解压 + PATH）✓
 3. 验证原生 codex 运行（Get-Command、--version、doctor）✓
-4. 密钥迁移（备份 → 交互式 env var → env_key）✓；SOPS 加密副本待办
+4. 密钥迁移（备份 → 交互式 env var → env_key）✓；SOPS 加密副本（`.secrets\deepseek.env.enc`）✓
 5. `codex doctor` 最终验证 ✓（config ok、env_key present、sandbox unrestricted、approval Never）
-6. 清理明文残留、npm 交接清理（待原生会话确认）
+6. 清理明文残留、npm 交接清理 ✓
 
 ## 风险与回滚
 
