@@ -43,4 +43,5 @@
 - 沙箱：`sandbox_mode=danger-full-access` + `approval_policy=never`（合并写入，已生效）
 - 密钥：`experimental_bearer_token` 明文 → `DEEPSEEK_API_KEY` 用户环境变量 + `env_key`（已生效；SOPS 加密副本待办）
 - 完成：原生部署、doctor 验证、aria2 下载通道（7.1MiB/s）
-- 待办：npm 交接清理（新会话确认后）、SOPS 加密副本、7zip 接管
+- 待办：npm 交接清理（新会话确认后）、SOPS 加密副本
+- 已完成：7zip 接管（`D:\ohmyenv\7z` 26.02，omc 已移除，`7z-archive` 用 tar 解包）

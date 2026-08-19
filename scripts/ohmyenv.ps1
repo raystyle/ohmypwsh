@@ -9,7 +9,7 @@ param(
     [string]$Command = 'help',
 
     [Parameter(Position = 1)]
-    [ValidateSet('gh', 'git', 'age', 'sops', 'codex', 'aria2', 'all')]
+    [ValidateSet('gh', 'git', 'age', 'sops', 'codex', 'aria2', '7z', 'all')]
     [string]$Tool = 'all',
 
     [switch]$Latest,

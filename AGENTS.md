@@ -26,5 +26,6 @@
 
 ## 设计原则
 
-- **引导安装不依赖 gh（bootstrap 自举）**：首次安装或恢复环境时，不得把已装好的 gh 当作先决条件；通过 `api.github.com` REST API 查询 gh/git 发布资产并直连下载（带 User-Agent、按 tag 查询、失败重试）。gh 仅在已安装后可作为加速下载通道。
+- **引导安装不依赖 gh（bootstrap 自举）**：首次安装或恢复环境时，不得把已装好的 gh 当作先决条件；通过 `api.github.com` REST API 查询发布资产并直连下载（带 User-Agent、按 tag 查询、失败重试）。
+- **API 限流全局 gh 兜底**：api.github.com 匿名限流（60 次/小时）时，所有查询统一走 `Invoke-GitHubApi`，自动切换到 `gh api` 认证通道（5000 次/小时）；gh 仅在已安装后作为加速/兜底通道。
 - **版本不硬编码，先 pin 后 update**：工具定义（`New-ToolDef`）只含静态元数据，版本/Tag/资产名只存在于 `scripts\env.psd1`（唯一 pin 来源）；新工具先 `ohmyenv pin <tool> [-Latest | -Version X]`，之后用 `ohmyenv update <tool>` 升级并重新 pin。

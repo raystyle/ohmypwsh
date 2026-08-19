@@ -28,6 +28,14 @@
 - Codex 接管落地：0.148.0 原生二进制（`D:\ohmyenv\codex`，SHA256SUMS 校验 + targz 解压），npm 版保留双轨共存
 - 沙箱永久关闭：`sandbox_mode = "danger-full-access"` + `approval_policy = "never"` 合并写入（未覆盖原配置）
 - DeepSeek 密钥迁移：交互式设置用户级 `DEEPSEEK_API_KEY`（`scripts\set-deepseek-key.ps1`），`config.toml` 改用 `env_key`，明文清除
+- 7-Zip 接管：26.02 部署到 `D:\ohmyenv\7z`，新增 `7z-archive` 解压类型（Windows tar 直接解包，无需预装 7z），omc 注册表移除并改名保留旧文件
+
+### Fixed
+
+- `Get-InstalledVersion` 数组展开 bug（`@versionArgs` 解析异常导致所有工具显示未安装）
+- 7z 版本解析（首行为空行）
+- `Get-EnvLock` 静态元数据与锁文件同步（如 Extract 类型变更）
+- `Invoke-GitHubApi` 全局兜底扩展到 5xx 网关错误（不限于 403 限流）
 
 ### Changed
 

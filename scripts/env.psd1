@@ -2,7 +2,7 @@
 @{
     EnvRoot = 'D:\ohmyenv'
     Tools   = @{
-        gh = @{
+        'gh' = @{
             Version      = '2.91.0'
             Tag          = 'v2.91.0'
             TagPrefix    = ''
@@ -17,7 +17,7 @@
             Extract      = 'zip'
             Sha256       = 'CED3E6F4BB5A9865056B594B7AD0CF42137DC92C494346F1CA705B5DBF14C88E'
         }
-        git = @{
+        'git' = @{
             Version      = '2.54.0.windows.1'
             Tag          = 'v2.54.0.windows.1'
             TagPrefix    = ''
@@ -32,7 +32,7 @@
             Extract      = '7zsfx'
             Sha256       = 'BEA006A6CC69673F27B1647E84AB3A68E912FBC175AB6320C5987E012897F311'
         }
-        age = @{
+        'age' = @{
             Version      = '1.3.1'
             Tag          = 'v1.3.1'
             TagPrefix    = ''
@@ -47,7 +47,7 @@
             Extract      = 'zip'
             Sha256       = 'C56E8CE22F7E80CB85AD946CC82D198767B056366201D3E1A2B93D865BE38154'
         }
-        sops = @{
+        'sops' = @{
             Version      = '3.13.3'
             Tag          = 'v3.13.3'
             TagPrefix    = ''
@@ -62,7 +62,7 @@
             Extract      = 'copy'
             Sha256       = 'A4A9A398858FE8B2EF72D9686D930BF7C5CECE9BE74AD83AC3B53CFDD70E6B1C'
         }
-        codex = @{
+        'codex' = @{
             Version      = '0.148.0'
             Tag          = 'rust-v0.148.0'
             TagPrefix    = 'rust-v'
@@ -77,7 +77,7 @@
             Extract      = 'targz'
             Sha256       = 'CC09F725B8ED133B76A2882FDA750B3F1672B10701E8172C9680B5AB79B861FF'
         }
-        aria2 = @{
+        'aria2' = @{
             Version      = '1.37.0'
             Tag          = 'release-1.37.0'
             TagPrefix    = 'release-'
@@ -91,6 +91,21 @@
             Exe          = 'aria2\aria2c.exe'
             Extract      = 'zip'
             Sha256       = '67D015301EEF0B612191212D564C5BB0A14B5B9C4796B76454276A4D28D9B288'
+        }
+        '7z' = @{
+            Version      = '26.02'
+            Tag          = '26.02'
+            TagPrefix    = ''
+            Repo         = 'ip7z/7zip'
+            AssetPattern = '^7z[0-9]+-x64\.exe$'
+            Asset        = '7z2602-x64.exe'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = '7z'
+            Bin          = '7z'
+            Exe          = '7z\7z.exe'
+            Extract      = '7z-archive'
+            Sha256       = '6745FA76DC2EA031596D8678F6F6B99C3C1B435B4164A63485ADBBC7B8D82EF0'
         }
     }
 }

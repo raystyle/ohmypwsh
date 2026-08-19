@@ -8,7 +8,7 @@
 $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
 
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
-$script:ToolNames = @('gh', 'git', 'age', 'sops', 'codex', 'aria2')
+$script:ToolNames = @('gh', 'git', 'age', 'sops', 'codex', 'aria2', '7z')
 
 function New-ToolDef {
     param([Parameter(Mandatory)][string]$Tool)
@@ -77,6 +77,16 @@ function New-ToolDef {
                 Extract      = 'zip'
             }
         }
+        '7z' {
+            @{
+                Repo         = 'ip7z/7zip'
+                AssetPattern = '^7z[0-9]+-x64\.exe$'
+                Dir          = '7z'
+                Bin          = '7z'
+                Exe          = '7z\7z.exe'
+                Extract      = '7z-archive'
+            }
+        }
         default { throw "未知工具: $Tool" }
     }
 }
@@ -97,6 +107,10 @@ function Get-EnvLock {
     foreach ($t in $script:ToolNames) {
         if (-not $lock.Tools.ContainsKey($t)) {
             $lock.Tools[$t] = New-ToolDef $t
+        } else {
+            # 静态元数据以 New-ToolDef 为准（同步更新），pin 字段（Version/Tag/Asset/Sha256）保留
+            $def = New-ToolDef $t
+            foreach ($k in $def.Keys) { $lock.Tools[$t][$k] = $def[$k] }
         }
     }
     $lock
@@ -111,7 +125,7 @@ function Save-EnvLock {
     $lines.Add('    Tools   = @{')
     foreach ($t in $script:ToolNames) {
         $d = $Lock.Tools[$t]
-        $lines.Add("        $t = @{")
+        $lines.Add("        '$t' = @{")
         $lines.Add("            Version      = '$($d.Version)'")
         $lines.Add("            Tag          = '$($d.Tag)'")
         $lines.Add("            TagPrefix    = '$($d.TagPrefix)'")
@@ -133,17 +147,41 @@ function Save-EnvLock {
     Write-Host "[OK] 锁定清单已写入: $script:LockPath" -ForegroundColor Green
 }
 
+function Invoke-GitHubApi {
+    <#
+    .SYNOPSIS
+        统一的 api.github.com 调用入口：匿名限流（60/h）时全局走 gh api（认证 5000/h）兜底。
+    #>
+    param([Parameter(Mandatory)][string]$Uri)
+    $headers = @{ 'User-Agent' = 'ohmypwsh-bootstrap'; 'Accept' = 'application/vnd.github+json' }
+    try {
+        return Invoke-RestMethod -Uri $Uri -Headers $headers -TimeoutSec 30
+    } catch {
+        if ($_.Exception.Message -match '403|rate limit|502|503|504|Gateway') {
+            $ghExe = Get-Command gh.exe -ErrorAction SilentlyContinue
+            if ($ghExe) {
+                Write-Host '[INFO] 匿名 API 限流，改用 gh api（认证通道）' -ForegroundColor Yellow
+                $apiPath = $Uri.Substring('https://api.github.com'.Length)
+                $json = & $ghExe.Source api $apiPath 2>$null
+                if ($LASTEXITCODE -eq 0 -and $json) {
+                    return ($json | ConvertFrom-Json)
+                }
+            }
+        }
+        throw
+    }
+}
+
 function Get-GitHubRelease {
     <#
     .SYNOPSIS
-        查询 GitHub 发布信息（latest 或指定 tag），带重试。
+        查询 GitHub 发布信息（latest 或指定 tag），带重试；匿名限流由 Invoke-GitHubApi 全局兜底。
     #>
     param(
         [Parameter(Mandatory)][string]$Repo,
         [string]$Tag,
         [switch]$Latest
     )
-    $headers = @{ 'User-Agent' = 'ohmypwsh-bootstrap'; 'Accept' = 'application/vnd.github+json' }
     $uri = if ($Latest) {
         "https://api.github.com/repos/$Repo/releases/latest"
     } else {
@@ -153,7 +191,7 @@ function Get-GitHubRelease {
     while ($true) {
         $attempt++
         try {
-            return Invoke-RestMethod -Uri $uri -Headers $headers -TimeoutSec 30
+            return Invoke-GitHubApi -Uri $uri
         } catch {
             if ($attempt -ge 3) {
                 throw "api.github.com 查询失败（$attempt 次）: $uri`n$($_.Exception.Message)"
@@ -308,7 +346,9 @@ function Get-InstalledVersion {
         [Parameter(Mandatory)][string]$Tool
     )
     if (-not (Test-Path $ExePath)) { return $null }
-    $line = (& $ExePath --version 2>&1 | Select-Object -First 1) -join ' '
+    $versionArgs = if ($Tool -eq '7z') { @('--help') } else { @('--version') }
+    # 跳过空行（如 7z --help 首行为空行）
+    $line = (& $ExePath $versionArgs 2>&1 | Where-Object { $_ -and $_.Trim() } | Select-Object -First 1) -join ' '
     switch ($Tool) {
         'gh'   { if ($line -match 'gh version (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'git'  { if ($line -match 'git version (\S+)') { return $Matches[1] } }
@@ -316,6 +356,7 @@ function Get-InstalledVersion {
         'sops' { if ($line -match 'sops[ -]v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'codex' { if ($line -match 'codex-cli\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'aria2' { if ($line -match 'aria2 version (\d+\.\d+\.\d+)') { return $Matches[1] } }
+        '7z'    { if ($line -match '7-Zip\s+(\d+\.\d+)') { return $Matches[1] } }
     }
     $null
 }
@@ -417,6 +458,11 @@ function Install-ToolVersion {
         'targz' {
             tar -xzf $cachePath -C $installDir
             if ($LASTEXITCODE -ne 0) { throw "$t tar.gz 解压失败（exit=$LASTEXITCODE）" }
+        }
+        '7z-archive' {
+            # 7zXXX-x64.exe 是 7z 归档（直接运行需提权）；Windows 自带 tar(bsdtar) 可直接解包，无需预装 7z
+            tar -xf $cachePath -C $installDir
+            if ($LASTEXITCODE -ne 0) { throw "$t 7z 归档解包失败（exit=$LASTEXITCODE）" }
         }
         default { throw "未知解压类型: $($d.Extract)" }
     }
