@@ -67,6 +67,7 @@ pwsh -NoProfile -File scripts\ohmyenv.ps1 daily                 # 日常无影�
 ```powershell
 pwsh -NoProfile -File scripts\set-codex-statusline.ps1     # Codex 状态栏幂等合并（[tui]）
 pwsh -NoProfile -File scripts\set-deepseek-key.ps1         # DeepSeek API Key 交互式设置
+pwsh -NoProfile -File scripts\set-starship-config.ps1      # starship PowerShell 配置（全模板幂等，-Force 覆盖）
 pwsh -NoProfile -File scripts\sops-test.ps1                # SOPS 冒烟测试
 pwsh -NoProfile -File scripts\verify-codex-handover.ps1    # codex 原生版交接验证（PASS/FAIL）
 ```

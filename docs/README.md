@@ -44,6 +44,7 @@
 - `research\ohmyenv-pitfalls.md`：ohmyenv 踩坑沉淀
 - `research\codex-deepseek-config.md`：Codex 接管记录（原生二进制 + 沙箱 + DeepSeek 密钥 + 状态栏）
 - `research\codex-statusline.md`：Codex TUI 状态栏研究（全量可选项 / 样式机制 / 推荐配置）
+- `research\starship-config.md`：starship.toml 配置研究（PowerShell 专用提示行）
 
 ## 项目目录索引
 
@@ -82,6 +83,7 @@ ohmypwsh/
    ├─ env.psd1                  工具版本锁定清单（唯一 pin 来源，版本不硬编码）
    ├─ set-deepseek-key.ps1      DeepSeek API Key 交互式设置（用户级环境变量）
    ├─ set-codex-statusline.ps1  Codex 状态栏幂等合并（[tui] status_line）
+   ├─ set-starship-config.ps1   starship PowerShell 配置（全模板幂等，-Force 覆盖）
    ├─ sops-encrypt-deepseek.ps1 SOPS 重加密/回读验证
    ├─ sops-test.ps1             SOPS 冒烟测试
    ├─ verify-codex-handover.ps1 Codex 交接验证（原生版解析 PASS/FAIL）

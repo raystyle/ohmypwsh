@@ -30,6 +30,7 @@
 - rmux 接入 ohmyenv：0.10.0（扩展工具），zip 展平 + SHA256SUMS 官方校验，部署到 `D:\ohmyenv\rmux` 并前置注册 PATH；版本识别用 `-V`（tmux 风格，`--version` 不支持）
 - starship 接管：1.26.0（扩展工具），zip 展平 + sha 回填（无统一 SUMS，走下载后回填）；配置 `~\.config\starship.toml` 保留（默认路径零迁移），profile Starship init 块保留
 - 建立方案 `docs\plans\0005-starship-takeover.md`：starship 接管（配置保留）与 PowerShell 模块/调试清理
+- starship PowerShell 专用配置：研究文档 `docs\research\starship-config.md`（gh api 拉官方配置文档核实）+ `scripts\set-starship-config.ps1` 全模板幂等写入（唯一源，`-Force` 覆盖，保留原符号预设）
 
 ### Changed
 
@@ -65,6 +66,7 @@
 - 自动升级任务方案取消：不注册 Task Scheduler，`ohmyenv daily` 保持手动执行（2026-08-19 用户指示）
 - PowerShell 清理（2026-08-19 用户指示，直接删除不留备份）：profile（pwsh7/5.1）删除 PSFzf 块仅留 Starship；删除用户级 Pester 5.7.1 / PSScriptAnalyzer 1.25.0 / PSFzf 2.7.10（`WindowsPowerShell\Modules` 与 `PowerShell\Modules` 双份）+ PowerShellEditorServices + pses 调试组件；omc 注册清空 `$PsModules`、移除 pses
 - 交接验证脚本扩展 starship（含配置文件就位检查）
+- `~/.config/starship.toml` 应用 PowerShell 专用提示行（format 结构 / 性能选项 / `❯`-`✖` 输入符 / pwsh shell 标识），新终端生效
 
 ### Fixed
 
