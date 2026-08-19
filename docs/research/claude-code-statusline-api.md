@@ -46,6 +46,6 @@
 
 ## 本机实现
 
-- `scripts\claude-statusline.ps1`：纯 PowerShell 7，stdin JSON → 单行 `模型 · ctx [1M] N% · N.Nk tok · $cost · 目录 · 分支 +N -M`，配色对齐 Codex（模型青、用量绿、分支品红）
+- `scripts\claude-statusline.ps1`：纯 PowerShell 7，stdin JSON → 单行 `模型 | ctx [1M] N% | N.Nk tok | 目录完整路径 | 分支 +N -M`（纯 ASCII，不显示成本），配色对齐 Codex（模型青、用量绿、分支品红）
 - `scripts\set-claude-statusline.ps1`：幂等合并 settings.json `statusLine` 块（command 指向 `pwsh -NoProfile -File D:/ohmypwsh/scripts/claude-statusline.ps1`，兼容 bash/pwsh 包装）
 - 实测：样例 JSON 输出正常（含 `[1M]` 标注、`+N -M` 变更统计）

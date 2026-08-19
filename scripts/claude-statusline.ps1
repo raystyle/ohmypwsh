@@ -62,29 +62,17 @@ if ($d.context_window -and $d.context_window.total_input_tokens) {
     }
 }
 
-# ── 5. 成本（本地成本统计，无则跳过） ──
-if ($d.cost -and $null -ne $d.cost.total_cost_usd) {
-    $costVal = [double]$d.cost.total_cost_usd
-    if ($costVal -gt 0) {
-        $costStr = if ($costVal -lt 100) { '$' + $costVal.ToString('0.00') } else { '$' + $costVal.ToString('0') }
-        $c = Seg $costStr '33'
-        if ($c) { $parts.Add($c) }
-    }
-}
-
-# ── 6. 目录（叶子名） ──
+# ── 5. 目录（完整路径） ──
 $dir = $null
 if ($d.workspace) { $dir = "$($d.workspace.current_dir)" }
 if (-not $dir -or $dir -eq '.') { $dir = "$($d.cwd)" }
 if (-not $dir -or $dir -eq '.') { $dir = "$($d.workspace.project_dir)" }
 if ($dir) {
-    $leaf = Split-Path -Leaf $dir
-    if (-not $leaf) { $leaf = $dir }
-    $p = Seg $leaf '32'
+    $p = Seg $dir '32'
     if ($p) { $parts.Add($p) }
 }
 
-# ── 7. Git 分支 + 变更（JSON worktree 优先，git 命令兜底；非 git 目录自动省略） ──
+# ── 6. Git 分支 + 变更（JSON worktree 优先，git 命令兜底；非 git 目录自动省略） ──
 $branch = $null
 if ($d.worktree -and $d.worktree.branch) { $branch = "$($d.worktree.branch)" }
 if (-not $branch -and $d.workspace -and $d.workspace.git_worktree -and $d.workspace.git_worktree.name) {
