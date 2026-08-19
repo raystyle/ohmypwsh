@@ -1,0 +1,29 @@
+# ROADMAP
+
+项目阶段与里程碑。状态：`未开始` / `进行中` / `已完成` / `挂起`。
+
+## 阶段总览
+
+| 阶段 | 目标 | 状态 |
+| --- | --- | --- |
+| 0 | 项目基础设施：AGENTS 规则、文档规范 | 已完成 |
+| 1 | 环境依赖管理：独立 D 盘环境目录，自建 gh/git 安装管理 | 已完成 |
+| 2 | 项目核心目标 | 未开始（待用户定义） |
+
+## 阶段 0：项目基础设施（已完成）
+
+- 建立 AGENTS.md 规则 1（踩坑当场沉淀）、规则 2（环境感知，默认 pwsh）、规则 3（文档规范）
+- 建立 CHANGELOG / ROADMAP / `docs\plans\` 文档骨架
+
+## 阶段 1：环境依赖管理（已完成）
+
+目标：参考 D:\Oh-My-Claude 的 omc 机制，在 D 盘独立系统环境目录（`D:\ohmyenv`）安装 gh 与 git，并在项目内沉淀安装管理脚本（`scripts\`），随后清理旧安装。
+
+方案：`docs\plans\0001-env-deps.md`（bootstrap 不依赖 gh，通过 api.github.com 查询二进制包）。
+
+完成项：
+
+- `scripts\ohmyenv.ps1` CLI（query / deploy / install / update / lock / status）+ `scripts\env.psd1` 锁定清单
+- gh 2.91.0、git 2.54.0.windows.1 安装于 `D:\ohmyenv`，版本与 sha256 已锁定
+- omc 注册表移除 gh/git；旧文件改名保留（`*.removed-20260819`），确认无误后可删除
+- 用户 PATH 前置新目录、移除旧 git 路径；gh 登录状态正常（keyring）
