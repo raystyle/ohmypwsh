@@ -16,6 +16,7 @@
 - 建立 `scripts\env.psd1` 锁定清单（版本 + sha256 回填）
 - gh/git 正式移交本项目管理：安装在 `D:\ohmyenv\gh`、`D:\ohmyenv\git`，旧文件改名保留（`*.removed-20260819`）
 - 建立研究文档 `docs\research\gh-git-https-ssh.md`：HTTPS / SSH 互相配置指南（含本机实测状态与待办）
+- 初始化 git 仓库（`main` 分支，根提交 `077e6b4`，含 `.gitignore`）
 
 ### Changed
 
