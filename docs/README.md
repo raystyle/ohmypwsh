@@ -54,6 +54,7 @@
 - `research\powershell-encoding.md`：PS5/PS7 编码兼容研究（优先注意规则）
 - `research\claude-code-statusline-api.md`：Claude Code 状态栏（statusLine）API 契约研究
 - `research\rmux-usage.md`：RMUX 正确用法研究（gh 调研 + 本机实测踩坑）
+- `research\claude-code-onboarding.md`：Claude Code 首次启动 onboarding 与安装警告（登录验证 / 工作区信任 / .local PATH 检查踩坑）
 
 ## 项目目录索引
 

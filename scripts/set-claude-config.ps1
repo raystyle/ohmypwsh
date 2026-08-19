@@ -130,6 +130,9 @@ $envBlock = [ordered]@{
     'PYTHONIOENCODING'                       = 'utf-8'
     'PYTHONUTF8'                             = '1'
     'CLAUDE_CODE_GIT_BASH_PATH'              = 'D:\ohmyenv\git\bin\bash.exe'
+    # ── 安装自检关闭：claude 由 ohmyenv/uv 托管（native 二进制不在官方 ~/.local/bin），
+    #    官方 DISABLE_INSTALLATION_CHECKS=1 跳过 PATH/install-method 检查警告 ──
+    'DISABLE_INSTALLATION_CHECKS'            = '1'
 }
 
 if (Test-Path -LiteralPath $settingsPath) {
@@ -165,6 +168,59 @@ $obj['permissions'] = [ordered]@{
     defaultMode = 'bypassPermissions'
 }
 Write-Host '[OK] permissions 已设为完整 YOLO（默认 bypassPermissions，不禁用切换）' -ForegroundColor Green
+
+# ── 4.2b ~/.claude.json onboarding 修复（第三方 API Key 场景） ──
+# 首次启动即使 env 已有 ANTHROPIC_API_KEY / ANTHROPIC_BASE_URL，仍会卡「Select login method」；
+# 官方解法是设 hasCompletedOnboarding=true 跳过登录验证。同时清空误记的 rejected 密钥，
+# 避免 onboarding 把 API Key 当成「拒绝使用」（曾因 send-keys Up+Enter 连发落在 No 上踩坑）。
+$claudeJsonPath = Join-Path $env:USERPROFILE '.claude.json'
+if (Test-Path -LiteralPath $claudeJsonPath) {
+    $cj = Get-Content -Raw -LiteralPath $claudeJsonPath | ConvertFrom-Json
+    $cjChanged = $false
+    if ($cj.hasCompletedOnboarding -ne $true) {
+        $cj | Add-Member -NotePropertyName hasCompletedOnboarding -NotePropertyValue $true -Force
+        $cjChanged = $true
+    }
+    if ($null -ne $cj.customApiKeyResponses -and $cj.customApiKeyResponses.rejected -and $cj.customApiKeyResponses.rejected.Count -gt 0) {
+        $cj.customApiKeyResponses.rejected = @()
+        $cjChanged = $true
+    }
+    # 4.2c 工作区信任：批量标记所有已记录项目 + 主工作区 D:\ohmypwsh，
+    #       hasTrustDialogAccepted / hasTrustDialogHooksAccepted 置 true，永久跳过信任弹窗
+    if ($null -eq $cj.projects) {
+        $cj | Add-Member -NotePropertyName projects -NotePropertyValue ([pscustomobject]@{}) -Force
+        $cjChanged = $true
+    }
+    $projectNames = @($cj.projects.PSObject.Properties.Name)
+    foreach ($projectName in $projectNames) {
+        $proj = $cj.projects.PSObject.Properties[$projectName].Value
+        if ($null -eq $proj) { continue }
+        if ($proj.hasTrustDialogAccepted -ne $true) {
+            $proj | Add-Member -NotePropertyName hasTrustDialogAccepted -NotePropertyValue $true -Force
+            $cjChanged = $true
+        }
+        if ($proj.hasTrustDialogHooksAccepted -ne $true) {
+            $proj | Add-Member -NotePropertyName hasTrustDialogHooksAccepted -NotePropertyValue $true -Force
+            $cjChanged = $true
+        }
+    }
+    $mainProject = 'D:/ohmypwsh'
+    if ($projectNames -notcontains $mainProject) {
+        $cj.projects | Add-Member -NotePropertyName $mainProject -NotePropertyValue ([pscustomobject]@{
+            hasTrustDialogAccepted      = $true
+            hasTrustDialogHooksAccepted = $true
+        }) -Force
+        $cjChanged = $true
+    }
+    if ($cjChanged) {
+        [System.IO.File]::WriteAllText($claudeJsonPath, ($cj | ConvertTo-Json -Depth 10), (New-Object System.Text.UTF8Encoding $false))
+        Write-Host '[OK] ~/.claude.json 已修复 onboarding + 工作区信任（跳过登录验证与信任弹窗）' -ForegroundColor Green
+    } else {
+        Write-Host '[INFO] ~/.claude.json onboarding + 工作区信任已是最新' -ForegroundColor DarkGray
+    }
+} else {
+    Write-Host '[WARN] ~/.claude.json 不存在（claude 首次启动会自动创建）' -ForegroundColor Yellow
+}
 
 # ── 4.3 PATH / PSModulePath 清理（omc 残留；幂等） ──
 $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')

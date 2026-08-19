@@ -24,7 +24,7 @@ Windows 包结构：`rmux.exe`（tiny CLI 分发器）+ `libexec\rmux\rmux.exe`�
 rmux new-session -d -s NAME -c D:\path       # 后台新会话（-c 指定起始目录）
 rmux list-sessions                           # 会话列表
 rmux attach-session -t NAME                  # 附加
-rmux split-window -h -t NAME -c D:\path 'cmd' # 右侧分割（-v 上下分割）
+rmux split-window -h -d -t NAME -c D:\path 'cmd' # 右侧分割（-v 上下分割；-d 保持焦点在原窗格，新窗格不抢焦点）
 rmux list-panes -t NAME                      # 窗格列表
 rmux kill-session -t NAME                    # 关闭会话
 rmux find-sessions / rmux find-panes         # 查找（含 pane id）
@@ -36,6 +36,7 @@ rmux find-sessions / rmux find-panes         # 查找（含 pane id）
 
 - `-t` 三种写法都接受：会话名（`-t work`）、`session:window.pane`（`-t 1:0.1`）、pane id（`-t %3`）
 - 待发送内容放在 `--` 之后；键名用 `Enter` / `Down` / `Up` / `C-c`
+- **中文 payload 会丢失/乱码**（Claude Code 窗格实测：中文 prompt 进不了输入框，还产生 `server closed connection`）：驱动 claude 的 prompt 用 ASCII/英文，或走 `claude -p` 管道传中文
 - **tiny CLI 对部分目标会误报「can't find pane」**：遇此错误设 `RMUX_DISABLE_TINY_CLI=1`（走 full helper `libexec\rmux\rmux.exe`）重试
 - `--wait` 本版本只支持 `quiet`；`--wait-next-text` / `--wait-visible-text` 是独立参数（不是 `--wait` 的值）
 
@@ -80,7 +81,7 @@ Windows 上驱动/调试 claude 一律用 `rmux claude`（Unix 的 `setsid rmux 
 
 ```powershell
 # 当前窗口右侧分割出 claude（左侧是 Codex）
-rmux split-window -h -t 1:0 -c D:\ohmypwsh 'claude'
+rmux split-window -h -d -t 1:0 -c D:\ohmypwsh 'claude'   # -d 保持焦点在左侧 Codex
 # 观察输出
 rmux pane-snapshot -t 1:0.1
 # 发命令验证模型

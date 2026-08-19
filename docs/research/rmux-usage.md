@@ -28,6 +28,7 @@ rmux kill-pane -t %N / kill-session -t NAME
 4. **Windows ConPTY 备屏捕获限制**：Claude Code 等全屏 TUI 走 alternate screen，rmux 0.10 `capture-pane`/`pane-snapshot` 返回空（`capture-pane -a` 报 no alternate screen），无法从外部读取 TUI 渲染内容；键可发（`broadcast-keys`/`send-keys`），但输入通道对 TUI 窗格不稳定（偶发 `server closed connection before a complete response frame arrived`）。
 5. **`rmux claude`（teammate 模式）**：自动传 `--teammate-mode tmux` 并注入私有 tmux shim；内层会话 socket 每实例随机（`-L` 无法预知），外层命令看不到内层会话；TUI 内容同样不可捕获。调试建议改用 `claude -p`（纯文本可捕获）或让用户目视窗格。
 6. **发送键到未知窗格有副作用**：`send-keys` 目标错误会把键注入错误的 pane（实测曾把 echo 打进其他 agent 会话输入框）。发送前先 `find-panes` 确认目标。
+7. **中文输入经 send-keys 丢失/乱码**：对 Claude Code 窗格发中文 payload（如 `-- '只回复"连接正常"' Enter`）时输入框不显示内容，且产生 `server closed connection before a complete response frame arrived`（乱码字节打到 API）；同一窗格英文 payload 立即正常。驱动 claude 的 prompt 先用 ASCII/英文，或先 `claude -p` 走管道传中文。
 
 ## 与本项目的关系
 

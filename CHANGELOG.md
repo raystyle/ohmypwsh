@@ -111,3 +111,7 @@
 - aria2 报 OK 但文件残缺（SSL 断连后 96% 停住）→ 升级链 sha 回填 + 安装后版本校验兜底，残缺缓存清除后重下
 - starship 非交互噪音：profile（pwsh7 / 5.1）Starship 初始化加 `TERM`/`ConsoleHost` 守卫，`TERM=dumb`（Codex CLI / 脚本管道）不再打印 starship 错误，交互终端渲染不受影响
 - `targz` 解压后未展平顶层单目录：python-build-standalone 的 `python/` 包裹层导致版本读取失败 → `targz` 与 zip 同样做单目录展平
+- Claude Code 首次启动卡「Select login method」：第三方 API Key 场景 onboarding 登录验证不自动跳过 → `~/.claude.json` 设 `hasCompletedOnboarding=true` 并清空 `customApiKeyResponses.rejected`（曾因 send-keys Up+Enter 连发误选「No」），固化进 `scripts\set-claude-config.ps1`（幂等）
+- Claude Code 工作区信任弹窗：`~/.claude.json` `projects` 批量标记 `hasTrustDialogAccepted` / `hasTrustDialogHooksAccepted`（主工作区 `D:/ohmypwsh` 兜底），跳过信任确认
+- Claude Code `/status` 的 `.local\bin` 安装警告：settings.json env 加 `DISABLE_INSTALLATION_CHECKS=1` 关闭 config mismatch 3 行；剩余 1 行 PATH 警告为 native 二进制编译内检查（`doctorDiagnostic.ts` 不受该变量控制）的已知假阳性，文档化保留
+- 新建研究文档 `docs\research\claude-code-onboarding.md`：onboarding 登录验证 / 信任弹窗 / 安装警告 / rmux 中文输入坑（跨引用 `rmux-usage.md`）
