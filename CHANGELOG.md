@@ -29,6 +29,7 @@
 - 沙箱永久关闭：`sandbox_mode = "danger-full-access"` + `approval_policy = "never"` 合并写入（未覆盖原配置）
 - DeepSeek 密钥迁移：交互式设置用户级 `DEEPSEEK_API_KEY`（`scripts\set-deepseek-key.ps1`），`config.toml` 改用 `env_key`，明文清除
 - 7-Zip 接管：26.02 部署到 `D:\ohmyenv\7z`，新增 `7z-archive` 解压类型（Windows tar 直接解包，无需预装 7z），omc 注册表移除并改名保留旧文件
+- 交接确认脚本 `scripts\verify-codex-handover.ps1`：新终端一键验证 codex 解析到原生版（PASS/FAIL）
 
 ### Fixed
 
