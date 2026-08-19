@@ -17,7 +17,7 @@
   - 扩展工具：rg/jq/yq（首批），核心稳定后再扩展
   - `ToolNames` 顺序 = 引导安装 / 展示 / 日常更新顺序；`status` 按「核心基础工具 / 扩展工具」两层分组
   - `ohmyenv daily`：日常无影响更新（同主版本自动 pin+deploy，跨主版本保留待人工确认，`-DryRun` 预览，`-IncludeBreaking` 强制），日志 `D:\ohmyenv\logs\update-daily.log`
-- 非目标：不引入包管理器；不自动创建计划任务（daily 已就绪，是否挂 Task Scheduler 由用户决定）
+- 非目标：不引入包管理器；不挂计划任务（2026-08-19 用户指示取消自动升级，`ohmyenv daily` 手动执行）
 
 ## 方案
 

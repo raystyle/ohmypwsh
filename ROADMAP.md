@@ -57,4 +57,6 @@
 - 已完成：`ohmyenv daily` 日常无影响更新（同主版本自动、跨主版本待确认，`-DryRun` / `-IncludeBreaking`，日志 `D:\ohmyenv\logs\update-daily.log`）
 - 已完成：升级链加固（sha 旧值误用修复、7zsfx 版本读取重试、滞后锁定补齐）
 - 已完成：日常实测升级 git 2.54.0 → 2.55.0.windows.4、gh 2.91.0 → 2.97.0
-- 待办（可选）：daily 挂 Task Scheduler 全自动日常更新；按需继续接管更多扩展工具
+- 已完成：扩展工具 rmux 接入（0.10.0，SHA256SUMS 校验）
+- 已决定：不挂自动升级任务（2026-08-19 用户指示，`ohmyenv daily` 保持手动执行）
+- 待办（可选）：按需继续接管更多扩展工具

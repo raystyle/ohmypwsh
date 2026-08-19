@@ -21,12 +21,13 @@
 - 生成 age 密钥（`%APPDATA%\sops\age\keys.txt`），设置 `SOPS_AGE_KEY_FILE`，建立 `.sops.yaml` 与 `scripts\sops-test.ps1` 冒烟测试
 - 建立方案 `docs\plans\0002-codex-takeover.md`：Codex 二进制与 DeepSeek 密钥管理接管（已完成）
 - 工具接管 rg/jq/yq：ohmyenv 新增工具定义（rg zip 展平、jq/yq copy 单文件），pin 15.2.0 / 1.8.2 / 4.53.4，部署到 `D:\ohmyenv` 并前置注册 PATH（aria2 下载 + sha256 回填）
-- 交接验证脚本 `scripts\verify-tools-handover.ps1`：新终端一键验证 rg/jq/yq 解析路径与版本（PASS/FAIL）
+- 交接验证脚本 `scripts\verify-tools-handover.ps1`：新终端一键验证 rg/jq/yq/rmux 解析路径与版本（PASS/FAIL）
 - 建立方案 `docs\plans\0003-tools-takeover.md`：D:\Oh-My-Claude 工具批量接管（rg/jq/yq）
 - 工具分层：ohmyenv 工具按「核心基础工具（密钥 age/sops / 智能体环境 codex / 项目管理 git/gh / 基础工具 aria2/7z）+ 扩展工具（rg/jq/yq）」分层，`ToolNames` 重排为引导顺序（核心先装齐再扩展）
 - `ohmyenv daily` 日常无影响更新：同主版本自动升级并重新锁定，跨主版本保留待人工确认（`-DryRun` 预览 / `-IncludeBreaking` 强制），日志 `D:\ohmyenv\logs\update-daily.log`，退出码 0/2
 - 建立方案 `docs\plans\0004-tool-tiers.md`：工具分层、引导安装顺序与日常无影响更新
 - AGENTS.md 常用命令新增 `ohmyenv daily`（预览 + 实跑）
+- rmux 接入 ohmyenv：0.10.0（扩展工具），zip 展平 + SHA256SUMS 官方校验，部署到 `D:\ohmyenv\rmux` 并前置注册 PATH；版本识别用 `-V`（tmux 风格，`--version` 不支持）
 
 ### Changed
 
@@ -59,6 +60,7 @@
 - 踩坑沉淀扩展（`docs\research\ohmyenv-pitfalls.md`）：新增工具接入四件套、omc 移交五步清单、进程 PATH 与注册表 PATH 差异、无 v 前缀 tag 兼容、单文件 copy 解压
 - `ohmyenv status` 按「核心基础工具 / 扩展工具」两层 + 子分组展示，顺序 = 引导链
 - 日常实测升级：git 2.54.0 → 2.55.0.windows.4、gh 2.91.0 → 2.97.0（同主版本，无影响）
+- 自动升级任务方案取消：不注册 Task Scheduler，`ohmyenv daily` 保持手动执行（2026-08-19 用户指示）
 
 ### Fixed
 

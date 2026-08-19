@@ -152,5 +152,20 @@
             Extract      = 'copy'
             Sha256       = 'ACF5C8F9B49B173A30C413636A72A0CC4ECCECC3EED137FD0B2C89587A1C8766'
         }
+        'rmux' = @{
+            Version      = '0.10.0'
+            Tag          = 'v0.10.0'
+            TagPrefix    = ''
+            Repo         = 'Helvesec/rmux'
+            AssetPattern = '^rmux-[0-9.]+-windows-x86_64\.zip$'
+            Asset        = 'rmux-0.10.0-windows-x86_64.zip'
+            SumsAsset    = 'SHA256SUMS'
+            SumsPattern  = 'rmux-[0-9.]+-windows-x86_64\.zip'
+            Dir          = 'rmux'
+            Bin          = 'rmux'
+            Exe          = 'rmux\rmux.exe'
+            Extract      = 'zip'
+            Sha256       = 'E315E2D51D927BA9621732812C0F932C862D05F4B677DBF3CAB76F0D27372A70'
+        }
     }
 }

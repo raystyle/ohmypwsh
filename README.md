@@ -1,6 +1,6 @@
 # ohmypwsh
 
-个人 Windows 环境依赖管理项目：用 `scripts\ohmyenv.ps1` 自举安装并管理 gh / git / age / sops / codex / aria2 / 7z / rg / jq / yq 到 `D:\ohmyenv`；密钥走 age + SOPS（`.secrets\` 加密副本），Codex 配置（沙箱 / DeepSeek / 状态栏）由脚本幂等接管。
+个人 Windows 环境依赖管理项目：用 `scripts\ohmyenv.ps1` 自举安装并管理 gh / git / age / sops / codex / aria2 / 7z / rg / jq / yq / rmux 到 `D:\ohmyenv`；密钥走 age + SOPS（`.secrets\` 加密副本），Codex 配置（沙箱 / DeepSeek / 状态栏）由脚本幂等接管。
 
 ## 入口
 

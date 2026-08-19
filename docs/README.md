@@ -86,6 +86,6 @@ ohmypwsh/
    └─ verify-tools-handover.ps1 rg/jq/yq 交接验证（解析/版本 PASS/FAIL）
 ```
 
-外部环境目录（git 之外，由 ohmyenv 管理）：`D:\ohmyenv` —— gh / git / age / sops / codex / aria2 / 7z / rg / jq / yq 安装根。
+外部环境目录（git 之外，由 ohmyenv 管理）：`D:\ohmyenv` —— gh / git / age / sops / codex / aria2 / 7z / rg / jq / yq / rmux 安装根。
 
 > 目录分类规则见 `AGENTS.md`「目录与分类规范」；本索引随文件增删同步维护。

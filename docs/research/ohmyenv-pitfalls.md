@@ -24,6 +24,7 @@
 ## 版本管理
 
 - 版本不硬编码在代码：`env.psd1` 是唯一 pin 来源；新工具先 `ohmyenv pin <tool> [-Latest | -Version X]`，之后 `ohmyenv update <tool>`（见 AGENTS.md 设计原则）
+- **rmux 用 tmux 风格版本参数**：`rmux --version` 打印 usage 且退出非零，版本读取必须 `rmux -V`（输出 `rmux 0.10.0`）→ `Get-InstalledVersion` 按工具定制 versionArgs
 
 ## 工具接入与移交
 

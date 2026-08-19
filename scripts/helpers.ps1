@@ -10,7 +10,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [En
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
 # 工具分层：核心基础工具（密钥 key / 智能体环境 agent / 项目管理 project / 基础工具 base）
 #           + 扩展工具 extras；ToolNames 顺序 = 引导安装/展示/日常更新顺序（核心先装齐，再稳定扩展）
-$script:ToolNames = @('age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'rg', 'jq', 'yq')
+$script:ToolNames = @('age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'rg', 'jq', 'yq', 'rmux')
 $script:ToolCategories = @{
     key     = '密钥'
     agent   = '智能体环境'
@@ -135,6 +135,19 @@ function New-ToolDef {
                 Bin          = 'yq'
                 Exe          = 'yq\yq.exe'
                 Extract      = 'copy'
+            }
+        }
+        'rmux' {
+            @{
+                Category     = 'extras'
+                Repo         = 'Helvesec/rmux'
+                AssetPattern = '^rmux-[0-9.]+-windows-x86_64\.zip$'
+                SumsAsset    = 'SHA256SUMS'
+                SumsPattern  = 'rmux-[0-9.]+-windows-x86_64\.zip'
+                Dir          = 'rmux'
+                Bin          = 'rmux'
+                Exe          = 'rmux\rmux.exe'
+                Extract      = 'zip'
             }
         }
         default { throw "未知工具: $Tool" }
@@ -396,7 +409,11 @@ function Get-InstalledVersion {
         [Parameter(Mandatory)][string]$Tool
     )
     if (-not (Test-Path $ExePath)) { return $null }
-    $versionArgs = if ($Tool -eq '7z') { @('--help') } else { @('--version') }
+    $versionArgs = switch ($Tool) {
+        '7z'   { @('--help') }
+        'rmux' { @('-V') }   # rmux 为 tmux 风格，--version 不支持，用 -V
+        default { @('--version') }
+    }
     # 跳过空行（如 7z --help 首行为空行）
     $line = (& $ExePath $versionArgs 2>&1 | Where-Object { $_ -and $_.Trim() } | Select-Object -First 1) -join ' '
     switch ($Tool) {
@@ -410,6 +427,7 @@ function Get-InstalledVersion {
         'rg'    { if ($line -match 'ripgrep (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'jq'    { if ($line -match 'jq-(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'yq'    { if ($line -match 'version v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'rmux'  { if ($line -match 'rmux (\d+\.\d+\.\d+)') { return $Matches[1] } }
     }
     $null
 }
