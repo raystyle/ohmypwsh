@@ -44,9 +44,18 @@
 - Claude Code 扩展配置：`scripts\set-claude-config.ps1`（uv 安装 claude-code 2.1.233 至 `D:\ohmyenv\uv-tools\bin` + 25 项优化环境变量 + settings.json `env` 块合并：GLM-5.3[1m] / glm-4.7 / 1M 压缩窗口，保留原权限配置，无插件/hook）
 - Claude Code 密钥加密：`scripts\set-claude-key.ps1`（`-FromOmcProfile` 迁移 GLM token → `ANTHROPIC_API_KEY` 用户环境变量，不回显）+ `scripts\sops-encrypt-anthropic.ps1`（`.secrets\anthropic.env.enc`，加密/解密回读验证）
 - 建立方案 `docs\plans\0008-claude-code-config.md`：Claude Code 扩展配置（GLM-5.3 1M 上下文）
+- Claude Code 状态栏对齐 Codex：`scripts\claude-statusline.ps1`（纯 PowerShell，stdin JSON → 模型/ctx[1M]/tokens/成本/目录/分支+变更，纯 ASCII 输出防乱码）+ `scripts\set-claude-statusline.ps1`（幂等合并 settings.json `statusLine` 块）；研究文档 `docs\research\claude-code-statusline-api.md`
+- Claude Code 完整 YOLO：settings.json permissions 只留 `defaultMode: bypassPermissions`（对齐 Codex danger-full-access + approval never）；修复 `disableBypassPermissionsMode` 非法布尔值导致整个 settings.json 被跳过、env 不生效回落内置模型的问题
+- Claude Code 配置收敛：settings.json env 块 29 项（模型三档/1M 压缩窗口/遥测/超时/编码/PowerShell 工具/子代理模型），用户环境变量只留 `ANTHROPIC_API_KEY` + `ANTHROPIC_BASE_URL`
+- `set-claude-key.ps1` 重写为 Codex 风格：交互输入 → 用户环境变量 → 自动 SOPS 加密备份（回读验证、明文即删）
+- rmux 双端项目级 skill：`.claude\skills\rmux\SKILL.md`（Claude Code）与 `.agents\skills\rmux\SKILL.md`（Codex，仓库根向上扫描），经 skill-creator `quick_validate` 校验；研究文档 `docs\research\rmux-usage.md`（send-keys 目标/tiny CLI/备屏捕获等实测坑）
+- 方案文档 `docs\plans\0009-claude-takeover.md`：Claude Code 完全接管（YOLO/状态栏/env 收敛/omc 清理/双端 rmux skill）
 
 ### Changed
 
+- Claude Code 安装与配置完全移交 ohmyenv：omc 侧 `.scripts\base\claude.ps1`（安装器/Profile 系统）、`.config\claude\`（GLM/DeepSeek/Zyun 明文 profile）、`~/.local\bin\claude.exe`（旧 2.1.187）删除；omc.ps1 `$BaseScripts` 清空、CLAUDE.md 与 `.claude\rules\claude-config.md` 同步标注接管
+- `set-claude-config.ps1` 重构：用户级只写 `ANTHROPIC_BASE_URL`，其余配置收敛进 settings.json env；幂等删除 omc 遗留环境变量（`[NullString]::Value` 真删）；PATH/PSModulePath 清理
+- 用户环境变量与 `~/.claude` 清理：CLAUDE_*/BUN_*/RUSTUP_*/CARGO_HOME/LANG/ANTHROPIC_DEFAULT_*/AUTH_TOKEN、PATH 的 `D:\Oh-My-Claude\*` 与 `.local\bin`、PSModulePath 死路径全删；`~/.claude` 旧 settings.local.json/插件（raystyle statusline/dev-fix + marketplace）/缓存/备份/history/daemon 残留清理（保留个人 skills）
 - 版本管理重构：`New-ToolDef` 不再硬编码版本；`env.psd1` 为唯一 pin 来源，新增 `pin` 命令（`lock` 为别名），流程改为“先 pin 后 update”
 - 下载通道：aria2（`D:\ohmyenv\aria2` 1.37.0）多线程优先，curl / Invoke-WebRequest 兜底
 - 按研究文档补齐本机配置：`gh auth setup-git`（HTTPS 走 gh 凭据助手）、ssh-agent 启用并加载密钥、`~/.ssh/config` 增加 github.com 条目、gh token 增加 `admin:public_key` scope

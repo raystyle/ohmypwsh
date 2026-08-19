@@ -66,6 +66,8 @@
 - 已完成：PS5/PS7 编码兼容优先规则（AGENTS 规则 4 + 研究文档）
 - 已完成：uv/Python 接管（uv 0.12.5 最新 + Python 3.12.14 为准，`UV_*` 全部迁入 `D:\ohmyenv`，源确认为 aliyun/nju，omc 注册移除）
 - 已完成：Claude Code 扩展配置（2.1.233 + GLM-5.3[1m] 1M 上下文 + bigmodel 端点 + 遥测关闭；密钥 SOPS 加密保存）
+- 已完成：Claude Code 完全接管（YOLO 对齐 Codex + 状态栏纯 PowerShell + 配置收敛 settings.json env + 用户环境变量/`~/.claude` omc 残留清理 + omc 侧 claude 安装器/Profile/旧 exe 删除；`claude -p` 实测 model=glm-5.3[1m]）
+- 已完成：rmux 双端项目级 skill（`.claude/skills/rmux` + `.agents/skills/rmux`，经 skill-creator 校验）
 - 已决定：不挂自动升级任务（2026-08-19 用户指示，`ohmyenv daily` 保持手动执行）
 - 待办（可选）：按需继续接管更多扩展工具
 - 研究中：PowerShell 模块 / .NET 库 / VS Build Tools 现状与接管可行性（`docs\research\powershell-dotnet-vsbuild.md`）
