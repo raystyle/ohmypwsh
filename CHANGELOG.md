@@ -37,6 +37,8 @@
 - 文档规范扩展（AGENTS.md 规则 3）：`docs\research\` 研究文档纳入四块文档体系，`docs\README.md` 更新文档地图、命名约定与研究文档索引
 - 状态栏升级为专业组合（对照 0.148.0 源码核实全量可选项）：`run-state` + `model-with-reasoning` + `git-branch` + `branch-changes` + `context-remaining` + `used-tokens` + `permissions`，主题色按类别区分（青/绿/品红）；`scripts\set-codex-statusline.ps1` 默认值同步更新
 - 建立研究文档 `docs\research\codex-statusline.md`：状态栏可选项全量清单（官方描述 + 渲染示例）、样式机制（` · ` 分隔符、主题色 accent）、`/statusline` 交互行为、推荐配置与注意事项
+- 状态栏补回项目目录显示：`current-dir`（当前工作目录完整路径）加入默认组合，与 `git-branch` / `branch-changes` 一并置于状态栏最后（`… · danger-full-access · D:\ohmypwsh · main · +12 -3`），`run-state` + `model-with-reasoning` + 用量/权限在前；`scripts\set-codex-statusline.ps1` 默认值与已应用配置同步更新
+- 分隔符研究（gh 源码核实）：` · ` 为硬编码常量 `STATUS_LINE_SEPARATOR`，`[tui]` 无 separator 配置键，未知状态栏项被静默忽略，无法改用 `|`；结论已沉淀进 `docs\research\codex-statusline.md`
 - 目录与分类规范（AGENTS.md 新增章节）：脚本 / 文档 / 配置 / 密钥数据 / 环境目录五类物理分离，新增文件必须归入对应目录（参考 `D:\hyper-v-lab` 的 AGENTS.md 风格），`docs\README.md` 增加指引
 - 项目目录与文件索引：`docs\README.md` 新增完整目录树（根文件 / `.secrets` / `docs` / `scripts` 逐文件说明）与外部环境目录说明，AGENTS.md 分类要点指向该索引
 - 建立对标研究 `docs\research\agents-docs-benchmark.md`：用 gh 调研 agentsmd 开放格式 / openai-agents-python / codex / zed 的 AGENTS.md 与文档结构，结论：本仓五要素齐全已属前列，建议补常用命令节、提交约定成文、根 README（待确认）

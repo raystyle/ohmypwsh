@@ -48,28 +48,37 @@
 status_line = [
   "run-state",
   "model-with-reasoning",
-  "git-branch",
-  "branch-changes",
   "context-remaining",
   "used-tokens",
   "permissions",
+  "current-dir",
+  "git-branch",
+  "branch-changes",
 ]
 status_line_use_colors = true
 ```
 
 设计理由：
 
-- `run-state` 放最前：一眼看到会话在 Ready / Working / Thinking
+- `run-state`：会话状态（Ready / Working / Thinking）
 - `model-with-reasoning`：模型 + 推理级别
-- `git-branch` + `branch-changes`：分支与工作区变更一目了然（`main · +12 -3`）
 - `context-remaining` + `used-tokens`：上下文余量与 token 消耗
 - `permissions`：信任边界（`danger-full-access`）常驻可见
+- `current-dir` + `git-branch` + `branch-changes` 置最后：项目目录、分支与工作区变更收尾（`D:\ohmypwsh · main · +12 -3`）
 
 应用脚本：`scripts\set-codex-statusline.ps1`（幂等合并，不覆盖 DeepSeek / 沙箱 / 信任项目等既有配置；`-StatusLine @(...)` 自定义，`-NoColors` 关彩色）。
+
+## 分隔符不可自定义（gh 源码核实）
+
+- 状态栏项之间固定用 ` · `（空格 + 中点 + 空格）分隔，源码硬编码常量 `STATUS_LINE_SEPARATOR`（`codex-rs/tui/src/bottom_pane/status_line_style.rs`），无配置项
+- `[tui]` 配置仅 `status_line` 与 `status_line_use_colors` 两个键（`codex-rs/config/src/types.rs`），没有 separator 键
+- `status_line` 中无法解析的字符串会被静默跳过（`id.parse::<StatusLineItem>()` 失败即 continue），因此不能塞 `"|"` 之类字面量充当分隔符
+- 结论：配置层面无法改用 `|`；只有改源码重新编译一条路，不建议
 
 ## 注意事项
 
 - 重启 codex 新会话生效；已有会话不刷新
+- 分隔符固定为 ` · `，不可配置为 `|`（源码常量，见上）
 - git 相关项在非 git 仓库目录自动省略
 - `five-hour-limit` / `weekly-limit` 在 DeepSeek（非 OpenAI 官方额度）下无意义，不推荐加
 - 已由 `codex doctor` 确认 `config.toml parse ok`

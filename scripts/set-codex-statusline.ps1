@@ -8,11 +8,12 @@ param(
     [string[]]$StatusLine = @(
         'run-state',
         'model-with-reasoning',
-        'git-branch',
-        'branch-changes',
         'context-remaining',
         'used-tokens',
-        'permissions'
+        'permissions',
+        'current-dir',
+        'git-branch',
+        'branch-changes'
     ),
     [switch]$NoColors
 )
