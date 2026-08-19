@@ -44,6 +44,44 @@ rmux kill-pane -t %N / kill-session -t NAME
 注意：本项目 Codex（左窗格）与 claude（右窗格）都跑在会话 0 内，kill-server 或关闭最后
 一个会话会同时终止两侧进程；detach 不会。
 
+## 独立终端窗口运行 claude（不开窗格，实测）
+
+适用：不想在 Codex 主窗口分屏，弹一个独立 Windows Terminal 窗口给 claude，从这边用
+rmux 命令驱动。正确链路是 **wt 窗口 → rmux → claude**：窗口自己跑 `rmux new-session -A`
+（会话存在则 attach，不存在则创建并运行 claude），daemon 由窗口环境启动。
+
+```powershell
+# 0. 关键：清掉 Codex 沙箱环境注入的污染
+#    - NO_COLOR=1 会一路传给 daemon→窗格→claude，把颜色全禁掉（必须 Remove-Item，置空无效）
+#    - TERM=dumb 会让 rmux 客户端无色彩 → 设为 xterm-256color
+#    - 重建 PATH（含 .local\bin），否则 claude /status 会报 native PATH 警告
+Remove-Item Env:NO_COLOR -ErrorAction SilentlyContinue
+$env:TERM = 'xterm-256color'
+$env:COLORTERM = 'truecolor'
+$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+
+# 1. 弹独立 wt 窗口（-w new 强制新窗口；-WindowStyle Minimized 最小化启动不抢 Codex 焦点；
+#    wt 路径动态解析，勿硬编码 WindowsApps）
+$wt = (Get-Command wt.exe).Source
+$wtArgs = '-w new --title "Claude Code" -d D:\ohmypwsh pwsh -NoProfile -Command "rmux new-session -A -s claude -c D:\ohmypwsh claude"'
+Start-Process -FilePath $wt -ArgumentList $wtArgs -WindowStyle Minimized
+
+# 2. 从这边操作（同窗格套路）
+rmux list-clients                          # 检查 [宽x高 term] 标记：dumb=无色彩
+rmux send-keys -t claude --wait quiet --stable-for 800ms --timeout 15s -- '/status' Enter
+rmux capture-pane -t claude -p
+```
+
+补充：
+- **无色彩的真正根因是 NO_COLOR=1**（Codex 沙箱注入），不是客户端 TERM：早期流程
+  「Codex 侧 `new-session -d` 预建会话 + wt 再 attach」会把 NO_COLOR 带进 daemon → claude 单色；
+  改为窗口直接 `new-session -A` 并 `Remove-Item Env:NO_COLOR` 后恢复彩色（实测确认）。
+- daemon 生命周期：最后一个会话被 kill 后 daemon 自动退出（实测 `kill-session` 末会话后
+  `list-sessions` 报 no server running）。
+- 旧窗口需要重开时，`rmux detach-client -t <client-id>` 断开后 wt 标签页自动关闭
+  （attach 进程退出 → 默认 closeOnExit graceful）。
+- 实测 /status 零警告：重建 PATH（含 `.local\bin`）后 claude 读到正确 PATH。
+
 ## 踩坑（实测沉淀）
 
 1. **send-keys 目标**：`-t` 接受会话名 / `session:window.pane` / pane id（`%N`），payload 必须放在 `--` 之后，键名 `Enter`/`Down`/`Up`/`C-c`。

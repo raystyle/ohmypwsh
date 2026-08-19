@@ -90,3 +90,17 @@ rmux send-keys -t 1 -- '/exit' Enter
 ```
 
 claude 的调试日志在 `%USERPROFILE%\.claude\debug\`（`--debug` 时写入），可用 `Select-String -Pattern 'model=|API error'` 快速定位实际派发模型与错误。
+
+## 独立终端窗口跑 claude（不开窗格）
+
+```powershell
+# 清 Codex 沙箱污染：NO_COLOR=1 会禁掉 claude 颜色（必须 Remove-Item），TERM=dumb 会无色彩
+Remove-Item Env:NO_COLOR -ErrorAction SilentlyContinue
+$env:TERM = 'xterm-256color'
+$env:COLORTERM = 'truecolor'
+$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+$wt = (Get-Command wt.exe).Source                            # 动态解析 wt 路径
+$wtArgs = '-w new --title "Claude Code" -d D:\ohmypwsh pwsh -NoProfile -Command "rmux new-session -A -s claude -c D:\ohmypwsh claude"'
+Start-Process -FilePath $wt -ArgumentList $wtArgs -WindowStyle Minimized
+rmux list-clients                                            # [宽x高 term]：dumb=无色彩；detach-client -t <id> 重开
+```
