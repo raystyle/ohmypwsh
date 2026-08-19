@@ -76,6 +76,11 @@ rmux capture-pane -t claude -p
 - **无色彩的真正根因是 NO_COLOR=1**（Codex 沙箱注入），不是客户端 TERM：早期流程
   「Codex 侧 `new-session -d` 预建会话 + wt 再 attach」会把 NO_COLOR 带进 daemon → claude 单色；
   改为窗口直接 `new-session -A` 并 `Remove-Item Env:NO_COLOR` 后恢复彩色（实测确认）。
+- **NO_COLOR/TERM 无法靠 Codex 配置关闭**：Codex unified exec 把 `UNIFIED_EXEC_ENV` 常量表
+  （`NO_COLOR=1`、`TERM=dumb`、`LANG/LC_*=C.UTF-8`、`PAGER=cat`、`CODEX_CI=1` 等）硬编码注入每个
+  exec 子进程，且在该进程 `shell_environment_policy`（exclude/set/filters）构建之后才覆写
+  （源码 `codex-rs/core/src/unified_exec/process_manager.rs`）；`sandbox_mode=danger-full-access`
+  只关隔离，不影响这套环境注入。因此只能在工作流层清理（启动命令里 `Remove-Item Env:NO_COLOR` + 设 TERM）。
 - daemon 生命周期：最后一个会话被 kill 后 daemon 自动退出（实测 `kill-session` 末会话后
   `list-sessions` 报 no server running）。
 - 旧窗口需要重开时，`rmux detach-client -t <client-id>` 断开后 wt 标签页自动关闭
