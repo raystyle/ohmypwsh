@@ -46,3 +46,4 @@
 - 已完成：npm 交接清理（`@openai/codex` 卸载、shim 清除、doctor 确认单一原生来源）
 - 已完成：7zip 接管（`D:\ohmyenv\7z` 26.02，omc 已移除，`7z-archive` 用 tar 解包）
 - 已完成：DeepSeek key SOPS 加密副本（`.secrets\deepseek.env.enc`，换机/轮换可恢复）
+- 已完成：状态栏增强配置（`[tui] status_line` 独立脚本 `scripts\set-codex-statusline.ps1` 幂等合并，`codex doctor` 验证 parse ok）

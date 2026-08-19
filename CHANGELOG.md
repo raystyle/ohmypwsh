@@ -32,6 +32,7 @@
 - 交接确认脚本 `scripts\verify-codex-handover.ps1`：新终端一键验证 codex 解析到原生版（PASS/FAIL）
 - Codex 交接完成：npm `@openai/codex` 已卸载，shim 清除；doctor 确认 `managed by npm: no`、`update action: manual`（更新只走 ohmyenv）
 - DeepSeek key 的 SOPS 加密副本：`.secrets\deepseek.env.enc`（可提交），新增 `scripts\sops-encrypt-deepseek.ps1` 一键加密/回读验证；明文不入库（`.gitignore` 保护）
+- Codex 安装后增强配置功能：独立脚本 `scripts\set-codex-statusline.ps1` 幂等合并 `[tui]` 状态栏（`model-with-reasoning` / `git-branch` / `context-remaining`，彩色开关 `-NoColors`），不覆盖 DeepSeek/沙箱/信任项目等既有配置；`codex doctor` 确认 `config.toml parse ok`
 
 ### Fixed
 

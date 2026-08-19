@@ -30,6 +30,24 @@ sandbox = "unelevated"
 - 备份：`~/.codex\backup-takeover-20260819\config.toml`（含旧明文 key，交接完成后清理）
 - SOPS 加密副本：`.secrets\deepseek.env.enc`（可提交，用于换机/轮换恢复）；重加密用 `scripts\sops-encrypt-deepseek.ps1`
 
+## 状态栏增强配置（[tui]）
+
+独立脚本 `scripts\set-codex-statusline.ps1`（Codex 安装后增强配置功能），幂等合并，不覆盖既有配置：
+
+```toml
+[tui]
+status_line = [
+  "model-with-reasoning",
+  "git-branch",
+  "context-remaining",
+]
+status_line_use_colors = true
+```
+
+用法：`pwsh -NoProfile -File scripts\set-codex-statusline.ps1`（可 `-StatusLine @(...)` 自定义、`-NoColors` 关彩色）。
+`codex doctor` 验证 `config.toml parse ok`；重启 codex 新会话生效，TUI 内 `/statusline` 可交互微调。
+官方配置参考：`https://developers.openai.com/codex/config-reference`（`tui.status_line` 为 array<string> 或 null，`null` 禁用状态栏）。
+
 ## 踩过的坑（规则 1 沉淀）
 
 - **不要用覆盖方式写 `config.toml`**：会冲掉模型提供方、项目信任、hooks 等已有配置 → 必须合并（正则替换单行 + 前置追加）
