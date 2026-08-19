@@ -20,6 +20,30 @@ rmux pane-snapshot -t NAME
 rmux kill-pane -t %N / kill-session -t NAME
 ```
 
+## 关闭 / 退出 rmux（实测）
+
+进程模型（`Get-CimInstance Win32_Process` 实测）：真正的 daemon 是
+`libexec\rmux\rmux.exe --__internal-daemon <管道>`（本机 PID 21912），
+所有会话/窗格/PTY/滚动缓冲都在 daemon 内；用户终端是 attached client
+（`libexec\rmux\rmux.exe` 无参，PID 15896）；外层还有 tiny CLI `rmux.exe`（PID 14900）。
+命名管道 `\\.\pipe\rmux-...` 是客户端与 daemon 的 IPC 通道。
+
+三个退出层级（前缀键默认 `Ctrl+B`，与 tmux 一致）：
+
+1. **只离开不杀会话（detach）**：`Ctrl+B d`（或 `Ctrl+B D` 选客户端）→ 回到外层终端，
+   daemon 与会话全部保留，之后 `rmux attach-session -t 0` 回来。外部命令行可用
+   `rmux detach-client -a`（注意：会断开所有客户端）。
+2. **关掉当前会话/窗格**：窗格内 shell 输入 `exit`（或 `Ctrl+D`），最后一个窗格关闭后
+   会话结束；快捷键 `Ctrl+B x`（杀窗格，y 确认）、`Ctrl+B &`（杀窗口）、
+   `Ctrl+B :` 后输入 `kill-session`。外部 `rmux kill-session -t NAME` 实测只影响目标会话，
+   daemon 与其他会话原样存活。
+3. **彻底关闭 rmux**：`rmux kill-server`（无参数）→ 杀 daemon 及全部会话/窗格/PTY。
+   也可在 `Ctrl+B :` 命令模式输入 `kill-server`。验证：`Get-Process rmux` 无残留、
+   命名管道消失。兜底：`Stop-Process -Name rmux -Force`（或 `rmux-daemon.exe`）。
+
+注意：本项目 Codex（左窗格）与 claude（右窗格）都跑在会话 0 内，kill-server 或关闭最后
+一个会话会同时终止两侧进程；detach 不会。
+
 ## 踩坑（实测沉淀）
 
 1. **send-keys 目标**：`-t` 接受会话名 / `session:window.pane` / pane id（`%N`），payload 必须放在 `--` 之后，键名 `Enter`/`Down`/`Up`/`C-c`。

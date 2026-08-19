@@ -116,3 +116,4 @@
 - Claude Code `/status` 的 `.local\bin` 安装警告：settings.json env 加 `DISABLE_INSTALLATION_CHECKS=1` 关闭 config mismatch 3 行；剩余 1 行 PATH 警告为 native 二进制编译内检查（`doctorDiagnostic.ts` 不受该变量控制）的已知假阳性，文档化保留
 - Claude Code `/status` 的 `.local\bin` PATH 警告（用户决定改为官方 native 布局）：`set-claude-config.ps1` 新增 2.5 段——claude 二进制幂等同步到 `%USERPROFILE%\.local\bin\claude.exe`（size+mtime 比对）+ 目录加入用户 PATH（4.3 清理规则同步移除 `.local\bin` 过滤），实测 `/status` 诊断区零警告；rmux 新窗格用 `split-window -e "Path=..."` 注入新 PATH
 - 新建研究文档 `docs\research\claude-code-onboarding.md`：onboarding 登录验证 / 信任弹窗 / 安装警告 / rmux 中文输入坑（跨引用 `rmux-usage.md`）
+- `docs\research\rmux-usage.md` 新增「关闭 / 退出 rmux」实测章节：进程模型（daemon = `libexec\rmux\rmux.exe --__internal-daemon` + attached client + tiny CLI）、三层退出方式（detach / kill-session / kill-server，前缀键 Ctrl+B）、`kill-session` 只影响目标会话实测、彻底关闭验证与兜底
