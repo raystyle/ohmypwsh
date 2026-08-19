@@ -35,6 +35,7 @@
 - `0003-tools-takeover.md`：D:\Oh-My-Claude 工具批量接管（rg/jq/yq）
 - `0004-tool-tiers.md`：工具分层、引导安装顺序与日常无影响更新
 - `0005-starship-takeover.md`：starship 接管（配置保留）与 PowerShell 模块/调试清理
+- `0006-psmodule-manager.md`：PowerShell 模块管理器（在线/离线、PS5/PS7、自研模块打包）
 
 ## 研究文档
 
@@ -47,12 +48,13 @@
 - `research\starship-config.md`：starship.toml 配置研究（PowerShell 专用提示行）
 - `research\powershell-dotnet-vsbuild.md`：PowerShell 模块 / .NET 库 / VS Build Tools 现状研究
 - `research\omc-psmodule-management.md`：omc 的 PowerShell 模块管理机制（本地仓库 + 双 shell 交叉部署 + 锁文件）
+- `research\powershell-encoding.md`：PS5/PS7 编码兼容研究（优先注意规则）
 
 ## 项目目录索引
 
 ```text
 ohmypwsh/
-├─ AGENTS.md                    协作规则（最高约束）：规则 1-3、目录分类、设计原则
+├─ AGENTS.md                    协作规则（最高约束）：规则 1-4、目录分类、设计原则
 ├─ README.md                    项目入口（一句话定位 + 文档/脚本链接）
 ├─ CHANGELOG.md                 可交付变更记录（先维护在 [Unreleased]）
 ├─ ROADMAP.md                   阶段与里程碑状态（未开始/进行中/已完成/挂起）
@@ -70,19 +72,23 @@ ohmypwsh/
 │  │  ├─ 0002-codex-takeover.md Codex 接管方案（原生二进制 + 沙箱 + 密钥）
 │  │  ├─ 0003-tools-takeover.md rg/jq/yq 工具批量接管（omc → ohmyenv）
 │  │  ├─ 0004-tool-tiers.md     工具分层与日常无影响更新（核心基础/扩展 + daily）
-│  │  └─ 0005-starship-takeover.md starship 接管与 PowerShell 清理
+│  │  ├─ 0005-starship-takeover.md starship 接管与 PowerShell 清理
+│  │  └─ 0006-psmodule-manager.md PowerShell 模块管理器（在线/离线/双 shell）
 │  └─ research\                 研究文档（工具能力 / 踩坑沉淀 / 实测记录）
 │     ├─ gh-cli.md              gh CLI 研究（现状/认证/API 兜底/命令地图）
 │     ├─ gh-git-https-ssh.md    gh 与 git 的 HTTPS/SSH 互相配置（本机实测）
 │     ├─ age-sops-key-management.md  密钥管理（age + SOPS 接入 ohmyenv）
 │     ├─ ohmyenv-pitfalls.md    ohmyenv 踩坑沉淀
 │     ├─ codex-deepseek-config.md    Codex 接管记录（沙箱/密钥/状态栏）
-│     └─ codex-statusline.md    Codex TUI 状态栏研究（全量可选项/样式/推荐配置）
+│     ├─ codex-statusline.md    Codex TUI 状态栏研究（全量可选项/样式/推荐配置）
+│     └─ powershell-encoding.md PS5/PS7 编码兼容研究（优先注意规则）
 │
 └─ scripts\                     环境脚本（全部入口）
    ├─ ohmyenv.ps1               CLI：query / deploy / install / update / pin / status
    ├─ helpers.ps1               模块函数（下载、安装、Invoke-GitHubApi 限流兜底）
    ├─ env.psd1                  工具版本锁定清单（唯一 pin 来源，版本不硬编码）
+   ├─ modules.psd1              PowerShell 模块锁定清单（psmodule.ps1 维护）
+   ├─ psmodule.ps1              PowerShell 模块管理器（在线/离线、PS5/PS7、打包）
    ├─ set-deepseek-key.ps1      DeepSeek API Key 交互式设置（用户级环境变量）
    ├─ set-codex-statusline.ps1  Codex 状态栏幂等合并（[tui] status_line）
    ├─ set-starship-config.ps1   starship PowerShell 配置（全模板幂等，-Force 覆盖）
@@ -92,6 +98,6 @@ ohmypwsh/
    └─ verify-tools-handover.ps1 rg/jq/yq 交接验证（解析/版本 PASS/FAIL）
 ```
 
-外部环境目录（git 之外，由 ohmyenv 管理）：`D:\ohmyenv` —— gh / git / age / sops / codex / aria2 / 7z / rg / jq / yq / rmux / starship 安装根。
+外部环境目录（git 之外，由 ohmyenv 管理）：`D:\ohmyenv` —— gh / git / age / sops / codex / aria2 / 7z / rg / jq / yq / rmux / starship 安装根；`D:\ohmyenv\modules` 为 PowerShell 模块共享部署根（用户 PSModulePath 追加）。
 
 > 目录分类规则见 `AGENTS.md`「目录与分类规范」；本索引随文件增删同步维护。

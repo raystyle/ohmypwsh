@@ -25,6 +25,10 @@
    - `docs\research\主题.md`：研究类成果（工具能力研究、踩坑沉淀、实测记录）落成研究文档，命名 `英文短名.md`，随研究/踩坑即时维护
    - 文档总览与命名约定见 `docs\README.md`
 
+4. **PS5/PS7 编码兼容（优先注意）**
+
+   凡需兼容 Windows PowerShell 5.1 的 `.psd1` / `.ps1` 文件，含非 ASCII 内容时**必须 UTF-8 带 BOM**（PS5.1 无 BOM 按本地代码页 ANSI 读取，中文系统为 GBK，会解析报错/mojibake）；`pwsh7` 的 `Set-Content -Encoding utf8` 是无 BOM，应改用 `utf8BOM`。纯 ASCII 无风险；读取文件显式指定编码，不依赖探测。详见 `docs\research\powershell-encoding.md`。
+
 ## 目录与分类规范
 
 文件按类别物理分离，新增文件必须归入对应目录，禁止乱放：
@@ -33,7 +37,7 @@
 | --- | --- | --- |
 | 脚本/代码 | `scripts\` | ohmyenv CLI（`ohmyenv.ps1`）、模块函数（`helpers.ps1`）、工具定义与锁定清单（`env.psd1`）、环境脚本（密钥/交接验证/状态栏等） |
 | 文档 | `docs\`（`plans\` + `research\`）+ 根目录 README/AGENTS/CHANGELOG/ROADMAP.md | 见「文档规范」 |
-| 配置 | `.sops.yaml`、`scripts\env.psd1` | SOPS 加密策略 / 工具版本锁定清单（唯一 pin 来源，代码不得硬编码版本） |
+| 配置 | `.sops.yaml`、`scripts\env.psd1`、`scripts\modules.psd1` | SOPS 加密策略 / 工具版本锁定清单 / PowerShell 模块锁定清单（唯一 pin 来源，代码不得硬编码版本） |
 | 密钥数据 | `.secrets\` | SOPS 加密副本（可提交）；明文密钥/凭据绝不入库（`.gitignore` 兜底） |
 | 环境目录 | `D:\ohmyenv` | 工具安装根（git 之外），由 ohmyenv 管理（query / deploy / install / update / pin） |
 

@@ -36,6 +36,9 @@
 - 残留目录清除（重启后锁释放）：`Documents\PowerShell\Modules` / `Documents\WindowsPowerShell\Modules` 用户模块目录整体删除，用户模块路径归零；Pester 3.4.0 / PSReadLine 2.0.0 为系统内置保留
 - 研究文档 `docs\research\omc-psmodule-management.md`：omc 的 PowerShell 模块管理机制（本地 nupkg 仓库 + PS5/PS7 交叉部署 + 锁文件）与清理后残留盘点
 - 研究文档补充「对 ohmyenv 的参考价值」：可借鉴（本地仓库/先 lock/双份部署认知/profile 标记）与应避免（仓库注册残留/WebClient/旧 PowerShellGet/锁散落/无校验拷贝），含接管建议方向
+- PowerShell 模块管理器 `scripts\psmodule.ps1`：list / pin / install / update / uninstall / pack；在线（PSGallery → `D:\ohmyenv\cache\modules` → 部署）与离线（`-File` nupkg）同一部署路径；默认共享部署 `D:\ohmyenv\modules` + 用户 PSModulePath 追加（PS5/PS7 同见）；`modules.psd1` 唯一锁源（sha256 回填）
+- 建立方案 `docs\plans\0006-psmodule-manager.md`：PowerShell 模块管理器（在线/离线、PS5/PS7、自研模块打包）
+- 研究文档 `docs\research\powershell-encoding.md` + AGENTS 规则 4：PS5/PS7 编码兼容优先注意（PS5.1 无 BOM 按 ANSI 读取，自研 manifest 必须 UTF-8 带 BOM）
 
 ### Changed
 
@@ -72,6 +75,9 @@
 - PowerShell 清理（2026-08-19 用户指示，直接删除不留备份）：profile（pwsh7/5.1）删除 PSFzf 块仅留 Starship；删除用户级 Pester 5.7.1 / PSScriptAnalyzer 1.25.0 / PSFzf 2.7.10（`WindowsPowerShell\Modules` 与 `PowerShell\Modules` 双份）+ PowerShellEditorServices + pses 调试组件；omc 注册清空 `$PsModules`、移除 pses
 - 交接验证脚本扩展 starship（含配置文件就位检查）
 - `~/.config/starship.toml` 应用 PowerShell 专用提示行（format 结构 / 性能选项 / `❯`-`✖` 输入符 / pwsh shell 标识），新终端生效
+- Windows PowerShell 5.1 PowerShellGet 1.0.0.1 → 2.2.5（CurrentUser + TLS 1.2）；用户 PSModulePath 恢复标准 CurrentUser 路径
+- omc 模块管理残留清理：注销 `OhMyClaude` PSRepository（双 shell）、删除 LocalRepo nupkg 与模块锁文件、删除孤儿 `psmodule.ps1`
+- 实测：Pester 5.7.1 在线安装 + 自研 `OhMyDemo` 离线安装均通过 pwsh7 与 PS5.1 验证（测试模块已卸载）
 
 ### Fixed
 
