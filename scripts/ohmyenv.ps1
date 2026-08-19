@@ -5,11 +5,11 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('query', 'deploy', 'install', 'update', 'lock', 'status', 'help')]
+    [ValidateSet('query', 'deploy', 'install', 'update', 'pin', 'lock', 'status', 'help')]
     [string]$Command = 'help',
 
     [Parameter(Position = 1)]
-    [ValidateSet('gh', 'git', 'age', 'sops', 'all')]
+    [ValidateSet('gh', 'git', 'age', 'sops', 'codex', 'aria2', 'all')]
     [string]$Tool = 'all',
 
     [switch]$Latest,
@@ -33,7 +33,7 @@ ohmyenv - 环境依赖管理 CLI（gh / git）
   ohmyenv.ps1 install [gh|git|all] [同上下载源选项]   # 仅装入环境目录，不改 PATH
   ohmyenv.ps1 deploy  [gh|git|all] [同上下载源选项]   # 安装 + 注册用户 PATH（默认锁定版本）
   ohmyenv.ps1 update  [gh|git|all]                   # 更新到最新版并锁定
-  ohmyenv.ps1 lock    [gh|git|all] [-Latest | -Version <ver>]   # 查看 / 设置锁定版本
+  ohmyenv.ps1 pin     [gh|git|all] [-Latest | -Version <ver>]   # pin 版本（lock 为别名）
   ohmyenv.ps1 status                                 # 锁定 vs 已安装 vs PATH
   ohmyenv.ps1 help
 
@@ -89,24 +89,24 @@ switch ($Command) {
         }
     }
 
-    'lock' {
+    { $_ -in @('pin', 'lock') } {
         if (-not $Latest -and -not $Tag -and -not $Version) {
-            Write-Host "当前锁定版本:" -ForegroundColor Cyan
+            Write-Host "当前 pin 版本:" -ForegroundColor Cyan
             foreach ($t in $tools) {
                 $d = $lock.Tools[$t]
+                if (-not $d.Tag) {
+                    Write-Host "[INFO] $t 未 pin，自动 pin 最新版" -ForegroundColor Yellow
+                    $r = Resolve-ToolVersion -Lock $lock -Tool $t -Latest
+                    Set-ToolPin -Lock $lock -Resolution $r
+                    continue
+                }
                 $sha = if ($d.Sha256) { $d.Sha256.Substring(0, [math]::Min(16, $d.Sha256.Length)) + '...' } else { '(未回填)' }
                 "  $t : $($d.Version) ($($d.Tag))  sha256=$sha"
             }
         } else {
             foreach ($t in $tools) {
                 $r = Resolve-ToolVersion -Lock $lock -Tool $t -Latest:$Latest -Tag $Tag -Version $Version
-                $d = $lock.Tools[$t]
-                $d.Tag     = $r.Tag
-                $d.Version = $r.Version
-                $d.Asset   = $r.AssetName
-                $d.Sha256  = ''
-                Save-EnvLock -Lock $lock
-                Write-Host "[OK] $t 已锁定: $($d.Version)（sha256 将在下次 install/deploy 时回填）" -ForegroundColor Green
+                Set-ToolPin -Lock $lock -Resolution $r
             }
         }
     }

@@ -9,7 +9,8 @@
 | 0 | 项目基础设施：AGENTS 规则、文档规范 | 已完成 |
 | 1 | 环境依赖管理：独立 D 盘环境目录，自建 gh/git 安装管理 | 已完成 |
 | 2 | 密钥管理：age + SOPS 接入 ohmyenv，.sops.yaml 与冒烟测试 | 已完成 |
-| 3 | 项目核心目标 | 未开始（待用户定义） |
+| 3 | Codex 接管：原生二进制 + 沙箱 + DeepSeek 密钥迁移到 env_key | 实施中（方案 0002） |
+| 4 | 项目核心目标 | 未开始（待用户定义） |
 
 ## 阶段 0：项目基础设施（已完成）
 
@@ -34,3 +35,12 @@
 - age 1.3.1、sops 3.13.3 接入 `ohmyenv`（查询/下载/锁定/sha256/PATH 统一管理）
 - 生成 age 私钥 `%APPDATA%\sops\age\keys.txt`，设置 `SOPS_AGE_KEY_FILE` 用户环境变量
 - 建立 `.sops.yaml`（公钥）与 `scripts\sops-test.ps1` 冒烟测试（已通过）
+
+## 阶段 3：Codex 接管（实施中）
+
+- 方案：`docs\plans\0002-codex-takeover.md`
+- 二进制：npm 包（0.147.0）→ ohmyenv 原生（0.148.0，`D:\ohmyenv\codex`）
+- 沙箱：`sandbox_mode=danger-full-access` + `approval_policy=never`（合并写入，已生效）
+- 密钥：`experimental_bearer_token` 明文 → `DEEPSEEK_API_KEY` 用户环境变量 + `env_key`（已生效；SOPS 加密副本待办）
+- 完成：原生部署、doctor 验证、aria2 下载通道（7.1MiB/s）
+- 待办：npm 交接清理（新会话确认后）、SOPS 加密副本、7zip 接管

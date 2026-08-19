@@ -4,69 +4,80 @@
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+# 合并 Machine + User PATH（registry 为最新权威，进程继承的旧 PATH 可能缺新目录）
+$env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
+
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
-$script:ToolNames = @('gh', 'git', 'age', 'sops')
+$script:ToolNames = @('gh', 'git', 'age', 'sops', 'codex', 'aria2')
 
 function New-ToolDef {
     param([Parameter(Mandatory)][string]$Tool)
     switch ($Tool) {
         'gh' {
             @{
-                Version      = '2.91.0'
-                Tag          = 'v2.91.0'
                 Repo         = 'cli/cli'
                 AssetPattern = '^gh_[0-9.]+_windows_amd64\.zip$'
-                Asset        = 'gh_2.91.0_windows_amd64.zip'
                 Dir          = 'gh'
                 Bin          = 'gh\bin'
                 Exe          = 'gh\bin\gh.exe'
                 Extract      = 'zip'
-                Sha256       = ''
             }
         }
         'git' {
             @{
-                Version      = '2.54.0.windows.1'
-                Tag          = 'v2.54.0.windows.1'
                 Repo         = 'git-for-windows/git'
                 AssetPattern = '^PortableGit-[0-9.]+-64-bit\.7z\.exe$'
-                Asset        = 'PortableGit-2.54.0-64-bit.7z.exe'
                 Dir          = 'git'
                 Bin          = 'git\cmd'
                 Exe          = 'git\cmd\git.exe'
                 Extract      = '7zsfx'
-                Sha256       = ''
             }
         }
         'age' {
             @{
-                Version      = '1.3.1'
-                Tag          = 'v1.3.1'
                 Repo         = 'FiloSottile/age'
                 AssetPattern = '^age-v[0-9.]+-windows-amd64\.zip$'
-                Asset        = 'age-v1.3.1-windows-amd64.zip'
                 Dir          = 'age'
                 Bin          = 'age'
                 Exe          = 'age\age.exe'
                 Extract      = 'zip'
-                Sha256       = ''
             }
         }
         'sops' {
             @{
-                Version      = '3.13.3'
-                Tag          = 'v3.13.3'
                 Repo         = 'getsops/sops'
                 AssetPattern = '^sops-v[0-9.]+\.amd64\.exe$'
-                Asset        = 'sops-v3.13.3.amd64.exe'
                 Dir          = 'sops'
                 Bin          = 'sops'
                 Exe          = 'sops\sops.exe'
                 Extract      = 'copy'
-                Sha256       = ''
             }
         }
-        default { throw "未知工具: $Tool（仅支持 gh / git）" }
+        'codex' {
+            @{
+                TagPrefix    = 'rust-v'
+                Repo         = 'openai/codex'
+                AssetPattern = '^codex-package-x86_64-pc-windows-msvc\.tar\.gz$'
+                SumsAsset    = 'codex-package_SHA256SUMS'
+                SumsPattern  = 'codex-package-x86_64-pc-windows-msvc\.tar\.gz'
+                Dir          = 'codex'
+                Bin          = 'codex\bin'
+                Exe          = 'codex\bin\codex.exe'
+                Extract      = 'targz'
+            }
+        }
+        'aria2' {
+            @{
+                TagPrefix    = 'release-'
+                Repo         = 'aria2/aria2'
+                AssetPattern = '^aria2-[0-9.]+-win-64bit-build1\.zip$'
+                Dir          = 'aria2'
+                Bin          = 'aria2'
+                Exe          = 'aria2\aria2c.exe'
+                Extract      = 'zip'
+            }
+        }
+        default { throw "未知工具: $Tool" }
     }
 }
 
@@ -103,9 +114,12 @@ function Save-EnvLock {
         $lines.Add("        $t = @{")
         $lines.Add("            Version      = '$($d.Version)'")
         $lines.Add("            Tag          = '$($d.Tag)'")
+        $lines.Add("            TagPrefix    = '$($d.TagPrefix)'")
         $lines.Add("            Repo         = '$($d.Repo)'")
         $lines.Add("            AssetPattern = '$($d.AssetPattern)'")
         $lines.Add("            Asset        = '$($d.Asset)'")
+        $lines.Add("            SumsAsset    = '$($d.SumsAsset)'")
+        $lines.Add("            SumsPattern  = '$($d.SumsPattern)'")
         $lines.Add("            Dir          = '$($d.Dir)'")
         $lines.Add("            Bin          = '$($d.Bin)'")
         $lines.Add("            Exe          = '$($d.Exe)'")
@@ -183,18 +197,42 @@ function Resolve-ToolVersion {
     } elseif ($Version) {
         $release = Get-GitHubRelease -Repo $d.Repo -Tag "v$Version"
     } else {
+        if (-not $d.Tag) { throw "$Tool 尚未 pin 版本。先执行: ohmyenv pin $Tool -Latest（或 -Version <版本>）" }
         $release = Get-GitHubRelease -Repo $d.Repo -Tag $d.Tag
     }
     $asset = Find-ReleaseAsset -Release $release -Pattern $d.AssetPattern
+    $prefix  = if ($d.TagPrefix) { $d.TagPrefix } else { 'v' }
+    $version = $release.tag_name
+    if ($version.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $version = $version.Substring($prefix.Length)
+    }
     @{
         Tool      = $Tool
         Tag       = $release.tag_name
-        Version   = $release.tag_name.TrimStart('v')
+        Version   = $version
         AssetName = $asset.name
         AssetSize = $asset.size
         AssetUrl  = $asset.browser_download_url
         Release   = $release
     }
+}
+
+function Set-ToolPin {
+    <#
+    .SYNOPSIS
+        将解析结果写入锁定清单（版本管理：先 pin 后 update）。
+    #>
+    param(
+        [Parameter(Mandatory)][hashtable]$Lock,
+        [Parameter(Mandatory)]$Resolution
+    )
+    $d = $Lock.Tools[$Resolution.Tool]
+    $d.Tag     = $Resolution.Tag
+    $d.Version = $Resolution.Version
+    $d.Asset   = $Resolution.AssetName
+    $d.Sha256  = ''
+    Save-EnvLock -Lock $Lock
+    Write-Host "[OK] $($Resolution.Tool) 已 pin: $($Resolution.Version)（sha256 将在 install/deploy 时回填）" -ForegroundColor Green
 }
 
 function Assert-Sha256 {
@@ -223,12 +261,30 @@ function Save-ReleaseAsset {
 
     if (Test-Path $OutFile) {
         if ($ExpectedSha256) {
-            Assert-Sha256 -File $OutFile -Expected $ExpectedSha256
-            Write-Host "[OK] 命中缓存（sha256 一致）: $OutFile" -ForegroundColor Green
-            return
+            try {
+                Assert-Sha256 -File $OutFile -Expected $ExpectedSha256
+                Write-Host "[OK] 命中缓存（sha256 一致）: $OutFile" -ForegroundColor Green
+                return
+            } catch {
+                Write-Host "[WARN] 缓存 sha256 不匹配，重新下载: $($_.Exception.Message)" -ForegroundColor Yellow
+                Remove-Item -LiteralPath $OutFile -Force
+            }
         }
         Write-Host "[INFO] 已有缓存但无 sha256 基准，复用: $OutFile" -ForegroundColor DarkGray
         return
+    }
+
+    $aria2 = (Get-Command aria2c.exe -ErrorAction SilentlyContinue).Source
+    if ($aria2) {
+        $outDir  = Split-Path -Parent $OutFile
+        $outName = Split-Path -Leaf $OutFile
+        & $aria2 -x 16 -s 16 -k 1M --file-allocation=none --auto-file-renaming=false --allow-overwrite=true --summary-interval=0 --console-log-level=warn -d $outDir -o $outName $Url
+        if ($LASTEXITCODE -eq 0 -and (Test-Path $OutFile)) {
+            if ($ExpectedSha256) { Assert-Sha256 -File $OutFile -Expected $ExpectedSha256 }
+            Write-Host "[OK] 已下载（aria2 多线程）: $OutFile" -ForegroundColor Green
+            return
+        }
+        Write-Host "[WARN] aria2 下载失败（exit=$LASTEXITCODE），改用 curl" -ForegroundColor Yellow
     }
 
     $curl = (Get-Command curl.exe -ErrorAction SilentlyContinue).Source
@@ -258,6 +314,8 @@ function Get-InstalledVersion {
         'git'  { if ($line -match 'git version (\S+)') { return $Matches[1] } }
         'age'  { if ($line -match '^v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'sops' { if ($line -match 'sops[ -]v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'codex' { if ($line -match 'codex-cli\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'aria2' { if ($line -match 'aria2 version (\d+\.\d+\.\d+)') { return $Matches[1] } }
     }
     $null
 }
@@ -311,6 +369,16 @@ function Install-ToolVersion {
     }
 
     $expectedSha = if ($d.Sha256 -and $Resolution.Tag -eq $d.Tag) { $d.Sha256 } else { '' }
+    if (-not $expectedSha -and $d.SumsAsset -and $Resolution.Tag -eq $d.Tag) {
+        # 从官方 SHA256SUMS 取期望校验值（资产名不含版本，必须按清单校验）
+        $sumsPath = Join-Path $envRoot "cache\$($d.SumsAsset)"
+        $sumsUrl  = "https://github.com/$($d.Repo)/releases/download/$($Resolution.Tag)/$($d.SumsAsset)"
+        if (Test-Path $sumsPath) { Remove-Item -LiteralPath $sumsPath -Force }
+        Save-ReleaseAsset -Url $sumsUrl -OutFile $sumsPath
+        $sumLine = Get-Content $sumsPath | Where-Object { $_ -match $d.SumsPattern } | Select-Object -First 1
+        if ($sumLine -match '([0-9a-fA-F]{64})\s') { $expectedSha = $Matches[1].ToUpperInvariant() }
+        if (-not $expectedSha) { throw "$t SHA256SUMS 中未找到匹配资产: $($d.SumsPattern)" }
+    }
     Save-ReleaseAsset -Url $Resolution.AssetUrl -OutFile $cachePath -ExpectedSha256 $expectedSha
 
     $sha = (Get-FileHash -LiteralPath $cachePath -Algorithm SHA256).Hash
@@ -345,6 +413,10 @@ function Install-ToolVersion {
         }
         'copy' {
             Copy-Item -LiteralPath $cachePath -Destination (Join-Path $installDir (Split-Path -Leaf $d.Exe)) -Force
+        }
+        'targz' {
+            tar -xzf $cachePath -C $installDir
+            if ($LASTEXITCODE -ne 0) { throw "$t tar.gz 解压失败（exit=$LASTEXITCODE）" }
         }
         default { throw "未知解压类型: $($d.Extract)" }
     }
