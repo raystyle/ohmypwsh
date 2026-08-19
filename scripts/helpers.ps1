@@ -10,7 +10,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [En
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
 # 工具分层：核心基础工具（密钥 key / 智能体环境 agent / 项目管理 project / 基础工具 base）
 #           + 扩展工具 extras；ToolNames 顺序 = 引导安装/展示/日常更新顺序（核心先装齐，再稳定扩展）
-$script:ToolNames = @('age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'rg', 'jq', 'yq', 'rmux')
+$script:ToolNames = @('age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'rg', 'jq', 'yq', 'rmux', 'starship')
 $script:ToolCategories = @{
     key     = '密钥'
     agent   = '智能体环境'
@@ -147,6 +147,17 @@ function New-ToolDef {
                 Dir          = 'rmux'
                 Bin          = 'rmux'
                 Exe          = 'rmux\rmux.exe'
+                Extract      = 'zip'
+            }
+        }
+        'starship' {
+            @{
+                Category     = 'extras'
+                Repo         = 'starship/starship'
+                AssetPattern = '^starship-x86_64-pc-windows-msvc\.zip$'
+                Dir          = 'starship'
+                Bin          = 'starship'
+                Exe          = 'starship\starship.exe'
                 Extract      = 'zip'
             }
         }
@@ -428,6 +439,7 @@ function Get-InstalledVersion {
         'jq'    { if ($line -match 'jq-(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'yq'    { if ($line -match 'version v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'rmux'  { if ($line -match 'rmux (\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'starship' { if ($line -match 'starship (\d+\.\d+\.\d+)') { return $Matches[1] } }
     }
     $null
 }

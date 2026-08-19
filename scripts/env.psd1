@@ -167,5 +167,20 @@
             Extract      = 'zip'
             Sha256       = 'E315E2D51D927BA9621732812C0F932C862D05F4B677DBF3CAB76F0D27372A70'
         }
+        'starship' = @{
+            Version      = '1.26.0'
+            Tag          = 'v1.26.0'
+            TagPrefix    = ''
+            Repo         = 'starship/starship'
+            AssetPattern = '^starship-x86_64-pc-windows-msvc\.zip$'
+            Asset        = 'starship-x86_64-pc-windows-msvc.zip'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'starship'
+            Bin          = 'starship'
+            Exe          = 'starship\starship.exe'
+            Extract      = 'zip'
+            Sha256       = '690021E22F2BF2C57D5867DC0FABABE5E55E714C26942BD909FFDDB6C5DF42F2'
+        }
     }
 }
