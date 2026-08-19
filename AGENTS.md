@@ -32,7 +32,7 @@
 | 类别 | 目录 | 说明 |
 | --- | --- | --- |
 | 脚本/代码 | `scripts\` | ohmyenv CLI（`ohmyenv.ps1`）、模块函数（`helpers.ps1`）、工具定义与锁定清单（`env.psd1`）、环境脚本（密钥/交接验证/状态栏等） |
-| 文档 | `docs\`（`plans\` + `research\`）+ 根目录 AGENTS/CHANGELOG/ROADMAP.md | 见「文档规范」 |
+| 文档 | `docs\`（`plans\` + `research\`）+ 根目录 README/AGENTS/CHANGELOG/ROADMAP.md | 见「文档规范」 |
 | 配置 | `.sops.yaml`、`scripts\env.psd1` | SOPS 加密策略 / 工具版本锁定清单（唯一 pin 来源，代码不得硬编码版本） |
 | 密钥数据 | `.secrets\` | SOPS 加密副本（可提交）；明文密钥/凭据绝不入库（`.gitignore` 兜底） |
 | 环境目录 | `D:\ohmyenv` | 工具安装根（git 之外），由 ohmyenv 管理（query / deploy / install / update / pin） |
@@ -43,6 +43,36 @@
 - 明文密钥、token、凭据永不入库；加密副本只放 `.secrets\`
 - 版本/Tag/资产名唯一来源是 `scripts\env.psd1`，先 `ohmyenv pin` 后 `ohmyenv update`
 - 类别/目录变动时同步更新 `docs\README.md`「项目目录索引」与本表
+
+## 常用命令
+
+所有脚本统一用 `pwsh -NoProfile` 运行；新终端先重建 PATH（注册表为权威，进程继承的 PATH 可能缺新目录）：
+
+```powershell
+$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+```
+
+环境管理（工具安装根 `D:\ohmyenv`，bootstrap 不依赖 gh）：
+
+```powershell
+pwsh -NoProfile -File scripts\ohmyenv.ps1 status                # 锁定 vs 已安装 vs PATH
+pwsh -NoProfile -File scripts\ohmyenv.ps1 pin   gh -Latest      # 先 pin 锁定版本
+pwsh -NoProfile -File scripts\ohmyenv.ps1 update gh             # 升级到最新并重新 pin
+```
+
+日常环境脚本：
+
+```powershell
+pwsh -NoProfile -File scripts\set-codex-statusline.ps1     # Codex 状态栏幂等合并（[tui]）
+pwsh -NoProfile -File scripts\set-deepseek-key.ps1         # DeepSeek API Key 交互式设置
+pwsh -NoProfile -File scripts\sops-test.ps1                # SOPS 冒烟测试
+pwsh -NoProfile -File scripts\verify-codex-handover.ps1    # codex 原生版交接验证（PASS/FAIL）
+```
+
+## 提交约定
+
+- 前缀 `feat:`（功能/脚本）/ `docs:`（仅文档）/ `fix:`（修坑）/ `chore:`（杂项）+ 中文描述，如 `feat: Codex 状态栏升级专业组合`
+- 一次提交只做一件事，先维护在本地 `main` 分支；远端推送按用户指示进行
 
 ## 设计原则
 

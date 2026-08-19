@@ -47,6 +47,7 @@
 ```text
 ohmypwsh/
 ├─ AGENTS.md                    协作规则（最高约束）：规则 1-3、目录分类、设计原则
+├─ README.md                    项目入口（一句话定位 + 文档/脚本链接）
 ├─ CHANGELOG.md                 可交付变更记录（先维护在 [Unreleased]）
 ├─ ROADMAP.md                   阶段与里程碑状态（未开始/进行中/已完成/挂起）
 ├─ .sops.yaml                   SOPS 加密策略（age 公钥，可提交）
