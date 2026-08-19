@@ -37,6 +37,7 @@
 - `0005-starship-takeover.md`：starship 接管（配置保留）与 PowerShell 模块/调试清理
 - `0006-psmodule-manager.md`：PowerShell 模块管理器（在线/离线、PS5/PS7、自研模块打包）
 - `0007-uv-python-takeover.md`：uv/Python 接管（uv 最新 + Python 3.12 为准）
+- `0008-claude-code-config.md`：Claude Code 扩展配置（GLM-5.3 1M 上下文）
 
 ## 研究文档
 
@@ -94,6 +95,9 @@ ohmypwsh/
    ├─ set-deepseek-key.ps1      DeepSeek API Key 交互式设置（用户级环境变量）
    ├─ set-codex-statusline.ps1  Codex 状态栏幂等合并（[tui] status_line）
    ├─ set-starship-config.ps1   starship PowerShell 配置（全模板幂等，-Force 覆盖）
+   ├─ set-claude-key.ps1        Claude Code (GLM) API Key 设置/迁移（-FromOmcProfile）
+   ├─ set-claude-config.ps1     Claude Code 配置（安装 + env + settings.json 合并）
+   ├─ sops-encrypt-anthropic.ps1 ANTHROPIC_API_KEY SOPS 加密备份
    ├─ sops-encrypt-deepseek.ps1 SOPS 重加密/回读验证
    ├─ sops-test.ps1             SOPS 冒烟测试
    ├─ verify-codex-handover.ps1 Codex 交接验证（原生版解析 PASS/FAIL）

@@ -72,6 +72,9 @@ pwsh -NoProfile -File scripts\ohmyenv.ps1 daily                 # 日常无影�
 pwsh -NoProfile -File scripts\set-codex-statusline.ps1     # Codex 状态栏幂等合并（[tui]）
 pwsh -NoProfile -File scripts\set-deepseek-key.ps1         # DeepSeek API Key 交互式设置
 pwsh -NoProfile -File scripts\set-starship-config.ps1      # starship PowerShell 配置（全模板幂等，-Force 覆盖）
+pwsh -NoProfile -File scripts\set-claude-key.ps1           # Claude Code (GLM) API Key 设置/迁移（-FromOmcProfile）
+pwsh -NoProfile -File scripts\set-claude-config.ps1        # Claude Code 配置（安装 + env + settings.json 幂等合并）
+pwsh -NoProfile -File scripts\sops-encrypt-anthropic.ps1   # ANTHROPIC_API_KEY SOPS 加密备份
 pwsh -NoProfile -File scripts\sops-test.ps1                # SOPS 冒烟测试
 pwsh -NoProfile -File scripts\verify-codex-handover.ps1    # codex 原生版交接验证（PASS/FAIL）
 ```

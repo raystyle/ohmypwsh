@@ -41,6 +41,9 @@
 - 研究文档 `docs\research\powershell-encoding.md` + AGENTS 规则 4：PS5/PS7 编码兼容优先注意（PS5.1 无 BOM 按 ANSI 读取，自研 manifest 必须 UTF-8 带 BOM）
 - uv/Python 接管：`uv` 0.12.5（最新）与 `python` 3.12.14（python-build-standalone 3.12 线 install_only）由 ohmyenv 管理，部署到 `D:\ohmyenv\uv` / `D:\ohmyenv\python`；新增静态 `VersionPattern`（python 版本从资产名提取）
 - 建立方案 `docs\plans\0007-uv-python-takeover.md`：uv/Python 接管（uv 最新 + Python 3.12 为准）
+- Claude Code 扩展配置：`scripts\set-claude-config.ps1`（uv 安装 claude-code 2.1.233 至 `D:\ohmyenv\uv-tools\bin` + 25 项优化环境变量 + settings.json `env` 块合并：GLM-5.3[1m] / glm-4.7 / 1M 压缩窗口，保留原权限配置，无插件/hook）
+- Claude Code 密钥加密：`scripts\set-claude-key.ps1`（`-FromOmcProfile` 迁移 GLM token → `ANTHROPIC_API_KEY` 用户环境变量，不回显）+ `scripts\sops-encrypt-anthropic.ps1`（`.secrets\anthropic.env.enc`，加密/解密回读验证）
+- 建立方案 `docs\plans\0008-claude-code-config.md`：Claude Code 扩展配置（GLM-5.3 1M 上下文）
 
 ### Changed
 
@@ -82,6 +85,7 @@
 - 实测：Pester 5.7.1 在线安装 + 自研 `OhMyDemo` 离线安装均通过 pwsh7 与 PS5.1 验证（测试模块已卸载）
 - `UV_*` 用户环境变量全部迁入 `D:\ohmyenv`（uv-cache / python / uv-tools / uv-tools\bin / install dir），PATH 前置 `D:\ohmyenv\python\Scripts` 与 `D:\ohmyenv\uv-tools\bin`；源确认：pip/uv 走 aliyun、python 下载走 nju 镜像
 - omc 移除 uv 注册（`$BaseScripts` 清出、`uv.ps1`/`uv.exe` 改名保留、CLAUDE.md 同步）；claude 2.1.187 验证仍可用
+- `ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic` + 遥测关闭等优化 env 就位；`claude --version` = 2.1.233（新装，支持 `[1m]`）
 
 ### Fixed
 

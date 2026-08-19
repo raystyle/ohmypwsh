@@ -36,6 +36,8 @@
 - **python-build-standalone 的 tag 是日期而非版本**：`Resolve-ToolVersion` 新增静态 `VersionPattern`，命中资产名时用捕获组作版本（python 3.12.14 从 `cpython-3.12.14+20260814-...-install_only.tar.gz` 提取）
 - **install_only tarball 顶层套单目录**（`python/` 包裹层）：`targz` 解压已加与 zip 相同的单目录展平（python-build-standalone 实测触发）
 - **uv 默认 python 由 `UV_PYTHON_INSTALL_DIR` 决定**：接管后指向 `D:\ohmyenv\python`，`uv python list` 同时仍会发现 PATH 上的 omc 残留 python（先不管 jupyter 时保留）
+- **PyPI 的 `claude-code` 是占位包**（0.0.1 无入口点，`uv tool install` 报 No executables）→ Claude Code 安装改用 `uv pip download claude-agent-sdk`（wheel 内捆绑 `claude.exe`，aliyun 源约 100MB）解出
+- **OrderedDictionary 的 PSObject 成员不被 ConvertTo-Json 序列化**：settings.json env 块合并须用字典式赋值（`$envTarget[$key]=$value`），`Add-Member` 会写出 `"env": {}`
 - **starship 只有逐资产 `.sha256`、无统一 SHA256SUMS**：`SumsAsset` 机制不适用（那是给单文件 SUMS 清单用的），走「下载后回填 sha + 安装后版本校验」即可
 - **PS 模块是双份安装 + 额外副本**：Pester/PSScriptAnalyzer/PSFzf 同时存在于 `WindowsPowerShell\Modules`（5.1）与 `PowerShell\Modules`（pwsh7），且 pses 目录内还有副本 → 清理要三处齐清；直接删除时注意进程占用（PSFzf.dll 曾被占用，重试后成功）
 - **profile 块由 profile-line.ps1 的 BEGIN/END 标记管理**：清理用块标记正则删除最稳（本例删除 PSFzf 块、仅留 Starship 块）
