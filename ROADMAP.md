@@ -10,7 +10,7 @@
 | 1 | 环境依赖管理：独立 D 盘环境目录，自建 gh/git 安装管理 | 已完成 |
 | 2 | 密钥管理：age + SOPS 接入 ohmyenv，.sops.yaml 与冒烟测试 | 已完成 |
 | 3 | Codex 接管：原生二进制 + 沙箱 + DeepSeek 密钥迁移到 env_key | 已完成 |
-| 4 | 项目核心目标 | 未开始（待用户定义） |
+| 4 | 工具分层与日常更新：核心基础工具（密钥/智能体/项目管理/基础工具）先装齐，扩展工具稳定扩展，日常无影响更新 | 进行中 |
 
 ## 阶段 0：项目基础设施（已完成）
 
@@ -47,3 +47,14 @@
 - 已完成：7zip 接管（`D:\ohmyenv\7z` 26.02，omc 已移除，`7z-archive` 用 tar 解包）
 - 已完成：DeepSeek key SOPS 加密副本（`.secrets\deepseek.env.enc`，换机/轮换可恢复）
 - 已完成：状态栏增强配置（`[tui] status_line` 独立脚本 `scripts\set-codex-statusline.ps1` 幂等合并，`codex doctor` 验证 parse ok）
+
+## 阶段 4：工具分层与日常更新（进行中）
+
+目标：核心基础工具先装齐（密钥 age/sops、智能体环境 codex、项目管理 git/gh、基础工具 aria2/7z），环境稳定后再扩展（rg/jq/yq 及后续工具）；日常更新走「无影响」策略（同主版本自动、跨主版本人工确认）。
+
+- 已完成：工具四层分类与引导顺序（`ToolNames` 重排为 age → sops → codex → git → gh → aria2 → 7z → rg → jq → yq，`status` 按核心/扩展分组）
+- 已完成：首批扩展工具接管 rg/jq/yq（15.2.0 / 1.8.2 / 4.53.4，omc 注册移除，交接验证 PASS）
+- 已完成：`ohmyenv daily` 日常无影响更新（同主版本自动、跨主版本待确认，`-DryRun` / `-IncludeBreaking`，日志 `D:\ohmyenv\logs\update-daily.log`）
+- 已完成：升级链加固（sha 旧值误用修复、7zsfx 版本读取重试、滞后锁定补齐）
+- 已完成：日常实测升级 git 2.54.0 → 2.55.0.windows.4、gh 2.91.0 → 2.97.0
+- 待办（可选）：daily 挂 Task Scheduler 全自动日常更新；按需继续接管更多扩展工具

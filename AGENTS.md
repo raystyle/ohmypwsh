@@ -58,6 +58,8 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Env
 pwsh -NoProfile -File scripts\ohmyenv.ps1 status                # 锁定 vs 已安装 vs PATH
 pwsh -NoProfile -File scripts\ohmyenv.ps1 pin   gh -Latest      # 先 pin 锁定版本
 pwsh -NoProfile -File scripts\ohmyenv.ps1 update gh             # 升级到最新并重新 pin
+pwsh -NoProfile -File scripts\ohmyenv.ps1 daily -DryRun         # 日常无影响更新预览（同主版本自动）
+pwsh -NoProfile -File scripts\ohmyenv.ps1 daily                 # 日常无影响更新（跨主版本保留待确认）
 ```
 
 日常环境脚本：

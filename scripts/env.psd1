@@ -2,36 +2,6 @@
 @{
     EnvRoot = 'D:\ohmyenv'
     Tools   = @{
-        'gh' = @{
-            Version      = '2.91.0'
-            Tag          = 'v2.91.0'
-            TagPrefix    = ''
-            Repo         = 'cli/cli'
-            AssetPattern = '^gh_[0-9.]+_windows_amd64\.zip$'
-            Asset        = 'gh_2.91.0_windows_amd64.zip'
-            SumsAsset    = ''
-            SumsPattern  = ''
-            Dir          = 'gh'
-            Bin          = 'gh\bin'
-            Exe          = 'gh\bin\gh.exe'
-            Extract      = 'zip'
-            Sha256       = 'CED3E6F4BB5A9865056B594B7AD0CF42137DC92C494346F1CA705B5DBF14C88E'
-        }
-        'git' = @{
-            Version      = '2.54.0.windows.1'
-            Tag          = 'v2.54.0.windows.1'
-            TagPrefix    = ''
-            Repo         = 'git-for-windows/git'
-            AssetPattern = '^PortableGit-[0-9.]+-64-bit\.7z\.exe$'
-            Asset        = 'PortableGit-2.54.0-64-bit.7z.exe'
-            SumsAsset    = ''
-            SumsPattern  = ''
-            Dir          = 'git'
-            Bin          = 'git\cmd'
-            Exe          = 'git\cmd\git.exe'
-            Extract      = '7zsfx'
-            Sha256       = 'BEA006A6CC69673F27B1647E84AB3A68E912FBC175AB6320C5987E012897F311'
-        }
         'age' = @{
             Version      = '1.3.1'
             Tag          = 'v1.3.1'
@@ -76,6 +46,36 @@
             Exe          = 'codex\bin\codex.exe'
             Extract      = 'targz'
             Sha256       = 'CC09F725B8ED133B76A2882FDA750B3F1672B10701E8172C9680B5AB79B861FF'
+        }
+        'git' = @{
+            Version      = '2.55.0.windows.4'
+            Tag          = 'v2.55.0.windows.4'
+            TagPrefix    = ''
+            Repo         = 'git-for-windows/git'
+            AssetPattern = '^PortableGit-[0-9.]+-64-bit\.7z\.exe$'
+            Asset        = 'PortableGit-2.55.0.4-64-bit.7z.exe'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'git'
+            Bin          = 'git\cmd'
+            Exe          = 'git\cmd\git.exe'
+            Extract      = '7zsfx'
+            Sha256       = '016E84230A3767F0C6B3788E79BA0C58A17377086801719D46700FCA4F7B36B5'
+        }
+        'gh' = @{
+            Version      = '2.97.0'
+            Tag          = 'v2.97.0'
+            TagPrefix    = ''
+            Repo         = 'cli/cli'
+            AssetPattern = '^gh_[0-9.]+_windows_amd64\.zip$'
+            Asset        = 'gh_2.97.0_windows_amd64.zip'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'gh'
+            Bin          = 'gh\bin'
+            Exe          = 'gh\bin\gh.exe'
+            Extract      = 'zip'
+            Sha256       = '35D7FE05C4DD1411FFDA1E73DFC7C6F44B75C936CA51FA6595C657FDC0350CEC'
         }
         'aria2' = @{
             Version      = '1.37.0'

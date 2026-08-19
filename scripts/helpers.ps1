@@ -8,33 +8,23 @@
 $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
 
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
-$script:ToolNames = @('gh', 'git', 'age', 'sops', 'codex', 'aria2', '7z', 'rg', 'jq', 'yq')
+# 工具分层：核心基础工具（密钥 key / 智能体环境 agent / 项目管理 project / 基础工具 base）
+#           + 扩展工具 extras；ToolNames 顺序 = 引导安装/展示/日常更新顺序（核心先装齐，再稳定扩展）
+$script:ToolNames = @('age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'rg', 'jq', 'yq')
+$script:ToolCategories = @{
+    key     = '密钥'
+    agent   = '智能体环境'
+    project = '项目管理'
+    base    = '基础工具'
+    extras  = '扩展工具'
+}
 
 function New-ToolDef {
     param([Parameter(Mandatory)][string]$Tool)
     switch ($Tool) {
-        'gh' {
-            @{
-                Repo         = 'cli/cli'
-                AssetPattern = '^gh_[0-9.]+_windows_amd64\.zip$'
-                Dir          = 'gh'
-                Bin          = 'gh\bin'
-                Exe          = 'gh\bin\gh.exe'
-                Extract      = 'zip'
-            }
-        }
-        'git' {
-            @{
-                Repo         = 'git-for-windows/git'
-                AssetPattern = '^PortableGit-[0-9.]+-64-bit\.7z\.exe$'
-                Dir          = 'git'
-                Bin          = 'git\cmd'
-                Exe          = 'git\cmd\git.exe'
-                Extract      = '7zsfx'
-            }
-        }
         'age' {
             @{
+                Category     = 'key'
                 Repo         = 'FiloSottile/age'
                 AssetPattern = '^age-v[0-9.]+-windows-amd64\.zip$'
                 Dir          = 'age'
@@ -45,6 +35,7 @@ function New-ToolDef {
         }
         'sops' {
             @{
+                Category     = 'key'
                 Repo         = 'getsops/sops'
                 AssetPattern = '^sops-v[0-9.]+\.amd64\.exe$'
                 Dir          = 'sops'
@@ -55,6 +46,7 @@ function New-ToolDef {
         }
         'codex' {
             @{
+                Category     = 'agent'
                 TagPrefix    = 'rust-v'
                 Repo         = 'openai/codex'
                 AssetPattern = '^codex-package-x86_64-pc-windows-msvc\.tar\.gz$'
@@ -66,8 +58,31 @@ function New-ToolDef {
                 Extract      = 'targz'
             }
         }
+        'git' {
+            @{
+                Category     = 'project'
+                Repo         = 'git-for-windows/git'
+                AssetPattern = '^PortableGit-[0-9.]+-64-bit\.7z\.exe$'
+                Dir          = 'git'
+                Bin          = 'git\cmd'
+                Exe          = 'git\cmd\git.exe'
+                Extract      = '7zsfx'
+            }
+        }
+        'gh' {
+            @{
+                Category     = 'project'
+                Repo         = 'cli/cli'
+                AssetPattern = '^gh_[0-9.]+_windows_amd64\.zip$'
+                Dir          = 'gh'
+                Bin          = 'gh\bin'
+                Exe          = 'gh\bin\gh.exe'
+                Extract      = 'zip'
+            }
+        }
         'aria2' {
             @{
+                Category     = 'base'
                 TagPrefix    = 'release-'
                 Repo         = 'aria2/aria2'
                 AssetPattern = '^aria2-[0-9.]+-win-64bit-build1\.zip$'
@@ -79,6 +94,7 @@ function New-ToolDef {
         }
         '7z' {
             @{
+                Category     = 'base'
                 Repo         = 'ip7z/7zip'
                 AssetPattern = '^7z[0-9]+-x64\.exe$'
                 Dir          = '7z'
@@ -89,6 +105,7 @@ function New-ToolDef {
         }
         'rg' {
             @{
+                Category     = 'extras'
                 Repo         = 'BurntSushi/ripgrep'
                 AssetPattern = '^ripgrep-[0-9.]+-x86_64-pc-windows-msvc\.zip$'
                 Dir          = 'rg'
@@ -99,6 +116,7 @@ function New-ToolDef {
         }
         'jq' {
             @{
+                Category     = 'extras'
                 TagPrefix    = 'jq-'
                 Repo         = 'jqlang/jq'
                 AssetPattern = '^jq-windows-amd64\.exe$'
@@ -110,6 +128,7 @@ function New-ToolDef {
         }
         'yq' {
             @{
+                Category     = 'extras'
                 Repo         = 'mikefarah/yq'
                 AssetPattern = '^yq_windows_amd64\.exe$'
                 Dir          = 'yq'
@@ -440,6 +459,15 @@ function Install-ToolVersion {
             Write-Host "[OK] 已回填 sha256（命中缓存）" -ForegroundColor Green
         }
         if ($RegisterPath) { Add-EnvPath -Dir (Join-Path $envRoot $d.Bin) }
+        if ($UpdateLock -and $d.Tag -ne $Resolution.Tag) {
+            # 已安装版本与解析一致但锁定滞后（如上次安装中断）：补齐锁定
+            $d.Tag     = $Resolution.Tag
+            $d.Version = $Resolution.Version
+            $d.Asset   = $Resolution.AssetName
+            if (Test-Path $cachePath) { $d.Sha256 = (Get-FileHash -LiteralPath $cachePath -Algorithm SHA256).Hash }
+            Save-EnvLock -Lock $Lock
+            Write-Host "[OK] $t 已锁定: $($d.Version)（补齐滞后锁定）" -ForegroundColor Green
+        }
         return
     }
 
@@ -457,9 +485,11 @@ function Install-ToolVersion {
     Save-ReleaseAsset -Url $Resolution.AssetUrl -OutFile $cachePath -ExpectedSha256 $expectedSha
 
     $sha = (Get-FileHash -LiteralPath $cachePath -Algorithm SHA256).Hash
-    if ($d.Sha256) {
-        if ($sha -ne $d.Sha256) { throw "$t 缓存 sha256 与锁定不符" }
-    } elseif ($Resolution.Tag -eq $d.Tag) {
+    if ($Resolution.Tag -eq $d.Tag) {
+        if ($d.Sha256 -and $sha -ne $d.Sha256) { throw "$t 缓存 sha256 与锁定不符" }
+        if (-not $d.Sha256) { $d.Sha256 = $sha; $shaBackfilled = $true }
+    } else {
+        # 升级/换版本：锁定 sha 属于旧版本，接受新下载的校验值并回填
         $d.Sha256 = $sha
         $shaBackfilled = $true
     }
@@ -501,7 +531,13 @@ function Install-ToolVersion {
         default { throw "未知解压类型: $($d.Extract)" }
     }
 
-    $installed = Get-InstalledVersion -ExePath $exePath -Tool $t
+    # 7zsfx 等解包后文件/杀软可能瞬态未就绪，版本读取加重试
+    $installed = $null
+    for ($i = 1; $i -le 5; $i++) {
+        $installed = Get-InstalledVersion -ExePath $exePath -Tool $t
+        if ($installed) { break }
+        Start-Sleep -Milliseconds (500 * $i)
+    }
     if (-not $installed) { throw "$t 安装后未找到可执行文件或无法读取版本: $exePath" }
     if ($installed -ne $Resolution.Version) {
         throw "$t 版本不符: 期望 $($Resolution.Version)，实际 $installed"

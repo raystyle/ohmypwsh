@@ -23,6 +23,10 @@
 - 工具接管 rg/jq/yq：ohmyenv 新增工具定义（rg zip 展平、jq/yq copy 单文件），pin 15.2.0 / 1.8.2 / 4.53.4，部署到 `D:\ohmyenv` 并前置注册 PATH（aria2 下载 + sha256 回填）
 - 交接验证脚本 `scripts\verify-tools-handover.ps1`：新终端一键验证 rg/jq/yq 解析路径与版本（PASS/FAIL）
 - 建立方案 `docs\plans\0003-tools-takeover.md`：D:\Oh-My-Claude 工具批量接管（rg/jq/yq）
+- 工具分层：ohmyenv 工具按「核心基础工具（密钥 age/sops / 智能体环境 codex / 项目管理 git/gh / 基础工具 aria2/7z）+ 扩展工具（rg/jq/yq）」分层，`ToolNames` 重排为引导顺序（核心先装齐再扩展）
+- `ohmyenv daily` 日常无影响更新：同主版本自动升级并重新锁定，跨主版本保留待人工确认（`-DryRun` 预览 / `-IncludeBreaking` 强制），日志 `D:\ohmyenv\logs\update-daily.log`，退出码 0/2
+- 建立方案 `docs\plans\0004-tool-tiers.md`：工具分层、引导安装顺序与日常无影响更新
+- AGENTS.md 常用命令新增 `ohmyenv daily`（预览 + 实跑）
 
 ### Changed
 
@@ -53,6 +57,8 @@
 - omc 注册移除 ripgrep/jq/yq：`$ToolDefs` 清出，定义文件与二进制改名保留（`*.removed-20260819`），`CLAUDE.md` 同步标注已移交
 - ohmyenv CLI 工具清单扩展为 10 个（gh/git/age/sops/codex/aria2/7z/rg/jq/yq），帮助文本同步
 - 踩坑沉淀扩展（`docs\research\ohmyenv-pitfalls.md`）：新增工具接入四件套、omc 移交五步清单、进程 PATH 与注册表 PATH 差异、无 v 前缀 tag 兼容、单文件 copy 解压
+- `ohmyenv status` 按「核心基础工具 / 扩展工具」两层 + 子分组展示，顺序 = 引导链
+- 日常实测升级：git 2.54.0 → 2.55.0.windows.4、gh 2.91.0 → 2.97.0（同主版本，无影响）
 
 ### Fixed
 
@@ -61,3 +67,7 @@
 - `Get-EnvLock` 静态元数据与锁文件同步（如 Extract 类型变更）
 - `Invoke-GitHubApi` 全局兜底扩展到 5xx 网关错误（不限于 403 限流）
 - 文档状态同步：ROADMAP 阶段 3 翻转为已完成（章节标题与旧待办清理）、方案 `0002-codex-takeover.md` 状态与实施步骤同步为已完成、CHANGELOG 末尾错位的「### Changed」区块并入主区块
+- 升级时 sha256 误用旧锁定值：已有锁定 sha 的工具升级到新版本被旧 sha 拒绝 → 仅同版本比对，新版本接受并回填
+- 7zsfx 解包后立即读版本可能瞬态失败 → 版本读取加重试（5 次退避）
+- 安装中断导致「已装新版本但锁定滞后」→ `update` 跳过分支补齐锁定与 sha
+- aria2 报 OK 但文件残缺（SSL 断连后 96% 停住）→ 升级链 sha 回填 + 安装后版本校验兜底，残缺缓存清除后重下

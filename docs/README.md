@@ -33,6 +33,7 @@
 - `0001-env-deps.md`：环境依赖管理（gh/git 自举安装，bootstrap 不依赖 gh）
 - `0002-codex-takeover.md`：Codex 接管（原生二进制 + 沙箱 + DeepSeek 密钥）
 - `0003-tools-takeover.md`：D:\Oh-My-Claude 工具批量接管（rg/jq/yq）
+- `0004-tool-tiers.md`：工具分层、引导安装顺序与日常无影响更新
 
 ## 研究文档
 
@@ -62,8 +63,9 @@ ohmypwsh/
 │  ├─ plans\                    重要方案/决策（NNNN-短名.md，模板 0000）
 │  │  ├─ 0000-template.md       方案文档模板
 │  │  ├─ 0001-env-deps.md       环境依赖管理（gh/git 自举，bootstrap 不依赖 gh）
-│  │  └─ 0002-codex-takeover.md Codex 接管方案（原生二进制 + 沙箱 + 密钥）
-│  │  └─ 0003-tools-takeover.md rg/jq/yq 工具批量接管（omc → ohmyenv）
+│  │  ├─ 0002-codex-takeover.md Codex 接管方案（原生二进制 + 沙箱 + 密钥）
+│  │  ├─ 0003-tools-takeover.md rg/jq/yq 工具批量接管（omc → ohmyenv）
+│  │  └─ 0004-tool-tiers.md     工具分层与日常无影响更新（核心基础/扩展 + daily）
 │  └─ research\                 研究文档（工具能力 / 踩坑沉淀 / 实测记录）
 │     ├─ gh-cli.md              gh CLI 研究（现状/认证/API 兜底/命令地图）
 │     ├─ gh-git-https-ssh.md    gh 与 git 的 HTTPS/SSH 互相配置（本机实测）

@@ -5,7 +5,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('query', 'deploy', 'install', 'update', 'pin', 'lock', 'status', 'help')]
+    [ValidateSet('query', 'deploy', 'install', 'update', 'pin', 'lock', 'status', 'daily', 'help')]
     [string]$Command = 'help',
 
     [Parameter(Position = 1)]
@@ -15,7 +15,9 @@ param(
     [switch]$Latest,
     [string]$Tag,
     [string]$Version,
-    [switch]$Force
+    [switch]$Force,
+    [switch]$DryRun,
+    [switch]$IncludeBreaking
 )
 
 $ErrorActionPreference = 'Stop'
@@ -35,6 +37,7 @@ ohmyenv - 环境依赖管理 CLI
   ohmyenv.ps1 update  [tool|all]                   # 更新到最新版并锁定
   ohmyenv.ps1 pin     [tool|all] [-Latest | -Version <ver>]   # pin 版本（lock 为别名）
   ohmyenv.ps1 status                               # 锁定 vs 已安装 vs PATH
+  ohmyenv.ps1 daily   [-DryRun] [-IncludeBreaking]  # 日常无影响更新（同主版本自动，跨主版本待确认）
   ohmyenv.ps1 help
 
 工具: gh / git / age / sops / codex / aria2 / 7z / rg / jq / yq（all = 全部）
@@ -45,10 +48,12 @@ ohmyenv - 环境依赖管理 CLI
   ohmyenv.ps1 deploy gh -Version 2.92.0
   ohmyenv.ps1 update
   ohmyenv.ps1 lock git -Latest
+  ohmyenv.ps1 daily -DryRun
 
 说明:
   - 全部查询/下载走 api.github.com + 直连 URL（bootstrap 不依赖已装 gh）
   - 环境根目录与锁定版本见 scripts\env.psd1
+  - daily：同主版本更新自动执行并重新锁定；跨主版本保留待人工确认（退出码 2）
 '@
 }
 
@@ -115,8 +120,21 @@ switch ($Command) {
 
     'status' {
         Write-Host "环境根目录: $($lock.EnvRoot)" -ForegroundColor Cyan
+        $lastTier = ''
+        $lastCat = ''
         foreach ($t in $script:ToolNames) {
             $d = $lock.Tools[$t]
+            $cat = $d.Category
+            $tier = if ($cat -eq 'extras') { '扩展工具' } else { '核心基础工具' }
+            if ($tier -ne $lastTier) {
+                Write-Host "[$tier]" -ForegroundColor Cyan
+                $lastTier = $tier
+                $lastCat = ''
+            }
+            if ($tier -eq '核心基础工具' -and $cat -ne $lastCat) {
+                Write-Host "  [$($script:ToolCategories[$cat])]" -ForegroundColor Yellow
+                $lastCat = $cat
+            }
             $exePath = Join-Path $lock.EnvRoot $d.Exe
             $bin     = Join-Path $lock.EnvRoot $d.Bin
             $installed = Get-InstalledVersion -ExePath $exePath -Tool $t
@@ -124,6 +142,52 @@ switch ($Command) {
             "  $t : locked=$($d.Version)  installed=$(if ($installed) { $installed } else { '-' })  path=$inPath"
             "       exe = $exePath"
         }
+    }
+
+    'daily' {
+        # 日常无影响更新：同主版本自动升级并锁定；跨主版本保留待人工确认
+        $envRoot = $lock.EnvRoot
+        $logDir  = Join-Path $envRoot 'logs'
+        $logFile = Join-Path $logDir 'update-daily.log'
+        New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+
+        $stamp  = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+        $report = New-Object System.Collections.Generic.List[string]
+        $report.Add("===== 日常更新检查 $stamp =====")
+        $updated = 0; $held = 0; $fresh = 0
+
+        foreach ($t in $script:ToolNames) {
+            $d = $lock.Tools[$t]
+            $r = Resolve-ToolVersion -Lock $lock -Tool $t -Latest
+            if ($r.Version -eq $d.Version) {
+                Write-Host "[跳过] ${t}: $($d.Version) 已是最新" -ForegroundColor DarkGray
+                $report.Add("[跳过] ${t}: $($d.Version) 已是最新")
+                $fresh++
+                continue
+            }
+            $sameMajor = (($d.Version -split '\.')[0]) -eq (($r.Version -split '\.')[0])
+            if ($IncludeBreaking -or $sameMajor) {
+                $action = if ($DryRun) { '预览' } else { '更新' }
+                $color  = if ($DryRun) { 'Cyan' } else { 'Green' }
+                Write-Host "[$action] ${t}: $($d.Version) -> $($r.Version)（同主版本，无影响）" -ForegroundColor $color
+                $report.Add("[$action] ${t}: $($d.Version) -> $($r.Version)（同主版本）")
+                if (-not $DryRun) {
+                    Install-ToolVersion -Lock $lock -Resolution $r -RegisterPath -UpdateLock
+                }
+                $updated++
+            } else {
+                Write-Host "[保留] ${t}: $($d.Version) -> $($r.Version)（跨主版本，需人工确认；-IncludeBreaking 强制更新）" -ForegroundColor Yellow
+                $report.Add("[保留] ${t}: $($d.Version) -> $($r.Version)（跨主版本，需人工确认）")
+                $held++
+            }
+        }
+
+        $summary = "===== 汇总: $(if ($DryRun) { '预览' } else { '更新' }) $updated | 保留 $held | 已最新 $fresh ====="
+        Write-Host $summary
+        $report.Add($summary)
+        $report | Add-Content -Path $logFile -Encoding utf8
+        Write-Host "[LOG] $logFile" -ForegroundColor DarkGray
+        if ($held -gt 0) { exit 2 }
     }
 
     default { Show-Help }

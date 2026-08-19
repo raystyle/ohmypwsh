@@ -5,17 +5,21 @@
 - **api.github.com 匿名限流（60/h）与 5xx 网关错误**：统一由 `Invoke-GitHubApi` 处理，命中 403/rate-limit/502/503/504 时自动改用 `gh api` 认证通道（5000/h）；gh 装好后即生效（全局兜底，见 AGENTS.md 设计原则）
 - **aria2 部分连接报 SSL/TLS handshake 失败**：GitHub CDN 瞬态，多线程 + SHA256SUMS 校验兜底，重试即成功
 - **中断的下载会残留进程并锁住缓存文件**：先 `taskkill /PID` 终止孤儿进程，脚本对缓存做 sha256 校验，不匹配自动重下
+- **aria2 报 OK 但文件可能残缺**：SSL/TLS 断连后进度停在 96% 仍回 OK（实测 git 56MB 包缺约 2MB）；新版本升级时缓存无 sha 基准会直接复用 → 安装后版本校验兜底，版本不符时删缓存重下
 
 ## 解压
 
 - **7-Zip 的 `7zXXX-x64.exe` 是 7z 归档**：直接运行需提权且不支持 `-y`；用 Windows 自带 tar（bsdtar）`tar -xf <file> -C <dir>` 解包（`7z-archive` 类型），无需预装 7z
 - **PowerShell `@versionArgs` 数组展开调用原生命令会解析异常**（gh 收到 `v`）→ 直接传 `$versionArgs` 变量
 - **7z --help 首行为空行** → 版本解析先跳过空行再取首行
+- **7zsfx 解包后立即读版本可能瞬态失败**：文件刚落地/杀软扫描未就绪时 `git.exe --version` 读空 → 版本读取加重试（5 次 × 500ms 退避）
 
 ## 锁文件
 
 - **PowerShell Data File 键名不能以数字开头**：`7z = @{...}` 解析失败，必须写 `'7z' = @{...}`
 - **静态元数据与锁文件不同步**：`New-ToolDef` 修改（如 Extract 类型）不会自动进入已存在的 `env.psd1` → `Get-EnvLock` 每次把 `New-ToolDef` 的静态字段合并进锁，pin 字段（Version/Tag/Asset/Sha256）保留
+- **升级时 sha256 误用旧锁定值**：`$d.Sha256` 非空且目标版本 ≠ 锁定版本时，旧代码拿旧 sha 比新文件必失败 → 仅同版本比对，新版本直接回填
+- **安装中断后「已装新版本但锁定滞后」**：`update` 的已安装跳过分支原不回写锁定 → 补齐锁定（Tag/Version/Asset/Sha256）
 
 ## 版本管理
 
