@@ -17,11 +17,12 @@
 
 3. **文档规范**
 
-   项目文档由 `CHANGELOG.md`、`ROADMAP.md`、`docs\plans\` 三块组成；任何可交付变更必须同步更新文档，禁止只改代码不落文档。
+   项目文档由 `CHANGELOG.md`、`ROADMAP.md`、`docs\plans\`、`docs\research\` 四块组成；任何可交付变更必须同步更新文档，禁止只改代码不落文档。
 
    - `CHANGELOG.md`：每次可交付变更追加记录（Added / Changed / Fixed / Removed + 日期），先维护在 `[Unreleased]` 下
    - `ROADMAP.md`：阶段与里程碑状态（未开始 / 进行中 / 已完成 / 挂起），随进展翻转
    - `docs\plans\NNNN-短名.md`：重要方案/决策必须落成方案文档，模板见 `docs\plans\0000-template.md`，禁止只在对话中拍板
+   - `docs\research\主题.md`：研究类成果（工具能力研究、踩坑沉淀、实测记录）落成研究文档，命名 `英文短名.md`，随研究/踩坑即时维护
    - 文档总览与命名约定见 `docs\README.md`
 
 ## 设计原则
