@@ -38,6 +38,39 @@ if (-not (Test-Path -LiteralPath $claudeExe)) {
     Write-Host "[OK] claude 已存在: $claudeExe" -ForegroundColor Green
 }
 
+# ── 2.5 native 安装位同步（消除 /status 的 .local\bin PATH 警告） ──
+# claude 本体仍由 ohmyenv/uv-tools 托管；此处把二进制同步到官方 native 位置
+# %USERPROFILE%\.local\bin\claude.exe 并把该目录加入用户 PATH，满足 claude doctor
+# 对 native 二进制的路径检查（doctorDiagnostic.ts 该检查不受 DISABLE_INSTALLATION_CHECKS 控制）。
+$nativeBinDir = Join-Path $env:USERPROFILE '.local\bin'
+$nativeClaude = Join-Path $nativeBinDir 'claude.exe'
+New-Item -ItemType Directory -Path $nativeBinDir -Force | Out-Null
+$needCopy = $false
+if (Test-Path -LiteralPath $nativeClaude) {
+    $srcInfo = Get-Item -LiteralPath $claudeExe
+    $dstInfo = Get-Item -LiteralPath $nativeClaude
+    $needCopy = ($srcInfo.Length -ne $dstInfo.Length) -or ($srcInfo.LastWriteTimeUtc -ne $dstInfo.LastWriteTimeUtc)
+} else {
+    $needCopy = $true
+}
+if ($needCopy) {
+    Copy-Item -LiteralPath $claudeExe -Destination $nativeClaude -Force
+    Write-Host "[OK] 已同步 claude 二进制到 native 位置: $nativeClaude" -ForegroundColor Green
+} else {
+    Write-Host "[INFO] native 位置 claude 已是最新: $nativeClaude" -ForegroundColor DarkGray
+}
+$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+if ($userPath) {
+    $pathHasNative = ($userPath -split ';') | Where-Object { $_.TrimEnd('\') -ieq $nativeBinDir.TrimEnd('\') }
+    if (-not $pathHasNative) {
+        [Environment]::SetEnvironmentVariable('Path', ($userPath.TrimEnd(';') + ';' + $nativeBinDir), 'User')
+        $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
+        Write-Host "[OK] 已把 $nativeBinDir 加入用户 PATH" -ForegroundColor Green
+    } else {
+        Write-Host "[INFO] $nativeBinDir 已在用户 PATH" -ForegroundColor DarkGray
+    }
+}
+
 # ── 3. 用户级环境变量：只保留 API 端点（密钥归 set-claude-key.ps1；其余 claude 配置全部收敛进 settings.json env） ──
 [Environment]::SetEnvironmentVariable('ANTHROPIC_BASE_URL', 'https://open.bigmodel.cn/api/anthropic', 'User')
 Set-Item Env:ANTHROPIC_BASE_URL 'https://open.bigmodel.cn/api/anthropic'
@@ -225,12 +258,13 @@ if (Test-Path -LiteralPath $claudeJsonPath) {
 # ── 4.3 PATH / PSModulePath 清理（omc 残留；幂等） ──
 $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
 if ($userPath) {
-    $keepPath = ($userPath -split ';') | Where-Object { $_ -and $_ -notmatch '(?i)^D:\\Oh-My-Claude(\\|$)' -and $_ -notmatch '(?i)^C:\\Users\\ray\\.local\\bin$' }
+    # 只移除 omc 残留 D:\Oh-My-Claude\*；~\.local\bin 由 2.5 段托管（native 安装位）
+    $keepPath = ($userPath -split ';') | Where-Object { $_ -and $_ -notmatch '(?i)^D:\\Oh-My-Claude(\\|$)' }
     $newPath = ($keepPath -join ';')
     if ($newPath -ne $userPath) {
         [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
         $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + $newPath
-        Write-Host '[OK] 用户 PATH 已移除 omc 残留（D:\Oh-My-Claude\* 与 .local\bin）' -ForegroundColor Green
+        Write-Host '[OK] 用户 PATH 已移除 omc 残留（D:\Oh-My-Claude\*）' -ForegroundColor Green
     } else {
         Write-Host '[INFO] 用户 PATH 无 omc 残留' -ForegroundColor DarkGray
     }

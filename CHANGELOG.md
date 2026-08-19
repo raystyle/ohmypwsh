@@ -114,4 +114,5 @@
 - Claude Code 首次启动卡「Select login method」：第三方 API Key 场景 onboarding 登录验证不自动跳过 → `~/.claude.json` 设 `hasCompletedOnboarding=true` 并清空 `customApiKeyResponses.rejected`（曾因 send-keys Up+Enter 连发误选「No」），固化进 `scripts\set-claude-config.ps1`（幂等）
 - Claude Code 工作区信任弹窗：`~/.claude.json` `projects` 批量标记 `hasTrustDialogAccepted` / `hasTrustDialogHooksAccepted`（主工作区 `D:/ohmypwsh` 兜底），跳过信任确认
 - Claude Code `/status` 的 `.local\bin` 安装警告：settings.json env 加 `DISABLE_INSTALLATION_CHECKS=1` 关闭 config mismatch 3 行；剩余 1 行 PATH 警告为 native 二进制编译内检查（`doctorDiagnostic.ts` 不受该变量控制）的已知假阳性，文档化保留
+- Claude Code `/status` 的 `.local\bin` PATH 警告（用户决定改为官方 native 布局）：`set-claude-config.ps1` 新增 2.5 段——claude 二进制幂等同步到 `%USERPROFILE%\.local\bin\claude.exe`（size+mtime 比对）+ 目录加入用户 PATH（4.3 清理规则同步移除 `.local\bin` 过滤），实测 `/status` 诊断区零警告；rmux 新窗格用 `split-window -e "Path=..."` 注入新 PATH
 - 新建研究文档 `docs\research\claude-code-onboarding.md`：onboarding 登录验证 / 信任弹窗 / 安装警告 / rmux 中文输入坑（跨引用 `rmux-usage.md`）

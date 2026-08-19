@@ -9,7 +9,7 @@
 - 自定义 API Key 确认弹窗（"Do you want to use this API key?"）务必单独按键确认：rmux `send-keys` 把 `Up`+`Enter` 连发会落在「2. No」，被记入 `customApiKeyResponses.rejected`，导致后续一直不信任该密钥；脚本已幂等清空 rejected。
 - `/status` 的 `.local\bin` 安装警告分两类：
   - config mismatch 类（install method / claude.exe missing）→ `DISABLE_INSTALLATION_CHECKS=1`（settings.json env）可关；
-  - PATH 检查类（"Native installation exists but ... is not in your PATH"）→ **编译进 native 二进制**，环境变量与配置都无法关闭，属已知装饰性误报（homebrew / winget / mise / pacman 等包管理器安装同样出现）。
+  - PATH 检查类（"Native installation exists but ... is not in your PATH"）→ **编译进 native 二进制**，环境变量与配置都无法关闭；唯一消除方式是按官方 native 布局部署（二进制在 `%USERPROFILE%\.local\bin\claude.exe` 且该目录在 PATH）。已按用户决定改为官方布局（见踩坑 4 更新），`/status` 诊断区零警告。
 
 ## 背景
 
@@ -58,7 +58,13 @@ onboarding 通过后仍会问 "Accessing workspace: D:\ohmypwsh ... Quick safety
 - PATH 检查（`if (type === 'native')`）无条件执行，不在 `DISABLE_INSTALLATION_CHECKS` 门内 → `~/.local\bin` 不在 PATH 必报；
 - config mismatch 检查（installMethod !== 'native'、claude.exe missing）在 `DISABLE_INSTALLATION_CHECKS` 门内 → 加 `"DISABLE_INSTALLATION_CHECKS": "1"`（settings.json env）后 3 行消失。
 
-剩余 1 行 PATH 警告的唯一消除方式是重新把 `C:\Users\ray\.local\bin` 加回 PATH（且通常还需该路径存在 claude.exe），与本项目「omc 清理决定」（删除 `.local\bin` 与 PATH 条目）冲突 → 保留该行，视为已知假阳性，不影响任何功能。
+**更新（2026-08-19，用户决定改为官方 native 布局）**：不再保留该警告——`set-claude-config.ps1` 新增 2.5 段：
+
+- 把 ohmyenv 托管的 `D:\ohmyenv\uv-tools\bin\claude.exe` 幂等同步到 `%USERPROFILE%\.local\bin\claude.exe`（比较 size + LastWriteTimeUtc，变更才重拷）；
+- 把 `%USERPROFILE%\.local\bin` 加入用户 PATH（4.3 段清理规则同步移除 `.local\bin` 过滤，避免自相矛盾）；
+- 实测 `/status` 的 System diagnostics 段完全消失（零警告）。
+
+注意：rmux 守护进程 env 是启动时快照，已开窗格/新开窗格不会自动带上新 PATH——重启 claude 窗格时用 `split-window -e "Path=..."` 注入（本次实测有效），或重启终端/daemon 全局生效。二进制本体仍由 ohmyenv 托管，native 位只是同步副本。
 
 ### 5. 关联：rmux send-keys 中文输入丢失
 
@@ -66,4 +72,4 @@ onboarding 通过后仍会问 "Accessing workspace: D:\ohmypwsh ... Quick safety
 
 ## 待办
 
-- 无：onboarding 两坑（登录验证 + 信任弹窗）与安装警告处理均已固化进 `scripts\set-claude-config.ps1`（幂等合并，`[INFO]` 提示已最新）。
+- 无：onboarding 两坑（登录验证 + 信任弹窗）与安装警告处理均已固化进 `scripts\set-claude-config.ps1`（幂等合并，`[INFO]` 提示已最新）；native 布局已按用户决定落地。
