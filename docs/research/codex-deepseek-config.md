@@ -32,14 +32,18 @@ sandbox = "unelevated"
 
 ## 状态栏增强配置（[tui]）
 
-独立脚本 `scripts\set-codex-statusline.ps1`（Codex 安装后增强配置功能），幂等合并，不覆盖既有配置：
+独立脚本 `scripts\set-codex-statusline.ps1`（Codex 安装后增强配置功能），幂等合并，不覆盖既有配置。完整可选项与样式机制见 `docs\research\codex-statusline.md`：
 
 ```toml
 [tui]
 status_line = [
+  "run-state",
   "model-with-reasoning",
   "git-branch",
+  "branch-changes",
   "context-remaining",
+  "used-tokens",
+  "permissions",
 ]
 status_line_use_colors = true
 ```

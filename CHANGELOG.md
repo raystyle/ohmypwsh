@@ -35,6 +35,8 @@
 - Codex 安装后增强配置功能：独立脚本 `scripts\set-codex-statusline.ps1` 幂等合并 `[tui]` 状态栏（`model-with-reasoning` / `git-branch` / `context-remaining`，彩色开关 `-NoColors`），不覆盖 DeepSeek/沙箱/信任项目等既有配置；`codex doctor` 确认 `config.toml parse ok`
 - 建立研究文档 `docs\research\gh-cli.md`：gh 2.91.0 本机现状（认证/scopes/配置）、API 限流兜底通道、命令能力地图、与 ohmyenv 衔接及按需特性建议
 - 文档规范扩展（AGENTS.md 规则 3）：`docs\research\` 研究文档纳入四块文档体系，`docs\README.md` 更新文档地图、命名约定与研究文档索引
+- 状态栏升级为专业组合（对照 0.148.0 源码核实全量可选项）：`run-state` + `model-with-reasoning` + `git-branch` + `branch-changes` + `context-remaining` + `used-tokens` + `permissions`，主题色按类别区分（青/绿/品红）；`scripts\set-codex-statusline.ps1` 默认值同步更新
+- 建立研究文档 `docs\research\codex-statusline.md`：状态栏可选项全量清单（官方描述 + 渲染示例）、样式机制（` · ` 分隔符、主题色 accent）、`/statusline` 交互行为、推荐配置与注意事项
 
 ### Fixed
 

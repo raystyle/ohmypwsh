@@ -5,7 +5,15 @@
 #       可选: -StatusLine @('model-with-reasoning','git-branch','context-remaining')  -NoColors
 
 param(
-    [string[]]$StatusLine = @('model-with-reasoning', 'git-branch', 'context-remaining'),
+    [string[]]$StatusLine = @(
+        'run-state',
+        'model-with-reasoning',
+        'git-branch',
+        'branch-changes',
+        'context-remaining',
+        'used-tokens',
+        'permissions'
+    ),
     [switch]$NoColors
 )
 
