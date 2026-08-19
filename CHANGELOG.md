@@ -56,7 +56,8 @@
 - Claude Code 状态栏微调：移除成本（`$0.14`）显示；目录显示完整路径（如 `D:\ohmypwsh`）而非叶子名
 - Claude Code 安装与配置完全移交 ohmyenv：omc 侧 `.scripts\base\claude.ps1`（安装器/Profile 系统）、`.config\claude\`（GLM/DeepSeek/Zyun 明文 profile）、`~/.local\bin\claude.exe`（旧 2.1.187）删除；omc.ps1 `$BaseScripts` 清空、CLAUDE.md 与 `.claude\rules\claude-config.md` 同步标注接管
 - `set-claude-config.ps1` 重构：用户级只写 `ANTHROPIC_BASE_URL`，其余配置收敛进 settings.json env；幂等删除 omc 遗留环境变量（`[NullString]::Value` 真删）；PATH/PSModulePath 清理
-- 用户环境变量与 `~/.claude` 清理：CLAUDE_*/BUN_*/RUSTUP_*/CARGO_HOME/LANG/ANTHROPIC_DEFAULT_*/AUTH_TOKEN、PATH 的 `D:\Oh-My-Claude\*` 与 `.local\bin`、PSModulePath 死路径全删；`~/.claude` 旧 settings.local.json/插件（raystyle statusline/dev-fix + marketplace）/缓存/备份/history/daemon 残留清理（保留个人 skills）
+- 用户环境变量与 `~/.claude` 清理：CLAUDE_*/BUN_*/RUSTUP_*/CARGO_HOME/LANG/ANTHROPIC_DEFAULT_*/AUTH_TOKEN、PATH 的 `D:\Oh-My-Claude\*` 与 `.local\bin`、PSModulePath 死路径全删；`~/.claude` 旧 settings.local.json/插件（raystyle statusline/dev-fix + marketplace）/缓存/备份/history/daemon 残留清理
+- Claude Code 完全从零重置（用户指示）：`~/.claude` 目录与 `~/.claude.json` 整体删除（含 12 个旧用户 skill：astgrep/browse/bunsh/github/google/grok/gx/md2pdf/mdcheck/nuevo/twitter/uvsh 与运行时状态），随后用 `set-claude-config.ps1` + `set-claude-statusline.ps1` 重建 settings.json（env 29 项 + YOLO + statusLine），`claude -p` 冒烟验证通过
 - 版本管理重构：`New-ToolDef` 不再硬编码版本；`env.psd1` 为唯一 pin 来源，新增 `pin` 命令（`lock` 为别名），流程改为“先 pin 后 update”
 - 下载通道：aria2（`D:\ohmyenv\aria2` 1.37.0）多线程优先，curl / Invoke-WebRequest 兜底
 - 按研究文档补齐本机配置：`gh auth setup-git`（HTTPS 走 gh 凭据助手）、ssh-agent 启用并加载密钥、`~/.ssh/config` 增加 github.com 条目、gh token 增加 `admin:public_key` scope

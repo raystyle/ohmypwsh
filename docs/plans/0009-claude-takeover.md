@@ -18,7 +18,7 @@
   - settings.json 合法化：permissions 只留 `defaultMode: bypassPermissions`（完整 YOLO，对齐 Codex danger-full-access + approval never）
   - 状态栏对齐 Codex：`statusLine` 块 + `scripts\claude-statusline.ps1`（纯 PowerShell，不走 bash）
   - 环境变量收敛：claude 全部配置进 settings.json env，用户级只留 `ANTHROPIC_API_KEY` + `ANTHROPIC_BASE_URL`；清 omc 残留（CLAUDE_*/BUN_*/RUSTUP_*/CARGO/LANG/PATH/PSModulePath）
-  - `~/.claude` 清理：删 omc 时代 settings.local.json、plugins（raystyle statusline/dev-fix + marketplace）、backups、cache、history、daemon/session-env；保留用户个人 skills
+  - `~/.claude` 完全重置：删 omc 时代 settings.local.json、plugins（raystyle statusline/dev-fix + marketplace）、backups、cache、history、daemon/session-env、12 个旧用户 skill（astgrep/browse/bunsh/github/google/grok/gx/md2pdf/mdcheck/nuevo/twitter/uvsh）与运行时状态；最终连 `.claude` 目录与 `~/.claude.json` 整体删除后用部署脚本重建（用户指示完全从零重置）
   - omc 完全接管：删 claude.ps1（留 `.removed-20260819` 标记）、`.config\claude\`、旧 exe；omc.ps1/CLAUDE.md/rules 同步
 - 非目标：不动 omc 其余工具（aria2/fzf 等）；不迁移 claude 会话历史；不装插件/hook
 
