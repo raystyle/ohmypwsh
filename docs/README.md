@@ -46,6 +46,7 @@
 - `research\codex-statusline.md`：Codex TUI 状态栏研究（全量可选项 / 样式机制 / 推荐配置）
 - `research\starship-config.md`：starship.toml 配置研究（PowerShell 专用提示行）
 - `research\powershell-dotnet-vsbuild.md`：PowerShell 模块 / .NET 库 / VS Build Tools 现状研究
+- `research\omc-psmodule-management.md`：omc 的 PowerShell 模块管理机制（本地仓库 + 双 shell 交叉部署 + 锁文件）
 
 ## 项目目录索引
 
