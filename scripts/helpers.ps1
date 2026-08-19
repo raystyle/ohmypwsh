@@ -10,7 +10,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [En
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
 # 工具分层：核心基础工具（密钥 key / 智能体环境 agent / 项目管理 project / 基础工具 base）
 #           + 扩展工具 extras；ToolNames 顺序 = 引导安装/展示/日常更新顺序（核心先装齐，再稳定扩展）
-$script:ToolNames = @('age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'rg', 'jq', 'yq', 'rmux', 'starship')
+$script:ToolNames = @('age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship')
 $script:ToolCategories = @{
     key     = '密钥'
     agent   = '智能体环境'
@@ -101,6 +101,29 @@ function New-ToolDef {
                 Bin          = '7z'
                 Exe          = '7z\7z.exe'
                 Extract      = '7z-archive'
+            }
+        }
+        'uv' {
+            @{
+                Category     = 'base'
+                Repo         = 'astral-sh/uv'
+                AssetPattern = '^uv-x86_64-pc-windows-msvc\.zip$'
+                Dir          = 'uv'
+                Bin          = 'uv'
+                Exe          = 'uv\uv.exe'
+                Extract      = 'zip'
+            }
+        }
+        'python' {
+            @{
+                Category       = 'base'
+                Repo           = 'astral-sh/python-build-standalone'
+                AssetPattern   = '^cpython-3\.12\.[0-9]+(\+[0-9]+)?-x86_64-pc-windows-msvc-install_only\.tar\.gz$'
+                VersionPattern = '^cpython-(\d+\.\d+\.\d+)'
+                Dir            = 'python'
+                Bin            = 'python'
+                Exe            = 'python\python.exe'
+                Extract        = 'targz'
             }
         }
         'rg' {
@@ -315,7 +338,10 @@ function Resolve-ToolVersion {
     $asset = Find-ReleaseAsset -Release $release -Pattern $d.AssetPattern
     $prefix  = if ($d.TagPrefix) { $d.TagPrefix } else { 'v' }
     $version = $release.tag_name
-    if ($version.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+    if ($d.VersionPattern -and $asset.name -match $d.VersionPattern) {
+        # 如 python-build-standalone：tag 是日期，版本从资产名提取
+        $version = $Matches[1]
+    } elseif ($version.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
         $version = $version.Substring($prefix.Length)
     }
     @{
@@ -435,6 +461,8 @@ function Get-InstalledVersion {
         'codex' { if ($line -match 'codex-cli\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'aria2' { if ($line -match 'aria2 version (\d+\.\d+\.\d+)') { return $Matches[1] } }
         '7z'    { if ($line -match '7-Zip\s+(\d+\.\d+)') { return $Matches[1] } }
+        'uv'    { if ($line -match 'uv (\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'python' { if ($line -match 'Python (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'rg'    { if ($line -match 'ripgrep (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'jq'    { if ($line -match 'jq-(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'yq'    { if ($line -match 'version v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
@@ -552,6 +580,15 @@ function Install-ToolVersion {
         'targz' {
             tar -xzf $cachePath -C $installDir
             if ($LASTEXITCODE -ne 0) { throw "$t tar.gz 解压失败（exit=$LASTEXITCODE）" }
+            # 展平顶层单目录（如 python-build-standalone 的 python/ 包裹层）
+            $items = Get-ChildItem -LiteralPath $installDir -Force
+            $dirs  = @($items | Where-Object { $_.PSIsContainer })
+            $files = @($items | Where-Object { -not $_.PSIsContainer })
+            if ($files.Count -eq 0 -and $dirs.Count -eq 1) {
+                $inner = $dirs[0].FullName
+                Get-ChildItem -LiteralPath $inner -Force | Move-Item -Destination $installDir -Force
+                Remove-Item -LiteralPath $inner -Force
+            }
         }
         '7z-archive' {
             # 7zXXX-x64.exe 是 7z 归档（直接运行需提权）；Windows 自带 tar(bsdtar) 可直接解包，无需预装 7z

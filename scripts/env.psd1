@@ -107,6 +107,36 @@
             Extract      = '7z-archive'
             Sha256       = '6745FA76DC2EA031596D8678F6F6B99C3C1B435B4164A63485ADBBC7B8D82EF0'
         }
+        'uv' = @{
+            Version      = '0.12.5'
+            Tag          = '0.12.5'
+            TagPrefix    = ''
+            Repo         = 'astral-sh/uv'
+            AssetPattern = '^uv-x86_64-pc-windows-msvc\.zip$'
+            Asset        = 'uv-x86_64-pc-windows-msvc.zip'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'uv'
+            Bin          = 'uv'
+            Exe          = 'uv\uv.exe'
+            Extract      = 'zip'
+            Sha256       = '4C4D49D8738847D9B71BA319E49A5688C93EAC0FE6204B1DF24E98528DDDF39A'
+        }
+        'python' = @{
+            Version      = '3.12.14'
+            Tag          = '20260814'
+            TagPrefix    = ''
+            Repo         = 'astral-sh/python-build-standalone'
+            AssetPattern = '^cpython-3\.12\.[0-9]+(\+[0-9]+)?-x86_64-pc-windows-msvc-install_only\.tar\.gz$'
+            Asset        = 'cpython-3.12.14+20260814-x86_64-pc-windows-msvc-install_only.tar.gz'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'python'
+            Bin          = 'python'
+            Exe          = 'python\python.exe'
+            Extract      = 'targz'
+            Sha256       = '7330282B47CD43A66B702D39078D2E5A88E580CEE351D82F95045F21F5EE042A'
+        }
         'rg' = @{
             Version      = '15.2.0'
             Tag          = '15.2.0'

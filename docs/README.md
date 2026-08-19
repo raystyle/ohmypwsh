@@ -36,6 +36,7 @@
 - `0004-tool-tiers.md`：工具分层、引导安装顺序与日常无影响更新
 - `0005-starship-takeover.md`：starship 接管（配置保留）与 PowerShell 模块/调试清理
 - `0006-psmodule-manager.md`：PowerShell 模块管理器（在线/离线、PS5/PS7、自研模块打包）
+- `0007-uv-python-takeover.md`：uv/Python 接管（uv 最新 + Python 3.12 为准）
 
 ## 研究文档
 
@@ -73,7 +74,8 @@ ohmypwsh/
 │  │  ├─ 0003-tools-takeover.md rg/jq/yq 工具批量接管（omc → ohmyenv）
 │  │  ├─ 0004-tool-tiers.md     工具分层与日常无影响更新（核心基础/扩展 + daily）
 │  │  ├─ 0005-starship-takeover.md starship 接管与 PowerShell 清理
-│  │  └─ 0006-psmodule-manager.md PowerShell 模块管理器（在线/离线/双 shell）
+│  │  ├─ 0006-psmodule-manager.md PowerShell 模块管理器（在线/离线/双 shell）
+│  │  └─ 0007-uv-python-takeover.md uv/Python 接管（uv 最新 + Python 3.12 为准）
 │  └─ research\                 研究文档（工具能力 / 踩坑沉淀 / 实测记录）
 │     ├─ gh-cli.md              gh CLI 研究（现状/认证/API 兜底/命令地图）
 │     ├─ gh-git-https-ssh.md    gh 与 git 的 HTTPS/SSH 互相配置（本机实测）
@@ -98,6 +100,6 @@ ohmypwsh/
    └─ verify-tools-handover.ps1 rg/jq/yq 交接验证（解析/版本 PASS/FAIL）
 ```
 
-外部环境目录（git 之外，由 ohmyenv 管理）：`D:\ohmyenv` —— gh / git / age / sops / codex / aria2 / 7z / rg / jq / yq / rmux / starship 安装根；`D:\ohmyenv\modules` 为 PowerShell 模块共享部署根（用户 PSModulePath 追加）。
+外部环境目录（git 之外，由 ohmyenv 管理）：`D:\ohmyenv` —— gh / git / age / sops / codex / aria2 / 7z / uv / python / rg / jq / yq / rmux / starship 安装根；`D:\ohmyenv\modules` 为 PowerShell 模块共享部署根（用户 PSModulePath 追加）；`uv-cache` / `uv-tools` 为 uv 缓存与工具目录。
 
 > 目录分类规则见 `AGENTS.md`「目录与分类规范」；本索引随文件增删同步维护。

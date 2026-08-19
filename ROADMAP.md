@@ -64,6 +64,7 @@
 - 已完成：PowerShell 模块管理器（`psmodule.ps1`：在线/离线安装、自研模块打包、PS5/PS7 共享部署；`modules.psd1` 唯一锁源）
 - 已完成：Windows PowerShell 5.1 PowerShellGet 1.0.0.1 → 2.2.5；omc 模块管理残留清理（OhMyClaude 仓库/nupkg/锁/孤儿库）
 - 已完成：PS5/PS7 编码兼容优先规则（AGENTS 规则 4 + 研究文档）
+- 已完成：uv/Python 接管（uv 0.12.5 最新 + Python 3.12.14 为准，`UV_*` 全部迁入 `D:\ohmyenv`，源确认为 aliyun/nju，omc 注册移除）
 - 已决定：不挂自动升级任务（2026-08-19 用户指示，`ohmyenv daily` 保持手动执行）
 - 待办（可选）：按需继续接管更多扩展工具
 - 研究中：PowerShell 模块 / .NET 库 / VS Build Tools 现状与接管可行性（`docs\research\powershell-dotnet-vsbuild.md`）

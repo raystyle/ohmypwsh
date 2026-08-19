@@ -39,6 +39,8 @@
 - PowerShell 模块管理器 `scripts\psmodule.ps1`：list / pin / install / update / uninstall / pack；在线（PSGallery → `D:\ohmyenv\cache\modules` → 部署）与离线（`-File` nupkg）同一部署路径；默认共享部署 `D:\ohmyenv\modules` + 用户 PSModulePath 追加（PS5/PS7 同见）；`modules.psd1` 唯一锁源（sha256 回填）
 - 建立方案 `docs\plans\0006-psmodule-manager.md`：PowerShell 模块管理器（在线/离线、PS5/PS7、自研模块打包）
 - 研究文档 `docs\research\powershell-encoding.md` + AGENTS 规则 4：PS5/PS7 编码兼容优先注意（PS5.1 无 BOM 按 ANSI 读取，自研 manifest 必须 UTF-8 带 BOM）
+- uv/Python 接管：`uv` 0.12.5（最新）与 `python` 3.12.14（python-build-standalone 3.12 线 install_only）由 ohmyenv 管理，部署到 `D:\ohmyenv\uv` / `D:\ohmyenv\python`；新增静态 `VersionPattern`（python 版本从资产名提取）
+- 建立方案 `docs\plans\0007-uv-python-takeover.md`：uv/Python 接管（uv 最新 + Python 3.12 为准）
 
 ### Changed
 
@@ -78,6 +80,8 @@
 - Windows PowerShell 5.1 PowerShellGet 1.0.0.1 → 2.2.5（CurrentUser + TLS 1.2）；用户 PSModulePath 恢复标准 CurrentUser 路径
 - omc 模块管理残留清理：注销 `OhMyClaude` PSRepository（双 shell）、删除 LocalRepo nupkg 与模块锁文件、删除孤儿 `psmodule.ps1`
 - 实测：Pester 5.7.1 在线安装 + 自研 `OhMyDemo` 离线安装均通过 pwsh7 与 PS5.1 验证（测试模块已卸载）
+- `UV_*` 用户环境变量全部迁入 `D:\ohmyenv`（uv-cache / python / uv-tools / uv-tools\bin / install dir），PATH 前置 `D:\ohmyenv\python\Scripts` 与 `D:\ohmyenv\uv-tools\bin`；源确认：pip/uv 走 aliyun、python 下载走 nju 镜像
+- omc 移除 uv 注册（`$BaseScripts` 清出、`uv.ps1`/`uv.exe` 改名保留、CLAUDE.md 同步）；claude 2.1.187 验证仍可用
 
 ### Fixed
 
@@ -91,3 +95,4 @@
 - 安装中断导致「已装新版本但锁定滞后」→ `update` 跳过分支补齐锁定与 sha
 - aria2 报 OK 但文件残缺（SSL 断连后 96% 停住）→ 升级链 sha 回填 + 安装后版本校验兜底，残缺缓存清除后重下
 - starship 非交互噪音：profile（pwsh7 / 5.1）Starship 初始化加 `TERM`/`ConsoleHost` 守卫，`TERM=dumb`（Codex CLI / 脚本管道）不再打印 starship 错误，交互终端渲染不受影响
+- `targz` 解压后未展平顶层单目录：python-build-standalone 的 `python/` 包裹层导致版本读取失败 → `targz` 与 zip 同样做单目录展平
