@@ -73,6 +73,14 @@ rmux capture-pane -t claude -p
 ```
 
 补充：
+- **wt 新窗口默认 cwd 是 `%USERPROFILE%`，不继承调用方 cwd**：弹窗命令必须显式
+  `wt ... -d <目录>`，rmux 建会话/分窗格要显式 `-c <目录>`（Claude Code review 实测确认）。
+- **会话复用守卫**：`rmux has-session -t dev` 存在时先 `kill-session -t dev`，否则
+  `new-session`（无 -A）报错后 `split-window` 会静默追加 dev:0.2，破坏固定窗格索引。
+- **旧 daemon 污染守卫**：daemon 若由含 NO_COLOR 的环境启动，新窗格颜色仍会坏——
+  `Get-Process rmux` 有进程且 `list-sessions` 无保留会话时先 `kill-server` 再走干净环境。
+- **send-keys 提交原语**：发送后 capture 验证输入行已清空/出现处理指示，未提交补发 `Enter`；
+  长 prompt 分「发文本 → 检查 → Enter」避免吞键（Claude Code review 时实测踩到）。
 - **无色彩的真正根因是 NO_COLOR=1**（Codex 沙箱注入），不是客户端 TERM：早期流程
   「Codex 侧 `new-session -d` 预建会话 + wt 再 attach」会把 NO_COLOR 带进 daemon → claude 单色；
   改为窗口直接 `new-session -A` 并 `Remove-Item Env:NO_COLOR` 后恢复彩色（实测确认）。
@@ -86,6 +94,16 @@ rmux capture-pane -t claude -p
 - 旧窗口需要重开时，`rmux detach-client -t <client-id>` 断开后 wt 标签页自动关闭
   （attach 进程退出 → 默认 closeOnExit graceful）。
 - 实测 /status 零警告：重建 PATH（含 `.local\bin`）后 claude 读到正确 PATH。
+
+## Claude Code review 结论（2026-08-19，双端 skill 互相校验）
+
+让 Claude Code（rmux 窗格内）review 双端 rmux skill：确认双文件字节一致、核心语法全部
+对二进制实测通过（`new-session -A/-d/-s`、`split-window -h -d -t`、`send-keys -t dev:0.1
+--wait quiet`（quiet 是本版唯一 wait 模式）、`--stable-for`/`--timeout`、窗格寻址
+`dev:0.0/dev:0.1` 实测往返成功、`find-sessions`/`find-panes`/`pane-snapshot`/`stream-pane`/
+`wait-pane` 不在 list-commands 但均可用）。已按 review 修复：单 agent 变体补回 `-c`/`-d`
+（cwd 错误）、TUI 窗格 capture-pane 返回空的内联提示、会话复用守卫、旧 daemon 守卫、
+list-clients 竞态等待、`--wait-text` 补齐、tiny CLI 结构说明、PATH 重建副作用注释。
 
 ## 踩坑（实测沉淀）
 
