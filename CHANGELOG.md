@@ -31,6 +31,7 @@
 - starship 接管：1.26.0（扩展工具），zip 展平 + sha 回填（无统一 SUMS，走下载后回填）；配置 `~\.config\starship.toml` 保留（默认路径零迁移），profile Starship init 块保留
 - 建立方案 `docs\plans\0005-starship-takeover.md`：starship 接管（配置保留）与 PowerShell 模块/调试清理
 - starship PowerShell 专用配置：研究文档 `docs\research\starship-config.md`（gh api 拉官方配置文档核实）+ `scripts\set-starship-config.ps1` 全模板幂等写入（唯一源，`-Force` 覆盖，保留原符号预设）
+- 研究文档 `docs\research\powershell-dotnet-vsbuild.md`：PowerShell 模块 / .NET 库 / VS Build Tools 现状与接管建议（纯研究）
 
 ### Changed
 

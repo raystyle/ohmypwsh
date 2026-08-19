@@ -45,6 +45,7 @@
 - `research\codex-deepseek-config.md`：Codex 接管记录（原生二进制 + 沙箱 + DeepSeek 密钥 + 状态栏）
 - `research\codex-statusline.md`：Codex TUI 状态栏研究（全量可选项 / 样式机制 / 推荐配置）
 - `research\starship-config.md`：starship.toml 配置研究（PowerShell 专用提示行）
+- `research\powershell-dotnet-vsbuild.md`：PowerShell 模块 / .NET 库 / VS Build Tools 现状研究
 
 ## 项目目录索引
 

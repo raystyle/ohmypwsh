@@ -63,3 +63,4 @@
 - 已完成：PowerShell 清理（Pester/PSScriptAnalyzer/PSFzf/pses 直接删除，profile 仅留 Starship）
 - 已决定：不挂自动升级任务（2026-08-19 用户指示，`ohmyenv daily` 保持手动执行）
 - 待办（可选）：按需继续接管更多扩展工具
+- 研究中：PowerShell 模块 / .NET 库 / VS Build Tools 现状与接管可行性（`docs\research\powershell-dotnet-vsbuild.md`）
