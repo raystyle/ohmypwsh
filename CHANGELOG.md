@@ -30,6 +30,7 @@
 - DeepSeek 密钥迁移：交互式设置用户级 `DEEPSEEK_API_KEY`（`scripts\set-deepseek-key.ps1`），`config.toml` 改用 `env_key`，明文清除
 - 7-Zip 接管：26.02 部署到 `D:\ohmyenv\7z`，新增 `7z-archive` 解压类型（Windows tar 直接解包，无需预装 7z），omc 注册表移除并改名保留旧文件
 - 交接确认脚本 `scripts\verify-codex-handover.ps1`：新终端一键验证 codex 解析到原生版（PASS/FAIL）
+- Codex 交接完成：npm `@openai/codex` 已卸载，shim 清除；doctor 确认 `managed by npm: no`、`update action: manual`（更新只走 ohmyenv）
 
 ### Fixed
 
