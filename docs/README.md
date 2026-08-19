@@ -31,6 +31,7 @@
 ## 方案索引
 
 - `0001-env-deps.md`：环境依赖管理（gh/git 自举安装，bootstrap 不依赖 gh）
+- `0002-codex-takeover.md`：Codex 接管（原生二进制 + 沙箱 + DeepSeek 密钥）
 
 ## 研究文档
 
@@ -39,3 +40,46 @@
 - `research\age-sops-key-management.md`：密钥管理（age + SOPS，接入 ohmyenv）
 - `research\ohmyenv-pitfalls.md`：ohmyenv 踩坑沉淀
 - `research\codex-deepseek-config.md`：Codex 接管记录（原生二进制 + 沙箱 + DeepSeek 密钥 + 状态栏）
+- `research\codex-statusline.md`：Codex TUI 状态栏研究（全量可选项 / 样式机制 / 推荐配置）
+
+## 项目目录索引
+
+```text
+ohmypwsh/
+├─ AGENTS.md                    协作规则（最高约束）：规则 1-3、目录分类、设计原则
+├─ CHANGELOG.md                 可交付变更记录（先维护在 [Unreleased]）
+├─ ROADMAP.md                   阶段与里程碑状态（未开始/进行中/已完成/挂起）
+├─ .sops.yaml                   SOPS 加密策略（age 公钥，可提交）
+├─ .gitignore                   忽略规则（备份/缓存/密钥明文兜底）
+│
+├─ .secrets\                    密钥加密副本（可提交；明文禁止入库）
+│  └─ deepseek.env.enc          DeepSeek key 的 SOPS 加密备份
+│
+├─ docs\                        文档总览与规范见本文件
+│  ├─ README.md                 文档地图、命名约定、变更流程、目录索引
+│  ├─ plans\                    重要方案/决策（NNNN-短名.md，模板 0000）
+│  │  ├─ 0000-template.md       方案文档模板
+│  │  ├─ 0001-env-deps.md       环境依赖管理（gh/git 自举，bootstrap 不依赖 gh）
+│  │  └─ 0002-codex-takeover.md Codex 接管方案（原生二进制 + 沙箱 + 密钥）
+│  └─ research\                 研究文档（工具能力 / 踩坑沉淀 / 实测记录）
+│     ├─ gh-cli.md              gh CLI 研究（现状/认证/API 兜底/命令地图）
+│     ├─ gh-git-https-ssh.md    gh 与 git 的 HTTPS/SSH 互相配置（本机实测）
+│     ├─ age-sops-key-management.md  密钥管理（age + SOPS 接入 ohmyenv）
+│     ├─ ohmyenv-pitfalls.md    ohmyenv 踩坑沉淀
+│     ├─ codex-deepseek-config.md    Codex 接管记录（沙箱/密钥/状态栏）
+│     └─ codex-statusline.md    Codex TUI 状态栏研究（全量可选项/样式/推荐配置）
+│
+└─ scripts\                     环境脚本（全部入口）
+   ├─ ohmyenv.ps1               CLI：query / deploy / install / update / pin / status
+   ├─ helpers.ps1               模块函数（下载、安装、Invoke-GitHubApi 限流兜底）
+   ├─ env.psd1                  工具版本锁定清单（唯一 pin 来源，版本不硬编码）
+   ├─ set-deepseek-key.ps1      DeepSeek API Key 交互式设置（用户级环境变量）
+   ├─ set-codex-statusline.ps1  Codex 状态栏幂等合并（[tui] status_line）
+   ├─ sops-encrypt-deepseek.ps1 SOPS 重加密/回读验证
+   ├─ sops-test.ps1             SOPS 冒烟测试
+   └─ verify-codex-handover.ps1 Codex 交接验证（原生版解析 PASS/FAIL）
+```
+
+外部环境目录（git 之外，由 ohmyenv 管理）：`D:\ohmyenv` —— gh / git / age / sops / codex / aria2 / 7z 安装根。
+
+> 目录分类规则见 `AGENTS.md`「目录与分类规范」；本索引随文件增删同步维护。

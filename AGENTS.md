@@ -42,7 +42,7 @@
 - 新文件按类别落位；排查期临时脚本仅作过渡，验证后必须收敛进 `scripts\` 或删除，不留孤儿脚本
 - 明文密钥、token、凭据永不入库；加密副本只放 `.secrets\`
 - 版本/Tag/资产名唯一来源是 `scripts\env.psd1`，先 `ohmyenv pin` 后 `ohmyenv update`
-- 类别/目录变动时同步更新 `docs\README.md` 与本表
+- 类别/目录变动时同步更新 `docs\README.md`「项目目录索引」与本表
 
 ## 设计原则
 
