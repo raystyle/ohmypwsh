@@ -39,6 +39,7 @@
 - 建立研究文档 `docs\research\codex-statusline.md`：状态栏可选项全量清单（官方描述 + 渲染示例）、样式机制（` · ` 分隔符、主题色 accent）、`/statusline` 交互行为、推荐配置与注意事项
 - 目录与分类规范（AGENTS.md 新增章节）：脚本 / 文档 / 配置 / 密钥数据 / 环境目录五类物理分离，新增文件必须归入对应目录（参考 `D:\hyper-v-lab` 的 AGENTS.md 风格），`docs\README.md` 增加指引
 - 项目目录与文件索引：`docs\README.md` 新增完整目录树（根文件 / `.secrets` / `docs` / `scripts` 逐文件说明）与外部环境目录说明，AGENTS.md 分类要点指向该索引
+- 建立对标研究 `docs\research\agents-docs-benchmark.md`：用 gh 调研 agentsmd 开放格式 / openai-agents-python / codex / zed 的 AGENTS.md 与文档结构，结论：本仓五要素齐全已属前列，建议补常用命令节、提交约定成文、根 README（待确认）
 
 ### Fixed
 
