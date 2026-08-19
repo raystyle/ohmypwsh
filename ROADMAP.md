@@ -9,7 +9,7 @@
 | 0 | 项目基础设施：AGENTS 规则、文档规范 | 已完成 |
 | 1 | 环境依赖管理：独立 D 盘环境目录，自建 gh/git 安装管理 | 已完成 |
 | 2 | 密钥管理：age + SOPS 接入 ohmyenv，.sops.yaml 与冒烟测试 | 已完成 |
-| 3 | Codex 接管：原生二进制 + 沙箱 + DeepSeek 密钥迁移到 env_key | 实施中（方案 0002） |
+| 3 | Codex 接管：原生二进制 + 沙箱 + DeepSeek 密钥迁移到 env_key | 已完成 |
 | 4 | 项目核心目标 | 未开始（待用户定义） |
 
 ## 阶段 0：项目基础设施（已完成）
@@ -43,6 +43,6 @@
 - 沙箱：`sandbox_mode=danger-full-access` + `approval_policy=never`（合并写入，已生效）
 - 密钥：`experimental_bearer_token` 明文 → `DEEPSEEK_API_KEY` 用户环境变量 + `env_key`（已生效；SOPS 加密副本待办）
 - 完成：原生部署、doctor 验证、aria2 下载通道（7.1MiB/s）
-- 待办：SOPS 加密副本
 - 已完成：npm 交接清理（`@openai/codex` 卸载、shim 清除、doctor 确认单一原生来源）
 - 已完成：7zip 接管（`D:\ohmyenv\7z` 26.02，omc 已移除，`7z-archive` 用 tar 解包）
+- 已完成：DeepSeek key SOPS 加密副本（`.secrets\deepseek.env.enc`，换机/轮换可恢复）

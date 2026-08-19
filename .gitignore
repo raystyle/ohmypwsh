@@ -14,3 +14,6 @@
 # SOPS/age 私钥（绝不提交）
 keys.txt
 *.agekey
+
+# SOPS 密文可提交，明文禁止
+.secrets/*.env

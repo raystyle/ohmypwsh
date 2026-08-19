@@ -28,6 +28,7 @@ sandbox = "unelevated"
 - `config.toml`：`experimental_bearer_token` 明文 → 已替换为 `env_key = "DEEPSEEK_API_KEY"`
 - `codex doctor` 确认：`provider auth env var DEEPSEEK_API_KEY (present)`
 - 备份：`~/.codex\backup-takeover-20260819\config.toml`（含旧明文 key，交接完成后清理）
+- SOPS 加密副本：`.secrets\deepseek.env.enc`（可提交，用于换机/轮换恢复）；重加密用 `scripts\sops-encrypt-deepseek.ps1`
 
 ## 踩过的坑（规则 1 沉淀）
 
