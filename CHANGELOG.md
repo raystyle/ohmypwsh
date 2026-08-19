@@ -35,6 +35,7 @@
 - PowerShell 模块清理完成（2026-08-19）：删除用户级 PSReadLine / WslInterop 副本与 PSFzf 残留，清空 `PSModulePath` 用户变量；pwsh 7 与 Windows PowerShell 5.1 均回到系统原生模块（pses 死路径一并移除）
 - 残留目录清除（重启后锁释放）：`Documents\PowerShell\Modules` / `Documents\WindowsPowerShell\Modules` 用户模块目录整体删除，用户模块路径归零；Pester 3.4.0 / PSReadLine 2.0.0 为系统内置保留
 - 研究文档 `docs\research\omc-psmodule-management.md`：omc 的 PowerShell 模块管理机制（本地 nupkg 仓库 + PS5/PS7 交叉部署 + 锁文件）与清理后残留盘点
+- 研究文档补充「对 ohmyenv 的参考价值」：可借鉴（本地仓库/先 lock/双份部署认知/profile 标记）与应避免（仓库注册残留/WebClient/旧 PowerShellGet/锁散落/无校验拷贝），含接管建议方向
 
 ### Changed
 

@@ -42,3 +42,27 @@
 
 - omc 模块管理 = PowerShellGet 语义 + 本地 nupkg 仓库 + PS5/PS7 双路径交叉部署 + 锁文件（`.config\<模块>\config.json`）+ 可选 profile 块
 - 现状已停用（`$PsModules` 空、模块全删）；残留的仓库注册 / nupkg / 锁文件可按需清理
+
+## 对 ohmyenv 的参考价值（PS5/PS7 模块管理）
+
+### 可借鉴
+
+- **本地仓库 + 离线缓存**：nupkg 先落本地再安装，网络友好、版本可控；ohmyenv 已有 `D:\ohmyenv\cache` 体系可复用（比 omc 的 `.cache\dev\LocalRepo` 更集中）
+- **先 lock 后 install**：与 ohmyenv「先 pin 后 update」哲学一致，模块同样应版本锁定
+- **PS5/PS7 双份部署的认知**：两 shell 用户目录分离（`Documents\WindowsPowerShell\Modules` vs `Documents\PowerShell\Modules`），跨 shell 部署是刚需而非可选项
+- **profile 块标记管理**：`BEGIN/END ohmywinclaude:` 标记幂等增删 profile 初始化（本次清理即复用该模式）
+
+### 应避免
+
+- **全局 PSRepository 注册残留**：`OhMyClaude` 仓库至今仍注册于两个 shell，属于清理不彻底的隐式全局状态
+- **老式直连下载**：`System.Net.WebClient` 无 sha 校验、重试粗糙（对比 ohmyenv 的 aria2 + curl + sha256）
+- **PowerShellGet 1.0.0.1 语义**：官方已不支持，应升级 2.2.5 或转 PSResourceGet 1.2.0（pwsh7 已内置）
+- **锁文件散落**：`.config\<模块>\config.json` 分散登记；ohmyenv 应集中（`env.psd1` 或独立模块清单）
+- **无校验交叉拷贝**：`Copy-Item` 部署不校验内容，二进制模块跨 .NET Framework / .NET 可能不兼容
+
+### 建议方向（若 ohmyenv 接管模块）
+
+- pwsh7 用 `Install-PSResource`；5.1 先升级 PowerShellGet 2.2.5 再 `Install-Module`（PSResourceGet 也可装，但需先升）
+- 缓存统一走 `D:\ohmyenv\cache`（`Save-PSResource` 或直连 nupkg），不注册长期 PSRepository
+- 部署形态按模块兼容性二选一：兼容双 shell 的模块用「共享目录 + 用户 PSModulePath 追加」一份生效（pses 先例）；仅单 shell 兼容的二进制模块按 shell 双份部署
+- 版本锁集中登记，沿用 profile 标记块管理初始化
