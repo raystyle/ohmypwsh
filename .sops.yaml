@@ -1,0 +1,7 @@
+# SOPS 加密规则
+# 公钥可安全提交；私钥在 %APPDATA%\sops\age\keys.txt（绝不提交，.gitignore 已保护）
+creation_rules:
+  - path_regex: \.env(\.[^.]+)?$
+    encrypted_regex: '^(API_KEY|DB_PASSWORD|.*_TOKEN|.*_SECRET|.*PASSWORD.*|.*KEY.*)$'
+    age: >-
+      age1wsgcklmca5mayu4n6jhry5jphvk3tzlt8xqjtajs06y5yagwh4zqshk05k

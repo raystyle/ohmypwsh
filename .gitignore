@@ -10,3 +10,7 @@
 
 # 本地覆盖（示例）
 .env
+
+# SOPS/age 私钥（绝不提交）
+keys.txt
+*.agekey

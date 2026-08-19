@@ -9,7 +9,7 @@ param(
     [string]$Command = 'help',
 
     [Parameter(Position = 1)]
-    [ValidateSet('gh', 'git', 'all')]
+    [ValidateSet('gh', 'git', 'age', 'sops', 'all')]
     [string]$Tool = 'all',
 
     [switch]$Latest,
@@ -22,7 +22,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'helpers.ps1')
 
 $lock  = Get-EnvLock
-$tools = if ($Tool -eq 'all') { @('gh', 'git') } else { @($Tool) }
+$tools = if ($Tool -eq 'all') { @($script:ToolNames) } else { @($Tool) }
 
 function Show-Help {
     @'
@@ -113,7 +113,7 @@ switch ($Command) {
 
     'status' {
         Write-Host "环境根目录: $($lock.EnvRoot)" -ForegroundColor Cyan
-        foreach ($t in 'gh', 'git') {
+        foreach ($t in $script:ToolNames) {
             $d = $lock.Tools[$t]
             $exePath = Join-Path $lock.EnvRoot $d.Exe
             $bin     = Join-Path $lock.EnvRoot $d.Bin

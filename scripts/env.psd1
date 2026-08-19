@@ -26,5 +26,29 @@
             Extract      = '7zsfx'
             Sha256       = 'BEA006A6CC69673F27B1647E84AB3A68E912FBC175AB6320C5987E012897F311'
         }
+        age = @{
+            Version      = '1.3.1'
+            Tag          = 'v1.3.1'
+            Repo         = 'FiloSottile/age'
+            AssetPattern = '^age-v[0-9.]+-windows-amd64\.zip$'
+            Asset        = 'age-v1.3.1-windows-amd64.zip'
+            Dir          = 'age'
+            Bin          = 'age'
+            Exe          = 'age\age.exe'
+            Extract      = 'zip'
+            Sha256       = 'C56E8CE22F7E80CB85AD946CC82D198767B056366201D3E1A2B93D865BE38154'
+        }
+        sops = @{
+            Version      = '3.13.3'
+            Tag          = 'v3.13.3'
+            Repo         = 'getsops/sops'
+            AssetPattern = '^sops-v[0-9.]+\.amd64\.exe$'
+            Asset        = 'sops-v3.13.3.amd64.exe'
+            Dir          = 'sops'
+            Bin          = 'sops'
+            Exe          = 'sops\sops.exe'
+            Extract      = 'copy'
+            Sha256       = 'A4A9A398858FE8B2EF72D9686D930BF7C5CECE9BE74AD83AC3B53CFDD70E6B1C'
+        }
     }
 }

@@ -5,6 +5,7 @@
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
+$script:ToolNames = @('gh', 'git', 'age', 'sops')
 
 function New-ToolDef {
     param([Parameter(Mandatory)][string]$Tool)
@@ -37,18 +38,42 @@ function New-ToolDef {
                 Sha256       = ''
             }
         }
+        'age' {
+            @{
+                Version      = '1.3.1'
+                Tag          = 'v1.3.1'
+                Repo         = 'FiloSottile/age'
+                AssetPattern = '^age-v[0-9.]+-windows-amd64\.zip$'
+                Asset        = 'age-v1.3.1-windows-amd64.zip'
+                Dir          = 'age'
+                Bin          = 'age'
+                Exe          = 'age\age.exe'
+                Extract      = 'zip'
+                Sha256       = ''
+            }
+        }
+        'sops' {
+            @{
+                Version      = '3.13.3'
+                Tag          = 'v3.13.3'
+                Repo         = 'getsops/sops'
+                AssetPattern = '^sops-v[0-9.]+\.amd64\.exe$'
+                Asset        = 'sops-v3.13.3.amd64.exe'
+                Dir          = 'sops'
+                Bin          = 'sops'
+                Exe          = 'sops\sops.exe'
+                Extract      = 'copy'
+                Sha256       = ''
+            }
+        }
         default { throw "未知工具: $Tool（仅支持 gh / git）" }
     }
 }
 
 function New-DefaultLock {
-    @{
-        EnvRoot = 'D:\ohmyenv'
-        Tools   = @{
-            gh  = New-ToolDef 'gh'
-            git = New-ToolDef 'git'
-        }
-    }
+    $tools = @{}
+    foreach ($t in $script:ToolNames) { $tools[$t] = New-ToolDef $t }
+    @{ EnvRoot = 'D:\ohmyenv'; Tools = $tools }
 }
 
 function Get-EnvLock {
@@ -58,7 +83,7 @@ function Get-EnvLock {
         $lock = New-DefaultLock
         Save-EnvLock -Lock $lock
     }
-    foreach ($t in 'gh', 'git') {
+    foreach ($t in $script:ToolNames) {
         if (-not $lock.Tools.ContainsKey($t)) {
             $lock.Tools[$t] = New-ToolDef $t
         }
@@ -73,7 +98,7 @@ function Save-EnvLock {
     $lines.Add('@{')
     $lines.Add("    EnvRoot = '$($Lock.EnvRoot)'")
     $lines.Add('    Tools   = @{')
-    foreach ($t in 'gh', 'git') {
+    foreach ($t in $script:ToolNames) {
         $d = $Lock.Tools[$t]
         $lines.Add("        $t = @{")
         $lines.Add("            Version      = '$($d.Version)'")
@@ -229,8 +254,10 @@ function Get-InstalledVersion {
     if (-not (Test-Path $ExePath)) { return $null }
     $line = (& $ExePath --version 2>&1 | Select-Object -First 1) -join ' '
     switch ($Tool) {
-        'gh'  { if ($line -match 'gh version (\d+\.\d+\.\d+)') { return $Matches[1] } }
-        'git' { if ($line -match 'git version (\S+)') { return $Matches[1] } }
+        'gh'   { if ($line -match 'gh version (\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'git'  { if ($line -match 'git version (\S+)') { return $Matches[1] } }
+        'age'  { if ($line -match '^v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'sops' { if ($line -match 'sops[ -]v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
     }
     $null
 }
@@ -302,10 +329,22 @@ function Install-ToolVersion {
     switch ($d.Extract) {
         'zip' {
             Expand-Archive -Path $cachePath -DestinationPath $installDir -Force
+            # 展平顶层单目录（如 age zip 的 age/ 包裹层）
+            $items = Get-ChildItem -LiteralPath $installDir -Force
+            $dirs  = @($items | Where-Object { $_.PSIsContainer })
+            $files = @($items | Where-Object { -not $_.PSIsContainer })
+            if ($files.Count -eq 0 -and $dirs.Count -eq 1) {
+                $inner = $dirs[0].FullName
+                Get-ChildItem -LiteralPath $inner -Force | Move-Item -Destination $installDir -Force
+                Remove-Item -LiteralPath $inner -Force
+            }
         }
         '7zsfx' {
             & $cachePath '-y' "-o$installDir"
             if ($LASTEXITCODE -ne 0) { throw "$t 自解压失败（exit=$LASTEXITCODE）" }
+        }
+        'copy' {
+            Copy-Item -LiteralPath $cachePath -Destination (Join-Path $installDir (Split-Path -Leaf $d.Exe)) -Force
         }
         default { throw "未知解压类型: $($d.Extract)" }
     }

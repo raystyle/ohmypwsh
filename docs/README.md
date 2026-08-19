@@ -32,3 +32,4 @@
 ## 研究文档
 
 - `research\gh-git-https-ssh.md`：gh 与 git 的 HTTPS / SSH 互相配置（Windows 指南 + 本机实测）
+- `research\age-sops-key-management.md`：密钥管理（age + SOPS，接入 ohmyenv）

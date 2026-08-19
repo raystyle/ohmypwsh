@@ -8,7 +8,8 @@
 | --- | --- | --- |
 | 0 | 项目基础设施：AGENTS 规则、文档规范 | 已完成 |
 | 1 | 环境依赖管理：独立 D 盘环境目录，自建 gh/git 安装管理 | 已完成 |
-| 2 | 项目核心目标 | 未开始（待用户定义） |
+| 2 | 密钥管理：age + SOPS 接入 ohmyenv，.sops.yaml 与冒烟测试 | 已完成 |
+| 3 | 项目核心目标 | 未开始（待用户定义） |
 
 ## 阶段 0：项目基础设施（已完成）
 
@@ -27,3 +28,9 @@
 - gh 2.91.0、git 2.54.0.windows.1 安装于 `D:\ohmyenv`，版本与 sha256 已锁定
 - omc 注册表移除 gh/git；旧文件改名保留（`*.removed-20260819`），确认无误后可删除
 - 用户 PATH 前置新目录、移除旧 git 路径；gh 登录状态正常（keyring）
+
+## 阶段 2：密钥管理（已完成）
+
+- age 1.3.1、sops 3.13.3 接入 `ohmyenv`（查询/下载/锁定/sha256/PATH 统一管理）
+- 生成 age 私钥 `%APPDATA%\sops\age\keys.txt`，设置 `SOPS_AGE_KEY_FILE` 用户环境变量
+- 建立 `.sops.yaml`（公钥）与 `scripts\sops-test.ps1` 冒烟测试（已通过）
