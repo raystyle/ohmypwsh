@@ -90,3 +90,4 @@
 - 7zsfx 解包后立即读版本可能瞬态失败 → 版本读取加重试（5 次退避）
 - 安装中断导致「已装新版本但锁定滞后」→ `update` 跳过分支补齐锁定与 sha
 - aria2 报 OK 但文件残缺（SSL 断连后 96% 停住）→ 升级链 sha 回填 + 安装后版本校验兜底，残缺缓存清除后重下
+- starship 非交互噪音：profile（pwsh7 / 5.1）Starship 初始化加 `TERM`/`ConsoleHost` 守卫，`TERM=dumb`（Codex CLI / 脚本管道）不再打印 starship 错误，交互终端渲染不受影响

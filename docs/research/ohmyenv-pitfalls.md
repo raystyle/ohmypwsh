@@ -36,3 +36,4 @@
 - **starship 只有逐资产 `.sha256`、无统一 SHA256SUMS**：`SumsAsset` 机制不适用（那是给单文件 SUMS 清单用的），走「下载后回填 sha + 安装后版本校验」即可
 - **PS 模块是双份安装 + 额外副本**：Pester/PSScriptAnalyzer/PSFzf 同时存在于 `WindowsPowerShell\Modules`（5.1）与 `PowerShell\Modules`（pwsh7），且 pses 目录内还有副本 → 清理要三处齐清；直接删除时注意进程占用（PSFzf.dll 曾被占用，重试后成功）
 - **profile 块由 profile-line.ps1 的 BEGIN/END 标记管理**：清理用块标记正则删除最稳（本例删除 PSFzf 块、仅留 Starship 块）
+- **starship 在非交互环境报 `TERM=dumb` 错误**：Codex CLI / 脚本管道常注入 `TERM=dumb`（starship 跨平台检测），profile 里裸 `Invoke-Expression (&starship init powershell)` 会打印 `[ERROR] - (starship::print): Under a 'dumb' terminal (TERM=dumb).` 噪音；修复为加守卫 `if ($env:TERM -ne "dumb" -and $Host.Name -eq "ConsoleHost") { Invoke-Expression (&starship init powershell) }`（pwsh7 与 5.1 profile 均已应用，交互终端渲染不受影响）
