@@ -126,6 +126,21 @@
             BootstrapAsset = '7zr.exe'
             Sha256       = '081DF9E9311DFD9C9E0E98C1C80180B99BB51E4CB24156B5F3057FE3C259D70A'
         }
+        'gsudo' = @{
+            Version      = '2.6.1'
+            Tag          = 'v2.6.1'
+            TagPrefix    = 'v'
+            Repo         = 'gerardog/gsudo'
+            AssetPattern = '^gsudo\.portable\.zip$'
+            Asset        = 'gsudo.portable.zip'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'gsudo'
+            Bin          = 'gsudo'
+            Exe          = 'gsudo\gsudo.exe'
+            Extract      = 'gsudo'
+            Sha256       = '21130BF178D7B9891207F00BFF56F05B6B363CE9CEC7B2D084E45FB12EE51F44'
+        }
         'dotnet' = @{
             Version      = '10.0.400'
             Tag          = 'v10.0.400'

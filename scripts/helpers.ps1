@@ -10,7 +10,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [En
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
 # 工具分层：核心基础工具（密钥 key / 智能体环境 agent / 项目管理 project / 基础工具 base）
 #           + 扩展工具 extras；ToolNames 顺序 = 引导安装/展示/日常更新顺序（核心先装齐，再稳定扩展）
-$script:ToolNames = @('pwsh', 'age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'dotnet', 'fnm', 'bun', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship')
+$script:ToolNames = @('pwsh', 'age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'gsudo', 'dotnet', 'fnm', 'bun', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship')
 $script:ToolCategories = @{
     key     = '密钥'
     agent   = '智能体环境'
@@ -119,6 +119,18 @@ function New-ToolDef {
                 Bin            = '7z'
                 Exe            = '7z\7z.exe'
                 Extract        = '7z-extra'
+            }
+        }
+        'gsudo' {
+            @{
+                Category     = 'base'
+                TagPrefix    = 'v'
+                Repo         = 'gerardog/gsudo'
+                AssetPattern = '^gsudo\.portable\.zip$'
+                Dir          = 'gsudo'
+                Bin          = 'gsudo'
+                Exe          = 'gsudo\gsudo.exe'
+                Extract      = 'gsudo'
             }
         }
         'dotnet' {
@@ -544,6 +556,7 @@ function Get-InstalledVersion {
         'dotnet' { if ($line -match '^(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'fnm'    { if ($line -match 'fnm\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'bun'    { if ($line -match '^v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'gsudo'  { if ($line -match 'gsudo\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'uv'    { if ($line -match 'uv (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'python' { if ($line -match 'Python (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'rg'    { if ($line -match 'ripgrep (\d+\.\d+\.\d+)') { return $Matches[1] } }
@@ -668,6 +681,16 @@ function Install-ToolVersion {
                 Get-ChildItem -LiteralPath $inner -Force | Move-Item -Destination $installDir -Force
                 Remove-Item -LiteralPath $inner -Force
             }
+        }
+        'gsudo' {
+            # gsudo.portable.zip 多架构（x64/x86/arm64/net46-AnyCpu）；只取 x64 展平，其余架构删除
+            Expand-Archive -Path $cachePath -DestinationPath $installDir -Force
+            $x64 = Join-Path $installDir 'x64'
+            if (-not (Test-Path -LiteralPath $x64)) { throw "$t 资产缺少 x64 目录" }
+            Get-ChildItem -LiteralPath $x64 -Force | Move-Item -Destination $installDir -Force
+            Get-ChildItem -LiteralPath $installDir -Directory |
+                Where-Object { $_.Name -in @('x64', 'x86', 'arm64', 'net46-AnyCpu') } |
+                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
         }
         '7zsfx' {
             & $cachePath '-y' "-o$installDir"

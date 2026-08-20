@@ -119,6 +119,7 @@
 - Node.js/npm 接管（fnm 替换 nvm-windows）：弃用 coreybutler/nvm-windows（需管理员 + 符号链接，与单二进制哲学不符），改用 Schniz/fnm；研究文档 `docs\research\node-fnm.md`；`New-ToolDef` nvm→fnm（`fnm-windows.zip` 单文件，`TagPrefix='v'`）；pin 1.39.0 → deploy 到 `D:\ohmyenv\fnm`（fnm.exe 7.8MB）；`scripts\set-fnm-config.ps1` 幂等配置（`FNM_DIR=D:\ohmyenv\fnm-data`/`FNM_NODE_DIST_MIRROR` npmmirror/PATH/`.npmrc` registry/profile 块带 `Get-Command fnm` 守卫）；`fnm install --lts` 装 node v24.19.0 并自动设默认
 - nvm-windows 与 omc 旧 node 卸载清理：删除用户 `NVM_HOME`/`NVM_SYMLINK` 环境变量与 PATH 残留 `D:\ohmyenv\nvm`/`D:\ohmyenv\nodejs`；物理删除 `D:\ohmyenv\nvm`、`D:\ohmyenv\cache\nvm-noinstall.zip`、`D:\Oh-My-Claude\.scripts\dev\node.ps1.removed-*`、`D:\Oh-My-Claude\.envs\dev\node.removed-*`
 - Bun 接管：研究文档 `docs\research\bun.md`；`New-ToolDef` 新增 `bun`（`bun-windows-x64.zip` 单文件，`TagPrefix='bun-v'`）；pin 1.3.14 → deploy 到 `D:\ohmyenv\bun`（bun.exe 98MB）+ PATH 前置；`scripts\set-bun-config.ps1` 幂等配置全局 `~/.bunfig.toml` + 局部 `bunfig.toml`（`[install] registry = npmmirror`）
+- gsudo 接管：研究文档 `docs\research\gsudo.md`；`New-ToolDef` 新增 `gsudo`（`gsudo.portable.zip` 多架构，`TagPrefix='v'`）+ 新增 `gsudo` 解压类型（只取 x64 展平、删 x86/arm64/net46）；pin 2.6.1 → deploy 到 `D:\ohmyenv\gsudo` + PATH 前置；`scripts\set-gsudo-config.ps1` 幂等创建 `sudo.exe` 同源 shim 并提示 Windows 内置 sudo 冲突
 
 ### Fixed
 
