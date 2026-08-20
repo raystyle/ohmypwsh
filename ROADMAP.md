@@ -10,8 +10,8 @@
 | 1 | 环境依赖管理：独立 D 盘环境目录，自建 gh/git 安装管理 | 已完成 |
 | 2 | 密钥管理：age + SOPS 接入 ohmyenv，.sops.yaml 与冒烟测试 | 已完成 |
 | 3 | Codex 接管：原生二进制 + 沙箱 + DeepSeek 密钥迁移到 env_key | 已完成 |
-| 4 | 工具分层与日常更新：核心基础工具（密钥/智能体/项目管理/基础工具）先装齐，扩展工具稳定扩展，日常无影响更新 | 进行中 |
-| 5 | 项目重定位：可迁移 Agent 环境部署与管理模块 CLI（安装包/部署包分类、pwsh7 纳入、EnvRoot 重定位、bootstrap、pack/unpack） | 进行中 |
+| 4 | 软件工具扩展：核心基础工具先装齐，扩展工具稳定扩展，pwsh7/7z 等部署方式完善，日常无影响更新 | 进行中 |
+| 5 | 项目重定位：可迁移 Agent 环境部署与管理模块 CLI（EnvRoot 重定位、bootstrap、omp 模块、pack/unpack） | 未开始 |
 
 ## 阶段 0：项目基础设施（已完成）
 
@@ -49,7 +49,7 @@
 - 已完成：DeepSeek key SOPS 加密副本（`.secrets\deepseek.env.enc`，换机/轮换可恢复）
 - 已完成：状态栏增强配置（`[tui] status_line` 独立脚本 `scripts\set-codex-statusline.ps1` 幂等合并，`codex doctor` 验证 parse ok）
 
-## 阶段 4：工具分层与日常更新（进行中）
+## 阶段 4：软件工具扩展（进行中）
 
 目标：核心基础工具先装齐（密钥 age/sops、智能体环境 codex、项目管理 git/gh、基础工具 aria2/7z），环境稳定后再扩展（rg/jq/yq 及后续工具）；日常更新走「无影响」策略（同主版本自动、跨主版本人工确认）。
 
@@ -69,34 +69,41 @@
 - 已完成：Claude Code 扩展配置（2.1.233 + GLM-5.3[1m] 1M 上下文 + bigmodel 端点 + 遥测关闭；密钥 SOPS 加密保存）
 - 已完成：Claude Code 完全接管（YOLO 对齐 Codex + 状态栏纯 PowerShell + 配置收敛 settings.json env + 用户环境变量/`~/.claude` omc 残留清理 + omc 侧 claude 安装器/Profile/旧 exe 删除；`claude -p` 实测 model=glm-5.3[1m]）
 - 已完成：rmux 双端项目级 skill（已迁移至独立仓库 https://github.com/raystyle/win-rmux；本项目只维护 rmux 的安装管理）
+- 已完成：pwsh7 v7.6.5 纳入工具清单（安装包类，MSI + `hashes.sha256` 校验，`Extract='msi'`）
+- 已完成：`scripts\set-pwsh.ps1` 一键幂等安装/升级（PS5.1 兼容 + UTF-8 BOM，检测 → 新装/升级
+  /跳过 → 提权 → msiexec → 验证）；实测关闭所有 pwsh 后 cmd 启动升级 7.6.4 → 7.6.5 成功
+- 已完成：PowerShell 7 遥测关闭（`DISABLE_TELEMETRY=1` + `POWERSHELL_TELEMETRY_OPTOUT=1` +
+  `POWERSHELL_UPDATECHECK=Off`）
+- 已完成：7z 绿色部署收敛（`7z-extra`：7zr.exe 解压 `7zXXXX-extra.7z` → x64/7za.exe shim 成
+  `7z.exe` 单文件 1.3MB，替换旧的 tar 解压多文件部署；实测解压功能正常）
 - 已决定：不挂自动升级任务（2026-08-19 用户指示，`ohmyenv daily` 保持手动执行）
 - 待办（可选）：按需继续接管更多扩展工具
 - 研究中：PowerShell 模块 / .NET 库 / VS Build Tools 现状与接管可行性（`docs\research\powershell-dotnet-vsbuild.md`）
 
-## 阶段 5：项目重定位（进行中）
+## 阶段 5：项目重定位（未开始，远期）
 
 目标：把项目本质收敛为「可迁移 Agent 环境部署与管理模块 CLI」——从原生 PS5.1 一键初始化，升级
 pwsh7，部署模块 CLI，产物分安装包/部署包两类，支持压缩包跨机还原已 pin 工具环境。
 
 方案：`docs\plans\0010-portable-agent-env.md`。
 
-已完成：
+预研（阶段 4 期间已提前摸清，正式推进待本阶段启动）：
 
 - 项目本质定位落盘（README / AGENTS.md「项目定位」/ 方案 0010）
 - 产物分类定稿：安装包（pwsh7 / codex / claude / kimi / git / 7z，只归档 installer，二次安装）
   vs 部署包（age / sops / gh / aria2 / uv / python / rg / jq / yq / rmux / starship，单二进制
   + PATH，进 EnvRoot）
-- pwsh7 v7.6.5 纳入工具清单（安装包类，MSI + `hashes.sha256` 校验，`Extract='msi'` per-user /
- 系统位置检测）
-- `scripts\set-pwsh.ps1` 一键幂等安装/升级（PS5.1 兼容 + UTF-8 BOM，检测 → 新装/升级/跳过 →
-  提权 → msiexec → 验证）；实测：关闭所有 pwsh 后 cmd 启动 `powershell.exe ... set-pwsh.ps1`
-  升级 7.6.4 → 7.6.5 成功
-- PowerShell 7 遥测关闭（`DISABLE_TELEMETRY=1` + `POWERSHELL_TELEMETRY_OPTOUT=1` +
-  `POWERSHELL_UPDATECHECK=Off`，研究文档 `docs\research\powershell-telemetry.md`）
+- EnvRoot 可重定位起步：`Get-DefaultEnvRoot`（环境变量 `OHMYENV_ROOT` > D 盘存在 > C 盘回退）
+  + `-EnvRoot` 参数覆盖
+- omp 模块起步：`scripts\omp.psm1`（`Invoke-Omp` + `omp` 别名，复用 ohmyenv 全部命令）
+- `ohmyenv pack` 实测成功：产出 `D:\ohmyenv\deploy\ohmyenv-deploy-<时间戳>.zip`（426 MB，含
+  密钥 + agent 配置 + 部署包 + 安装包 + manifest）；`unpack` 已实现幂等（>= pin 跳过 / < pin
+  升级 / 未装部署）
 
-进行中 / 待办：
+正式待办（本阶段启动后推进）：
 
-- EnvRoot / 项目根参数化，扫清 `D:\ohmyenv` / `D:\ohmypwsh` 硬编码
-- PS5.1 兼容 `bootstrap.ps1`（装 pwsh7 + 部署模块 + 注册 PATH）
-- 脚本收敛为 `ohmyenv.psm1` / `ohmyenv.psd1` 模块
-- `ohmyenv pack` / `ohmyenv unpack` 打包迁移与换机还原实测
+- 扫清残留硬编码：`set-claude-config.ps1`（`D:\ohmyenv`）、`set-claude-statusline.ps1`
+  （`D:\ohmypwsh`）、`verify-codex-handover.ps1`（`D:\ohmyenv`）
+- `omp.psd1` 模块清单（omp.psm1 已有，补清单 + 安装到 PSModulePath）
+- PS5.1 兼容 `bootstrap.ps1`（装 pwsh7 + 部署 omp 模块 + 注册 PATH，人类初始部署入口）
+- `ohmyenv unpack` 换机/换路径还原实测（验收标准 2）

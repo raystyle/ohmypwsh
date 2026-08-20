@@ -111,6 +111,7 @@ function New-ToolDef {
         '7z' {
             @{
                 Category       = 'base'
+                TagPrefix      = ''
                 Repo           = 'ip7z/7zip'
                 AssetPattern   = '^7z[0-9]+-extra\.7z$'
                 BootstrapAsset = '7zr.exe'
@@ -269,6 +270,8 @@ function Save-EnvLock {
         $lines.Add("            Bin          = '$($d.Bin)'")
         $lines.Add("            Exe          = '$($d.Exe)'")
         $lines.Add("            Extract      = '$($d.Extract)'")
+        if ($d.Kind) { $lines.Add("            Kind         = '$($d.Kind)'") }
+        if ($d.BootstrapAsset) { $lines.Add("            BootstrapAsset = '$($d.BootstrapAsset)'") }
         $lines.Add("            Sha256       = '$($d.Sha256)'")
         $lines.Add('        }')
     }
@@ -364,13 +367,14 @@ function Resolve-ToolVersion {
     } elseif ($Tag) {
         $release = Get-GitHubRelease -Repo $d.Repo -Tag $Tag
     } elseif ($Version) {
-        $release = Get-GitHubRelease -Repo $d.Repo -Tag "v$Version"
+        $prefix = if ($null -ne $d.TagPrefix) { $d.TagPrefix } else { 'v' }
+        $release = Get-GitHubRelease -Repo $d.Repo -Tag "$prefix$Version"
     } else {
         if (-not $d.Tag) { throw "$Tool 尚未 pin 版本。先执行: ohmyenv pin $Tool -Latest（或 -Version <版本>）" }
         $release = Get-GitHubRelease -Repo $d.Repo -Tag $d.Tag
     }
     $asset = Find-ReleaseAsset -Release $release -Pattern $d.AssetPattern
-    $prefix  = if ($d.TagPrefix) { $d.TagPrefix } else { 'v' }
+    $prefix  = if ($null -ne $d.TagPrefix) { $d.TagPrefix } else { 'v' }
     $version = $release.tag_name
     if ($d.VersionPattern -and $asset.name -match $d.VersionPattern) {
         # 如 python-build-standalone：tag 是日期，版本从资产名提取
@@ -495,7 +499,7 @@ function Get-InstalledVersion {
         'sops' { if ($line -match 'sops[ -]v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'codex' { if ($line -match 'codex-cli\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'aria2' { if ($line -match 'aria2 version (\d+\.\d+\.\d+)') { return $Matches[1] } }
-        '7z'    { if ($line -match '7-Zip\s+(\d+\.\d+)') { return $Matches[1] } }
+        '7z'    { if ($line -match '7-Zip[^\r\n]*?(\d+\.\d+)') { return $Matches[1] } }
         'uv'    { if ($line -match 'uv (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'python' { if ($line -match 'Python (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'rg'    { if ($line -match 'ripgrep (\d+\.\d+\.\d+)') { return $Matches[1] } }
@@ -578,6 +582,13 @@ function Install-ToolVersion {
     }
     Save-ReleaseAsset -Url $Resolution.AssetUrl -OutFile $cachePath -ExpectedSha256 $expectedSha
 
+    # 额外 bootstrap 资产（如 7z 的 7zr.exe：先下载最小解压器，用于解压主资产 extra.7z）
+    if ($d.BootstrapAsset) {
+        $bootUrl  = "https://github.com/$($d.Repo)/releases/download/$($Resolution.Tag)/$($d.BootstrapAsset)"
+        $bootPath = Join-Path $envRoot "cache\$($d.BootstrapAsset)"
+        Save-ReleaseAsset -Url $bootUrl -OutFile $bootPath
+    }
+
     $sha = (Get-FileHash -LiteralPath $cachePath -Algorithm SHA256).Hash
     if ($Resolution.Tag -eq $d.Tag) {
         if ($d.Sha256 -and $sha -ne $d.Sha256) { throw "$t 缓存 sha256 与锁定不符" }
@@ -639,6 +650,24 @@ function Install-ToolVersion {
             # 7zXXX-x64.exe 是 7z 归档（直接运行需提权）；Windows 自带 tar(bsdtar) 可直接解包，无需预装 7z
             tar -xf $cachePath -C $installDir
             if ($LASTEXITCODE -ne 0) { throw "$t 7z 归档解包失败（exit=$LASTEXITCODE）" }
+        }
+        '7z-extra' {
+            # 绿色部署：用 7zr.exe（最小解压器）解压 extra.7z，取 x64/7za.exe shim 成 7z.exe
+            $boot = Join-Path $envRoot "cache\$($d.BootstrapAsset)"
+            if (-not (Test-Path -LiteralPath $boot)) { throw "$t 缺少 BootstrapAsset: $($d.BootstrapAsset)" }
+            & $boot x $cachePath "-o$installDir" -y
+            if ($LASTEXITCODE -ne 0) { throw "$t extra.7z 解压失败（exit=$LASTEXITCODE）" }
+            $src7za = Join-Path $installDir 'x64\7za.exe'
+            if (-not (Test-Path -LiteralPath $src7za)) { $src7za = Join-Path $installDir '7za.exe' }
+            if (-not (Test-Path -LiteralPath $src7za)) { throw "$t extra.7z 内未找到 7za.exe" }
+            Copy-Item -LiteralPath $src7za -Destination (Join-Path $installDir '7z.exe') -Force
+            # 只保留 7z.exe（7za 单文件 standalone），清理解压出的其余文件保持目录干净
+            Get-ChildItem -LiteralPath $installDir -Recurse -File |
+                Where-Object { $_.Name -ne '7z.exe' } |
+                Remove-Item -Force -ErrorAction SilentlyContinue
+            Get-ChildItem -LiteralPath $installDir -Recurse -Directory |
+                Sort-Object { $_.FullName.Length } -Descending |
+                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
         }
         default { throw "未知解压类型: $($d.Extract)" }
     }

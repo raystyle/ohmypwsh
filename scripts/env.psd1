@@ -13,8 +13,9 @@
             SumsPattern  = 'PowerShell-[0-9.]+-win-x64\.msi'
             Dir          = 'pwsh'
             Bin          = ''
-            Exe          = 'C:\Program Files\PowerShell\7\pwsh.exe'
+            Exe          = '%LOCALAPPDATA%\Programs\PowerShell\7\pwsh.exe'
             Extract      = 'msi'
+            Kind         = 'installer'
             Sha256       = ''
         }
         'age' = @{
@@ -60,6 +61,7 @@
             Bin          = 'codex\bin'
             Exe          = 'codex\bin\codex.exe'
             Extract      = 'targz'
+            Kind         = 'installer'
             Sha256       = 'CC09F725B8ED133B76A2882FDA750B3F1672B10701E8172C9680B5AB79B861FF'
         }
         'git' = @{
@@ -75,6 +77,7 @@
             Bin          = 'git\cmd'
             Exe          = 'git\cmd\git.exe'
             Extract      = '7zsfx'
+            Kind         = 'installer'
             Sha256       = '016E84230A3767F0C6B3788E79BA0C58A17377086801719D46700FCA4F7B36B5'
         }
         'gh' = @{
@@ -112,15 +115,16 @@
             Tag          = '26.02'
             TagPrefix    = ''
             Repo         = 'ip7z/7zip'
-            AssetPattern = '^7z[0-9]+-x64\.exe$'
-            Asset        = '7z2602-x64.exe'
+            AssetPattern = '^7z[0-9]+-extra\.7z$'
+            Asset        = '7z2602-extra.7z'
             SumsAsset    = ''
             SumsPattern  = ''
             Dir          = '7z'
             Bin          = '7z'
             Exe          = '7z\7z.exe'
-            Extract      = '7z-archive'
-            Sha256       = '6745FA76DC2EA031596D8678F6F6B99C3C1B435B4164A63485ADBBC7B8D82EF0'
+            Extract      = '7z-extra'
+            BootstrapAsset = '7zr.exe'
+            Sha256       = '081DF9E9311DFD9C9E0E98C1C80180B99BB51E4CB24156B5F3057FE3C259D70A'
         }
         'uv' = @{
             Version      = '0.12.5'

@@ -113,6 +113,7 @@
 - Claude Code 状态栏 context 显示统一为 `context: 已用% (已用/窗口)`（如 `context: 0% (0/1M)`）：`claude-statusline.ps1` 用 `used_percentage` + `context_window_size` 计算窗口内占用（`FmtTok` 格式化 0/k/M）；Codex 状态栏为内置组件无自定义 command，无法用该格式，仅能 `context-used`（`Context 3% used`）+ `context-window-size`（`1M window`）近似
 - Codex 状态栏精简：移除 `run-state`（Ready 状态）与 `permissions`（Full Access 显示）；`context-remaining` 换成 `context-used` + `context-window-size`（显示 `Context 3% used · 1M window`），与 Claude 已用%语义对齐；`set-codex-statusline.ps1` 默认组合同步
 - rmux send-keys 回车原语实测修正：回车键名只有 `Enter` 有效（`C-m` 被当字面量 `^M` 污染输入框）；TUI agent（codex/claude/kimi）提交判断改用进程 CPU 增长（capture 因 alternate screen 为空），发送前记 CPU、发送后增量 >0.5 判定已提交，不再盲目连发回车；`docs\research\rmux-usage.md` 踩坑第 8 条 + SKILL.md「Agent 状态判断原语」同步
+- 7z 绿色部署落地：新增 `7z-extra` 解压类型（下载 `7zr.exe` + `7zXXXX-extra.7z` → 7zr 解压 → `x64/7za.exe` shim 成 `7z.exe` 单文件 1.3MB，替换旧的 tar 解压多文件部署）；`New-ToolDef` 7z 改 `AssetPattern='^7z[0-9]+-extra\.7z$'` + `BootstrapAsset='7zr.exe'` + `TagPrefix=''`；`Install-ToolVersion` 支持 BootstrapAsset 额外下载；`Save-EnvLock` 补充 `Kind`/`BootstrapAsset` 可选字段写盘；修复无 v 前缀 tag（7z tag 为 `26.02`）的 `-Version` 解析（`TagPrefix` 空串判断）；`Get-InstalledVersion` 7z 正则兼容 7za 的 `7-Zip (a) 26.02 (x64)` 输出
 
 ### Fixed
 
