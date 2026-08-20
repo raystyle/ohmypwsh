@@ -22,7 +22,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'helpers.ps1')
 
 $script:ModuleLockPath = Join-Path $PSScriptRoot 'modules.psd1'
-$script:EnvRoot        = 'D:\ohmyenv'
+$script:EnvRoot        = Get-DefaultEnvRoot
 $script:ModuleRoot     = Join-Path $script:EnvRoot 'modules'
 $script:ModuleCache    = Join-Path $script:EnvRoot 'cache\modules'
 $script:ModuleDocUser  = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell\Modules'

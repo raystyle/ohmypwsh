@@ -60,6 +60,7 @@
 
 ### Changed
 
+- 残留硬编码清理（可重定位）：`set-claude-config.ps1`（`$toolBin`/wheel 缓存/`CLAUDE_CODE_GIT_BASH_PATH`/`$mainProject` 改为 EnvRoot 与项目根派生）、`set-claude-statusline.ps1`（statusLine command 从 `$PSScriptRoot` 派生，不再写死 `D:/ohmypwsh`）、`verify-codex-handover.ps1`（`$expected` 走 EnvRoot 派生，codex 版本改读 `env.psd1` 不再硬编码）、`set-pwsh.ps1`（cache 目录 EnvRoot 派生，PS5.1 兼容内联解析）、`psmodule.ps1`（`$script:EnvRoot = Get-DefaultEnvRoot`）
 - Claude Code 状态栏微调：移除成本（`$0.14`）显示；目录显示完整路径（如 `D:\ohmypwsh`）而非叶子名
 - Claude Code 安装与配置完全移交 ohmyenv：omc 侧 `.scripts\base\claude.ps1`（安装器/Profile 系统）、`.config\claude\`（GLM/DeepSeek/Zyun 明文 profile）、`~/.local\bin\claude.exe`（旧 2.1.187）删除；omc.ps1 `$BaseScripts` 清空、CLAUDE.md 与 `.claude\rules\claude-config.md` 同步标注接管
 - `set-claude-config.ps1` 重构：用户级只写 `ANTHROPIC_BASE_URL`，其余配置收敛进 settings.json env；幂等删除 omc 遗留环境变量（`[NullString]::Value` 真删）；PATH/PSModulePath 清理

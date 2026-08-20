@@ -19,7 +19,8 @@ $target  = [version]$Version
 $tag     = "v$Version"
 $msiName = "PowerShell-$Version-win-x64.msi"
 $msiUrl  = "https://github.com/PowerShell/PowerShell/releases/download/$tag/$msiName"
-$cacheDir = 'D:\ohmyenv\cache'
+$envRoot  = if ($env:OHMYENV_ROOT -and $env:OHMYENV_ROOT.Trim()) { $env:OHMYENV_ROOT.Trim().TrimEnd('\') } elseif (Test-Path 'D:\') { 'D:\ohmyenv' } else { 'C:\ohmyenv' }
+$cacheDir = Join-Path $envRoot 'cache'
 $msiPath  = Join-Path $cacheDir $msiName
 
 Write-Host "===== PowerShell 7 一键幂等安装/升级（目标 $Version）=====" -ForegroundColor Cyan

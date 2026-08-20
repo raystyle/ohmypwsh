@@ -113,8 +113,9 @@ pwsh7，部署模块 CLI，产物分安装包/部署包两类，支持压缩包�
 
 正式待办（本阶段启动后推进）：
 
-- 扫清残留硬编码：`set-claude-config.ps1`（`D:\ohmyenv`）、`set-claude-statusline.ps1`
-  （`D:\ohmypwsh`）、`verify-codex-handover.ps1`（`D:\ohmyenv`）
+- 已完成：扫清残留硬编码（`set-claude-config.ps1` / `set-claude-statusline.ps1` /
+  `verify-codex-handover.ps1` / `set-pwsh.ps1` / `psmodule.ps1` 全部 EnvRoot/项目根派生；
+  `env.psd1` 的 `EnvRoot` 与 `modules.psd1` 的 `ModuleRoot` 为持久化配置保留）
 - `omp.psd1` 模块清单（omp.psm1 已有，补清单 + 安装到 PSModulePath）
 - PS5.1 兼容 `bootstrap.ps1`（装 pwsh7 + 部署 omp 模块 + 注册 PATH，人类初始部署入口）
 - `ohmyenv unpack` 换机/换路径还原实测（验收标准 2）

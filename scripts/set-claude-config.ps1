@@ -5,7 +5,8 @@
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'helpers.ps1')   # 重建 PATH（注册表权威）
 
-$toolBin = 'D:\ohmyenv\uv-tools\bin'
+$envRoot  = Get-DefaultEnvRoot
+$toolBin  = Join-Path $envRoot 'uv-tools\bin'
 $claudeExe = Join-Path $toolBin 'claude.exe'
 
 # ── 1. 确保 uv 工具目录环境（进程级，供本次安装使用） ──
@@ -16,7 +17,7 @@ foreach ($n in @('UV_TOOL_DIR', 'UV_TOOL_BIN_DIR', 'UV_INSTALL_DIR')) {
 # ── 2. 安装 claude-code（缺省安装；从 claude-agent-sdk wheel 解出 claude.exe） ──
 if (-not (Test-Path -LiteralPath $claudeExe)) {
     Write-Host '[INFO] 下载 claude-agent-sdk wheel 并解出 claude.exe ...' -ForegroundColor Cyan
-    $whlDir = Join-Path 'D:\ohmyenv\cache' ("claude-whl-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+    $whlDir = Join-Path (Join-Path $envRoot 'cache') ("claude-whl-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
     New-Item -ItemType Directory -Path $whlDir -Force | Out-Null
     try {
         & uv run --no-project --python 3.12 python -m pip download --no-deps --only-binary :all: -d $whlDir claude-agent-sdk
@@ -162,7 +163,7 @@ $envBlock = [ordered]@{
     'LANG'                                   = 'en_US.UTF-8'
     'PYTHONIOENCODING'                       = 'utf-8'
     'PYTHONUTF8'                             = '1'
-    'CLAUDE_CODE_GIT_BASH_PATH'              = 'D:\ohmyenv\git\bin\bash.exe'
+    'CLAUDE_CODE_GIT_BASH_PATH'              = (Join-Path $envRoot 'git\bin\bash.exe')
     # ── 安装自检关闭：claude 由 ohmyenv/uv 托管（native 二进制不在官方 ~/.local/bin），
     #    官方 DISABLE_INSTALLATION_CHECKS=1 跳过 PATH/install-method 检查警告 ──
     'DISABLE_INSTALLATION_CHECKS'            = '1'
@@ -237,7 +238,8 @@ if (Test-Path -LiteralPath $claudeJsonPath) {
             $cjChanged = $true
         }
     }
-    $mainProject = 'D:/ohmypwsh'
+    $projectRoot = Split-Path $PSScriptRoot -Parent
+    $mainProject = $projectRoot -replace '\\', '/'
     if ($projectNames -notcontains $mainProject) {
         $cj.projects | Add-Member -NotePropertyName $mainProject -NotePropertyValue ([pscustomobject]@{
             hasTrustDialogAccepted      = $true

@@ -5,11 +5,20 @@
 #       可选: -StatusLineCommand '<命令>' -Padding <0|1>
 
 param(
-    [string]$StatusLineCommand = '"C:/Program Files/PowerShell/7/pwsh.exe" -NoProfile -File D:/ohmypwsh/scripts/claude-statusline.ps1',
+    [string]$StatusLineCommand = '',
     [int]$Padding = 0
 )
 
 $ErrorActionPreference = 'Stop'
+
+if (-not $StatusLineCommand) {
+    $scriptPath = Join-Path $PSScriptRoot 'claude-statusline.ps1'
+    $scriptPath = $scriptPath -replace '\\', '/'
+    $pwshExe = (Get-Command pwsh.exe -ErrorAction SilentlyContinue).Source
+    if (-not $pwshExe) { $pwshExe = "$env:ProgramFiles\PowerShell\7\pwsh.exe" }
+    $pwshExe = $pwshExe -replace '\\', '/'
+    $StatusLineCommand = "`"$pwshExe`" -NoProfile -File $scriptPath"
+}
 
 $settingsPath = Join-Path $env:USERPROFILE '.claude\settings.json'
 New-Item -ItemType Directory -Path (Split-Path $settingsPath -Parent) -Force | Out-Null
