@@ -506,12 +506,13 @@ function Save-ReleaseAsset {
     param(
         [Parameter(Mandatory)][string]$Url,
         [Parameter(Mandatory)][string]$OutFile,
-        [string]$ExpectedSha256
+        [string]$ExpectedSha256,
+        [switch]$Force
     )
     $outDir = Split-Path -Parent $OutFile
     New-Item -ItemType Directory -Path $outDir -Force | Out-Null
 
-    if (Test-Path $OutFile) {
+    if ((Test-Path $OutFile) -and -not $Force) {
         if ($ExpectedSha256) {
             try {
                 Assert-Sha256 -File $OutFile -Expected $ExpectedSha256
@@ -530,7 +531,7 @@ function Save-ReleaseAsset {
     if ($aria2) {
         $outDir  = Split-Path -Parent $OutFile
         $outName = Split-Path -Leaf $OutFile
-        & $aria2 -x 16 -s 16 -k 1M --file-allocation=none --auto-file-renaming=false --allow-overwrite=true --summary-interval=0 --console-log-level=warn -d $outDir -o $outName $Url
+        & $aria2 -x 16 -s 16 -k 1M --file-allocation=none --auto-file-renaming=false --allow-overwrite=true --summary-interval=0 --console-log-level=warn --connect-timeout=20 --timeout=60 --max-tries=3 --retry-wait=5 -d $outDir -o $outName $Url
         if ($LASTEXITCODE -eq 0 -and (Test-Path $OutFile)) {
             if ($ExpectedSha256) { Assert-Sha256 -File $OutFile -Expected $ExpectedSha256 }
             Write-Host "[OK] 已下载（aria2 多线程）: $OutFile" -ForegroundColor Green
@@ -666,7 +667,8 @@ function Install-ToolVersion {
         if ($sumLine -match '([0-9a-fA-F]{64})\s') { $expectedSha = $Matches[1].ToUpperInvariant() }
         if (-not $expectedSha) { throw "$t SHA256SUMS 中未找到匹配资产: $($d.SumsPattern)" }
     }
-    Save-ReleaseAsset -Url $Resolution.AssetUrl -OutFile $cachePath -ExpectedSha256 $expectedSha
+    $forceDownload = ($Resolution.Tag -ne $d.Tag)
+    Save-ReleaseAsset -Url $Resolution.AssetUrl -OutFile $cachePath -ExpectedSha256 $expectedSha -Force:$forceDownload
 
     # 额外 bootstrap 资产（如 7z 的 7zr.exe：先下载最小解压器，用于解压主资产 extra.7z）
     if ($d.BootstrapAsset) {

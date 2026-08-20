@@ -133,6 +133,7 @@
 - Bun 接管：研究文档 `docs\research\bun.md`；`New-ToolDef` 新增 `bun`（`bun-windows-x64.zip` 单文件，`TagPrefix='bun-v'`）；pin 1.3.14 → deploy 到 `D:\ohmyenv\bun`（bun.exe 98MB）+ PATH 前置；`scripts\set-bun-config.ps1` 幂等配置全局 `~/.bunfig.toml` + 局部 `bunfig.toml`（`[install] registry = npmmirror`）
 - gsudo 接管：研究文档 `docs\research\gsudo.md`；`New-ToolDef` 新增 `gsudo`（`gsudo.portable.zip` 多架构，`TagPrefix='v'`）+ 新增 `gsudo` 解压类型（只取 x64 展平、删 x86/arm64/net46）；pin 2.6.1 → deploy 到 `D:\ohmyenv\gsudo` + PATH 前置；命令统一叫 `gsudo`（不建 `sudo` 别名，避免与 Windows 内置 sudo 冲突）
 - 研究文档 `docs\research\gh-cli.md` 刷新至 gh 2.97.0（2026-07-31）：新增 `discussion`（preview）、`agent-task`（preview）命令与 `reference` 等 HELP TOPICS，更新限流实测（core/graphql/search）
+- 日常实测升级：yq 4.53.4 → 4.53.6（同主版本，无影响；sha256 回填）
 
 ### Fixed
 
@@ -164,6 +165,8 @@
 - 双端 rmux skill 定稿 + Claude Code review 回归：Codex 侧（`.agents\skills\rmux`）与 Claude 侧（`.claude\skills\rmux`）统一为「新开终端窗口 + rmux 同终端多窗格分别操作 codex/claude」；skill-creator `quick_validate` 通过（PYTHONUTF8=1 解决 GBK 读取，uv --with pyyaml 补依赖）；按 Claude Code review 修复 8 项（单 agent 变体 cwd、TUI capture 空、会话复用守卫、旧 daemon 污染守卫、list-clients 竞态、`--wait-text`、tiny CLI 说明、PATH 副作用注释）+ 新增 send-keys 提交原语（发送后验证已提交，未提交补 Enter）；双窗格（codex+claude）真机回归通过（新窗口 xterm-256color 彩色、两侧均可操作）
 - `Invoke-GitHubApi` 兜底扩展：api.github.com 直连发生 SSL/TLS/连接/超时失败时也切换 `gh api` 认证通道（原先仅 403/rate-limit/502/503/504）；本机 `ohmyenv daily -DryRun` 曾因 api.github.com 直连 SSL 失败中断，修复后全量 20 工具经 gh api 兜底跑通
 - `Resolve-ToolVersion -Latest` 的 `v` 前缀丢失（TagPrefix 空串回写）：pwsh/age/sops/git/gh/yq/rmux/starship 未在 `New-ToolDef` 显式声明 `TagPrefix`，`Save-EnvLock` 把 `$null` 写成 `''`，重载后不再按默认 `v` 剥前缀，导致 `daily -DryRun` 把同版本/补丁升级误判为「跨主版本」；为这 8 个工具显式补 `TagPrefix='v'` 并同步 `env.psd1`，yq 4.53.4→4.53.6 恢复为「同主版本预览」
+- 版本无关资产名的升级缓存复用 bug：`yq_windows_amd64.exe` 等资产文件名不含版本号，升级时 `Save-ReleaseAsset` 无 sha 基准直接复用旧缓存，导致安装后「版本不符」；新增 `-Force` 参数，`Install-ToolVersion` 在 `Resolution.Tag -ne 锁定 Tag`（升级）时强制重下，yq 4.53.4→4.53.6 实测修复
+- aria2 下载长时间 0B 卡住：GitHub CDN 偶发 SSL/TLS handshake 失败，aria2 缺超时会卡住；下载参数加 `--connect-timeout=20 --timeout=60 --max-tries=3 --retry-wait=5` 快速失败并回落 curl
 
 ### Removed
 

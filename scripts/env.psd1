@@ -262,8 +262,8 @@
             Sha256       = 'A6FC67FEDAF9128A3309A1E2EBB8B986AECCF70122EE46D2CB4849E423F0C627'
         }
         'yq' = @{
-            Version      = '4.53.4'
-            Tag          = 'v4.53.4'
+            Version      = '4.53.6'
+            Tag          = 'v4.53.6'
             TagPrefix    = 'v'
             Repo         = 'mikefarah/yq'
             AssetPattern = '^yq_windows_amd64\.exe$'
@@ -274,7 +274,7 @@
             Bin          = 'yq'
             Exe          = 'yq\yq.exe'
             Extract      = 'copy'
-            Sha256       = 'ACF5C8F9B49B173A30C413636A72A0CC4ECCECC3EED137FD0B2C89587A1C8766'
+            Sha256       = 'ECE3DD8BB50D39F93610506273EA262FEB91E5C486BBDDBB10ABF91B2A6C0F14'
         }
         'rmux' = @{
             Version      = '0.10.0'
