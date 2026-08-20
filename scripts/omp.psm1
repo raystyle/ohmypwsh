@@ -175,7 +175,7 @@ omp - Agent 环境部署与管理模块 CLI
   omp unpack [-Zip <部署包.zip>]
   omp help
 
-工具: pwsh / gh / git / age / sops / codex / aria2 / 7z / uv / python / rg / jq / yq / rmux / starship（all = 全部）
+工具: pwsh / gh / git / age / sops / codex / aria2 / 7z / dotnet / fnm / uv / python / rg / jq / yq / rmux / starship（all = 全部）
 '@
         }
         default {

@@ -10,7 +10,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [En
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
 # 工具分层：核心基础工具（密钥 key / 智能体环境 agent / 项目管理 project / 基础工具 base）
 #           + 扩展工具 extras；ToolNames 顺序 = 引导安装/展示/日常更新顺序（核心先装齐，再稳定扩展）
-$script:ToolNames = @('pwsh', 'age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'dotnet', 'nvm', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship')
+$script:ToolNames = @('pwsh', 'age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'dotnet', 'fnm', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship')
 $script:ToolCategories = @{
     key     = '密钥'
     agent   = '智能体环境'
@@ -131,15 +131,15 @@ function New-ToolDef {
                 Extract  = 'zip'
             }
         }
-        'nvm' {
+        'fnm' {
             @{
                 Category     = 'base'
-                TagPrefix    = ''
-                Repo         = 'coreybutler/nvm-windows'
-                AssetPattern = '^nvm-noinstall\.zip$'
-                Dir          = 'nvm'
-                Bin          = 'nvm'
-                Exe          = 'nvm\nvm.exe'
+                TagPrefix    = 'v'
+                Repo         = 'Schniz/fnm'
+                AssetPattern = '^fnm-windows\.zip$'
+                Dir          = 'fnm'
+                Bin          = 'fnm'
+                Exe          = 'fnm\fnm.exe'
                 Extract      = 'zip'
             }
         }
@@ -516,7 +516,6 @@ function Get-InstalledVersion {
     $versionArgs = switch ($Tool) {
         '7z'   { @('--help') }
         'rmux' { @('-V') }   # rmux 为 tmux 风格，--version 不支持，用 -V
-        'nvm'  { @('version') }
         default { @('--version') }
     }
     # 跳过空行（如 7z --help 首行为空行）
@@ -531,7 +530,7 @@ function Get-InstalledVersion {
         'aria2' { if ($line -match 'aria2 version (\d+\.\d+\.\d+)') { return $Matches[1] } }
         '7z'    { if ($line -match '7-Zip[^\r\n]*?(\d+\.\d+)') { return $Matches[1] } }
         'dotnet' { if ($line -match '^(\d+\.\d+\.\d+)') { return $Matches[1] } }
-        'nvm'    { if ($line -match '^(\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'fnm'    { if ($line -match 'fnm\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'uv'    { if ($line -match 'uv (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'python' { if ($line -match 'Python (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'rg'    { if ($line -match 'ripgrep (\d+\.\d+\.\d+)') { return $Matches[1] } }

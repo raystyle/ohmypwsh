@@ -83,9 +83,9 @@
   直链下载源（最新 10.0.400，官方 CDN 非 GitHub）；VS Build Tools 体积数 GB 维持 omc
 - 已完成：.NET SDK 接管（10.0.400，`CdnUrl` CDN 直链下载源扩展 + 部署到 `D:\ohmyenv\dotnet` +
   PATH 前置，实测 `dotnet --list-sdks` 10.0.400）
-- 已完成：Node.js/npm 接管（nvm-windows 1.2.2 部署到 `D:\ohmyenv\nvm` + `set-node-config.ps1`
-  配置 NVM_HOME/NVM_SYMLINK/镜像 npmmirror/registry；node 版本由 nvm 管理，待 `nvm install`
-  后生效）
+- 已完成：Node.js/npm 接管（fnm 1.39.0 部署到 `D:\ohmyenv\fnm` + `set-fnm-config.ps1` 幂等配置
+  `FNM_DIR=D:\ohmyenv\fnm-data`/镜像 npmmirror/profile 块/`.npmrc` registry；`fnm install --lts`
+  安装 node v24.19.0 并设默认；项目根 `.nvmrc` 无缝切换）
 
 ## 阶段 5：项目重定位（未开始，远期）
 
