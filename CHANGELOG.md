@@ -68,6 +68,10 @@
 - ohmyenv 支持 `msi` 安装类型：下载 MSI 到缓存 → per-user 静默安装（`MSIINSTALLPERUSER=1`，不需管理员）→ 版本验证；msi 类 Bin 为空不注册 env PATH，`status` 对 msi 用 `ExpandEnvironmentVariables` 解析系统路径
 - PowerShell 7 一键幂等安装/升级脚本 `scripts\set-pwsh.ps1`（PS5.1 兼容 + UTF-8 BOM）：检测系统已装 pwsh7（Program Files / LOCALAPPDATA）→ 决定新装 / 升级 / 跳过；非管理员自动提权重启；缓存复用 MSI；msiexec 静默安装（UpgradeCode 自动替换旧版）；重新检测验证版本。因 pwsh 不能安全自更新（替换正在运行的 exe/dll 破坏会话），由 `powershell.exe` 独立运行
 - PowerShell 7 遥测关闭：`set-pwsh.ps1` 安装/升级加 `DISABLE_TELEMETRY=1`，安装后幂等写用户级 `POWERSHELL_TELEMETRY_OPTOUT=1` + `POWERSHELL_UPDATECHECK=Off`；研究文档 `docs\research\powershell-telemetry.md`（官方 about_Telemetry + GitHub Issue 实测）
+- 官方哈希校验机制：`helpers.ps1` 新增 `Get-OfficialSha256`，下载前优先从官方校验源解析目标资产 SHA256——统一清单（`SumsAsset` + `SumsPattern`，`SumsAsset` 支持 `{version}`/`{tag}` 占位）或逐资产 `.sha256`（`AssetShaSuffix`）；`Install-ToolVersion` 下载前必须校验官方哈希，缺失时回退锁定 sha 并显式 WARN；为 pwsh/sops/codex/gh/bun/uv/python/rg/yq/rmux/starship/gsudo/just/nushell 补齐校验元数据；`Save-EnvLock` 持久化 `AssetShaSuffix`
+- just 接管：`New-ToolDef` 新增 `just`（`casey/just`，zip + `SHA256SUMS`，`TagPrefix=''`）；pin 1.58.0 → deploy 到 `D:\ohmyenv\just` + PATH 前置；`Get-InstalledVersion` 解析 `just 1.58.0`
+- ast-grep 接管：`New-ToolDef` 新增 `ast-grep`（`ast-grep/ast-grep`，`app-x86_64-pc-windows-msvc.zip` 版本无关资产，`TagPrefix=''`）；pin 0.45.1 → deploy 到 `D:\ohmyenv\ast-grep`（ast-grep.exe + sg.exe）+ PATH 前置；该仓库无官方校验资产，沿用 sha 回填 + 版本校验兜底
+- nushell 接管：`New-ToolDef` 新增 `nushell`（官方 `nushell/nushell`，zip + `SHA256SUMS`，`TagPrefix=''`）；pin 0.115.0 → deploy 到 `D:\ohmyenv\nushell`（nu.exe + 8 个 nu_plugin_*.exe）+ PATH 前置；新增 `scripts\set-nushell-config.ps1` 幂等注册 7 个官方插件（参考 omc PostInstall，路径转正斜杠规避 nu 转义，排除 `nu_plugin_stress_internals.exe`）
 
 ### Changed
 
@@ -134,6 +138,7 @@
 - gsudo 接管：研究文档 `docs\research\gsudo.md`；`New-ToolDef` 新增 `gsudo`（`gsudo.portable.zip` 多架构，`TagPrefix='v'`）+ 新增 `gsudo` 解压类型（只取 x64 展平、删 x86/arm64/net46）；pin 2.6.1 → deploy 到 `D:\ohmyenv\gsudo` + PATH 前置；命令统一叫 `gsudo`（不建 `sudo` 别名，避免与 Windows 内置 sudo 冲突）
 - 研究文档 `docs\research\gh-cli.md` 刷新至 gh 2.97.0（2026-07-31）：新增 `discussion`（preview）、`agent-task`（preview）命令与 `reference` 等 HELP TOPICS，更新限流实测（core/graphql/search）
 - 日常实测升级：yq 4.53.4 → 4.53.6（同主版本，无影响；sha256 回填）
+- omc 双轨与已接管项清理（2026-08-20）：`omc.ps1` 注册移除 aria2/bun/pwsh/just/ast-grep/nushell；脚本 `.removed-20260820` 改名保留；`.envs` 二进制与 `.envs\tools\bun` 目录改名保留；nushell 旧配置 `%APPDATA%\nushell` 与 omc `.config\nushell` 清理；`CLAUDE.md` 注册表与工具一览同步
 
 ### Fixed
 
@@ -167,6 +172,7 @@
 - `Resolve-ToolVersion -Latest` 的 `v` 前缀丢失（TagPrefix 空串回写）：pwsh/age/sops/git/gh/yq/rmux/starship 未在 `New-ToolDef` 显式声明 `TagPrefix`，`Save-EnvLock` 把 `$null` 写成 `''`，重载后不再按默认 `v` 剥前缀，导致 `daily -DryRun` 把同版本/补丁升级误判为「跨主版本」；为这 8 个工具显式补 `TagPrefix='v'` 并同步 `env.psd1`，yq 4.53.4→4.53.6 恢复为「同主版本预览」
 - 版本无关资产名的升级缓存复用 bug：`yq_windows_amd64.exe` 等资产文件名不含版本号，升级时 `Save-ReleaseAsset` 无 sha 基准直接复用旧缓存，导致安装后「版本不符」；新增 `-Force` 参数，`Install-ToolVersion` 在 `Resolution.Tag -ne 锁定 Tag`（升级）时强制重下，yq 4.53.4→4.53.6 实测修复
 - aria2 下载长时间 0B 卡住：GitHub CDN 偶发 SSL/TLS handshake 失败，aria2 缺超时会卡住；下载参数加 `--connect-timeout=20 --timeout=60 --max-tries=3 --retry-wait=5` 快速失败并回落 curl
+- 下载未校验官方哈希（安全问题）：所有包此前只回填自算 sha256、未对照官方哈希；新增 `Get-OfficialSha256` 强制安装/升级前校验官方 SHA256SUMS 或逐资产 `.sha256`；无官方校验源的工具（age/git/aria2/7z/fnm/jq/ast-grep/oscdimg/dotnet）显式 WARN 并保留 sha 回填 + 版本校验兜底
 
 ### Removed
 

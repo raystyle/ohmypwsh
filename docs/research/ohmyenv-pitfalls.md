@@ -9,6 +9,7 @@
 - **aria2 报 OK 但文件可能残缺**：SSL/TLS 断连后进度停在 96% 仍回 OK（实测 git 56MB 包缺约 2MB）；新版本升级时缓存无 sha 基准会直接复用 → 安装后版本校验兜底，版本不符时删缓存重下
 - **aria2 对 GitHub CDN 偶发 SSL/TLS handshake 失败且会长时间 0B 卡住**：加 `--connect-timeout=20 --timeout=60 --max-tries=3 --retry-wait=5` 快速失败并回落 curl（本机 yq 下载实测）
 - **版本无关资产名（如 `yq_windows_amd64.exe`）升级会复用旧缓存**：缓存文件名不含版本，无 sha 基准时 `Save-ReleaseAsset` 直接复用 → 安装后「版本不符」；升级（Tag 变化）必须强制重下（`-Force`）
+- **下载必须校验官方哈希，不能只回填自算 sha256**：自算 sha 是自引用、无信任锚点；应优先从官方 `SHA256SUMS`（`SumsAsset` + `SumsPattern`，名称可用 `{version}`/`{tag}`）或逐资产 `.sha256`（`AssetShaSuffix`）解析目标资产哈希并校验；无官方校验源的工具（age/git/aria2/7z/fnm/jq/ast-grep/oscdimg/dotnet）只能 WARN + 版本校验兜底
 
 ## 解压
 

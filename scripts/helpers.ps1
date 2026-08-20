@@ -10,7 +10,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [En
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
 # 工具分层：核心基础工具（密钥 key / 智能体环境 agent / 项目管理 project / 基础工具 base）
 #           + 扩展工具 extras；ToolNames 顺序 = 引导安装/展示/日常更新顺序（核心先装齐，再稳定扩展）
-$script:ToolNames = @('pwsh', 'age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'gsudo', 'oscdimg', 'dotnet', 'fnm', 'bun', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship')
+$script:ToolNames = @('pwsh', 'age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'gsudo', 'oscdimg', 'dotnet', 'fnm', 'bun', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship', 'just', 'ast-grep', 'nushell')
 $script:ToolCategories = @{
     key     = '密钥'
     agent   = '智能体环境'
@@ -55,6 +55,8 @@ function New-ToolDef {
                 TagPrefix    = 'v'
                 Repo         = 'getsops/sops'
                 AssetPattern = '^sops-v[0-9.]+\.amd64\.exe$'
+                SumsAsset    = 'sops-v{version}.checksums.txt'
+                SumsPattern  = 'sops-v.*\.amd64\.exe'
                 Dir          = 'sops'
                 Bin          = 'sops'
                 Exe          = 'sops\sops.exe'
@@ -95,6 +97,8 @@ function New-ToolDef {
                 TagPrefix    = 'v'
                 Repo         = 'cli/cli'
                 AssetPattern = '^gh_[0-9.]+_windows_amd64\.zip$'
+                SumsAsset    = 'gh_{version}_checksums.txt'
+                SumsPattern  = 'gh_.*_windows_amd64\.zip'
                 Dir          = 'gh'
                 Bin          = 'gh\bin'
                 Exe          = 'gh\bin\gh.exe'
@@ -132,6 +136,7 @@ function New-ToolDef {
                 TagPrefix    = 'v'
                 Repo         = 'gerardog/gsudo'
                 AssetPattern = '^gsudo\.portable\.zip$'
+                AssetShaSuffix = '.sha256'
                 Dir          = 'gsudo'
                 Bin          = 'gsudo'
                 Exe          = 'gsudo\gsudo.exe'
@@ -176,6 +181,8 @@ function New-ToolDef {
                 TagPrefix    = 'bun-v'
                 Repo         = 'oven-sh/bun'
                 AssetPattern = '^bun-windows-x64\.zip$'
+                SumsAsset    = 'SHASUMS256.txt'
+                SumsPattern  = 'bun-windows-x64\.zip'
                 Dir          = 'bun'
                 Bin          = 'bun'
                 Exe          = 'bun\bun.exe'
@@ -187,6 +194,7 @@ function New-ToolDef {
                 Category     = 'base'
                 Repo         = 'astral-sh/uv'
                 AssetPattern = '^uv-x86_64-pc-windows-msvc\.zip$'
+                AssetShaSuffix = '.sha256'
                 Dir          = 'uv'
                 Bin          = 'uv'
                 Exe          = 'uv\uv.exe'
@@ -199,6 +207,8 @@ function New-ToolDef {
                 Repo           = 'astral-sh/python-build-standalone'
                 AssetPattern   = '^cpython-3\.12\.[0-9]+(\+[0-9]+)?-x86_64-pc-windows-msvc-install_only\.tar\.gz$'
                 VersionPattern = '^cpython-(\d+\.\d+\.\d+)'
+                SumsAsset      = 'SHA256SUMS'
+                SumsPattern    = 'cpython-3\.12\.[0-9]+(\+[0-9]+)?-x86_64-pc-windows-msvc-install_only\.tar\.gz'
                 Dir            = 'python'
                 Bin            = 'python'
                 Exe            = 'python\python.exe'
@@ -210,6 +220,7 @@ function New-ToolDef {
                 Category     = 'extras'
                 Repo         = 'BurntSushi/ripgrep'
                 AssetPattern = '^ripgrep-[0-9.]+-x86_64-pc-windows-msvc\.zip$'
+                AssetShaSuffix = '.sha256'
                 Dir          = 'rg'
                 Bin          = 'rg'
                 Exe          = 'rg\rg.exe'
@@ -234,6 +245,8 @@ function New-ToolDef {
                 TagPrefix    = 'v'
                 Repo         = 'mikefarah/yq'
                 AssetPattern = '^yq_windows_amd64\.exe$'
+                SumsAsset    = 'checksums'
+                SumsPattern  = 'yq_windows_amd64\.exe'
                 Dir          = 'yq'
                 Bin          = 'yq'
                 Exe          = 'yq\yq.exe'
@@ -260,9 +273,50 @@ function New-ToolDef {
                 TagPrefix    = 'v'
                 Repo         = 'starship/starship'
                 AssetPattern = '^starship-x86_64-pc-windows-msvc\.zip$'
+                AssetShaSuffix = '.sha256'
                 Dir          = 'starship'
                 Bin          = 'starship'
                 Exe          = 'starship\starship.exe'
+                Extract      = 'zip'
+            }
+        }
+        'just' {
+            @{
+                Category     = 'extras'
+                TagPrefix    = ''
+                Repo         = 'casey/just'
+                AssetPattern = '^just-\d+\.\d+\.\d+-x86_64-pc-windows-msvc\.zip$'
+                SumsAsset    = 'SHA256SUMS'
+                SumsPattern  = 'just-.*-x86_64-pc-windows-msvc\.zip'
+                Dir          = 'just'
+                Bin          = 'just'
+                Exe          = 'just\just.exe'
+                Extract      = 'zip'
+            }
+        }
+        'ast-grep' {
+            @{
+                Category     = 'extras'
+                TagPrefix    = ''
+                Repo         = 'ast-grep/ast-grep'
+                AssetPattern = '^app-x86_64-pc-windows-msvc\.zip$'
+                Dir          = 'ast-grep'
+                Bin          = 'ast-grep'
+                Exe          = 'ast-grep\ast-grep.exe'
+                Extract      = 'zip'
+            }
+        }
+        'nushell' {
+            @{
+                Category     = 'extras'
+                TagPrefix    = ''
+                Repo         = 'nushell/nushell'
+                AssetPattern = '^nu-\d+\.\d+\.\d+-x86_64-pc-windows-msvc\.zip$'
+                SumsAsset    = 'SHA256SUMS'
+                SumsPattern  = 'nu-.*-x86_64-pc-windows-msvc\.zip'
+                Dir          = 'nushell'
+                Bin          = 'nushell'
+                Exe          = 'nushell\nu.exe'
                 Extract      = 'zip'
             }
         }
@@ -343,6 +397,7 @@ function Save-EnvLock {
         $lines.Add("            Extract      = '$($d.Extract)'")
         if ($d.Kind) { $lines.Add("            Kind         = '$($d.Kind)'") }
         if ($d.BootstrapAsset) { $lines.Add("            BootstrapAsset = '$($d.BootstrapAsset)'") }
+        if ($d.AssetShaSuffix) { $lines.Add("            AssetShaSuffix = '$($d.AssetShaSuffix)'") }
         $lines.Add("            Sha256       = '$($d.Sha256)'")
         $lines.Add('        }')
     }
@@ -555,6 +610,48 @@ function Save-ReleaseAsset {
     Write-Host "[OK] 已下载（兜底）: $OutFile" -ForegroundColor Green
 }
 
+function Get-OfficialSha256 {
+    <#
+    .SYNOPSIS
+        从官方校验资产解析目标版本资产的标准 SHA256；无官方校验源时返回 $null。
+        支持两类官方来源：
+          1) 统一清单（SumsAsset + SumsPattern，名称可用 {version}/{tag} 占位）
+          2) 逐资产 .sha256（AssetShaSuffix，即 <资产>.sha256）
+    #>
+    param(
+        [Parameter(Mandatory)][hashtable]$Lock,
+        [Parameter(Mandatory)]$Resolution
+    )
+    $t = $Resolution.Tool
+    $d = $Lock.Tools[$t]
+    $envRoot = $Lock.EnvRoot
+    $tag = $Resolution.Tag
+    $ver = $Resolution.Version
+
+    if ($d.SumsAsset) {
+        $sumsName = $d.SumsAsset.Replace('{version}', $ver).Replace('{tag}', $tag)
+        $sumsPath = Join-Path $envRoot "cache\$sumsName"
+        $sumsUrl  = "https://github.com/$($d.Repo)/releases/download/$tag/$sumsName"
+        if (Test-Path -LiteralPath $sumsPath) { Remove-Item -LiteralPath $sumsPath -Force }
+        $null = Save-ReleaseAsset -Url $sumsUrl -OutFile $sumsPath -Force
+        $sumLine = Get-Content -LiteralPath $sumsPath | Where-Object { $_ -match $d.SumsPattern } | Select-Object -First 1
+        if ($sumLine -match '([0-9a-fA-F]{64})') { return $Matches[1].ToUpperInvariant() }
+        throw "$t 官方校验清单中未找到匹配资产: $($d.SumsPattern)"
+    }
+
+    if ($d.AssetShaSuffix) {
+        $shaPath = Join-Path $envRoot "cache\$($Resolution.AssetName)$($d.AssetShaSuffix)"
+        $shaUrl  = "$($Resolution.AssetUrl)$($d.AssetShaSuffix)"
+        if (Test-Path -LiteralPath $shaPath) { Remove-Item -LiteralPath $shaPath -Force }
+        $null = Save-ReleaseAsset -Url $shaUrl -OutFile $shaPath -Force
+        $shaText = (Get-Content -LiteralPath $shaPath -Raw).Trim()
+        if ($shaText -match '([0-9a-fA-F]{64})') { return $Matches[1].ToUpperInvariant() }
+        throw "$t 官方 .sha256 解析失败: $shaUrl"
+    }
+
+    $null
+}
+
 function Get-InstalledVersion {
     param(
         [Parameter(Mandatory)][string]$ExePath,
@@ -594,6 +691,9 @@ function Get-InstalledVersion {
         'yq'    { if ($line -match 'version v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'rmux'  { if ($line -match 'rmux (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'starship' { if ($line -match 'starship (\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'just'    { if ($line -match 'just\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'ast-grep' { if ($line -match '(\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'nushell' { if ($line -match '^(\d+\.\d+\.\d+)') { return $Matches[1] } }
     }
     $null
 }
@@ -656,16 +756,13 @@ function Install-ToolVersion {
         return
     }
 
-    $expectedSha = if ($d.Sha256 -and $Resolution.Tag -eq $d.Tag) { $d.Sha256 } else { '' }
-    if (-not $expectedSha -and $d.SumsAsset -and $Resolution.Tag -eq $d.Tag) {
-        # 从官方 SHA256SUMS 取期望校验值（资产名不含版本，必须按清单校验）
-        $sumsPath = Join-Path $envRoot "cache\$($d.SumsAsset)"
-        $sumsUrl  = "https://github.com/$($d.Repo)/releases/download/$($Resolution.Tag)/$($d.SumsAsset)"
-        if (Test-Path $sumsPath) { Remove-Item -LiteralPath $sumsPath -Force }
-        Save-ReleaseAsset -Url $sumsUrl -OutFile $sumsPath
-        $sumLine = Get-Content $sumsPath | Where-Object { $_ -match $d.SumsPattern } | Select-Object -First 1
-        if ($sumLine -match '([0-9a-fA-F]{64})\s') { $expectedSha = $Matches[1].ToUpperInvariant() }
-        if (-not $expectedSha) { throw "$t SHA256SUMS 中未找到匹配资产: $($d.SumsPattern)" }
+    # 优先官方校验源（统一清单 / 逐资产 .sha256），缺失时才回退锁定 sha（同 tag 缓存复用）
+    $expectedSha = Get-OfficialSha256 -Lock $Lock -Resolution $Resolution
+    if (-not $expectedSha -and $d.Sha256 -and $Resolution.Tag -eq $d.Tag) {
+        $expectedSha = $d.Sha256
+    }
+    if (-not $expectedSha) {
+        Write-Host "[WARN] $t 无官方校验源，仅依赖 sha256 回填 + 安装后版本校验兜底" -ForegroundColor Yellow
     }
     $forceDownload = ($Resolution.Tag -ne $d.Tag)
     Save-ReleaseAsset -Url $Resolution.AssetUrl -OutFile $cachePath -ExpectedSha256 $expectedSha -Force:$forceDownload

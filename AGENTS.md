@@ -91,6 +91,7 @@ pwsh -NoProfile -File scripts\set-claude-config.ps1        # Claude Code 配置�
 pwsh -NoProfile -File scripts\set-claude-statusline.ps1    # Claude Code 状态栏幂等合并（statusLine 块，纯 PowerShell）
 pwsh -NoProfile -File scripts\set-fnm-config.ps1           # fnm/Node 接管（FNM_DIR/镜像/PATH/profile/.npmrc，幂等）
 pwsh -NoProfile -File scripts\set-bun-config.ps1           # bun 镜像源（全局 ~/.bunfig.toml + 局部 bunfig.toml，幂等）
+pwsh -NoProfile -File scripts\set-nushell-config.ps1       # 官方 nushell 插件注册（nu_plugin_* 逐个 plugin add，幂等）
 pwsh -NoProfile -File scripts\deploy-omp.ps1               # 部署 omp 模块到 EnvRoot\modules\omp（幂等）
 pwsh -NoProfile -File scripts\sops-encrypt-anthropic.ps1   # ANTHROPIC_API_KEY SOPS 加密备份
 pwsh -NoProfile -File scripts\sops-test.ps1                # SOPS 冒烟测试
