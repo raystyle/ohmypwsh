@@ -32,7 +32,7 @@ function New-ToolDef {
                 SumsPattern  = 'PowerShell-[0-9.]+-win-x64\.msi'
                 Dir          = 'pwsh'
                 Bin          = ''
-                Exe          = '%LOCALAPPDATA%\Programs\PowerShell\7\pwsh.exe'
+                Exe          = '%ProgramFiles%\PowerShell\7\pwsh.exe'
                 Extract      = 'msi'
             }
         }
@@ -652,11 +652,10 @@ function Install-ToolVersion {
 
     switch ($d.Extract) {
         'msi' {
-            # 安装包：per-user 静默安装（不需管理员、可迁移），不绿色解压；MSI 自行注册用户 PATH
-            $perUserTarget = Join-Path $env:LOCALAPPDATA 'Programs\PowerShell\7'
-            $msiArgs = "/i `"$cachePath`" /qn /norestart MSIINSTALLPERUSER=1 APPLICATIONFOLDER=`"$perUserTarget`""
-            Start-Process -FilePath 'msiexec.exe' -ArgumentList $msiArgs -Wait
-            if ($LASTEXITCODE -ne 0) { throw "$t MSI 安装失败（exit=$LASTEXITCODE）" }
+            # 安装包：per-machine 静默安装（与 set-pwsh.ps1 一致），不绿色解压；MSI 自行注册 PATH
+            $msiArgs = "/i `"$cachePath`" /qn /norestart DISABLE_TELEMETRY=1"
+            $p = Start-Process -FilePath 'msiexec.exe' -ArgumentList $msiArgs -Wait -PassThru
+            if ($p.ExitCode -notin @(0, 3010)) { throw "$t MSI 安装失败（exit=$($p.ExitCode)）" }
         }
         'zip' {
             Expand-Archive -Path $cachePath -DestinationPath $installDir -Force

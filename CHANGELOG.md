@@ -122,6 +122,11 @@
 
 ### Fixed
 
+- pwsh 检测路径修正：`New-ToolDef pwsh` 的 `Exe` 由 `%LOCALAPPDATA%\Programs\PowerShell\7\pwsh.exe`
+  改为 `%ProgramFiles%\PowerShell\7\pwsh.exe`（`set-pwsh.ps1` 实际为 per-machine MSI 安装）；
+  `Install-ToolVersion` msi 分支同步改为 per-machine 静默安装（`DISABLE_TELEMETRY=1` +
+  `-PassThru` 读退出码，去掉原先的 `MSIINSTALLPERUSER=1` 与不可靠的 `$LASTEXITCODE`），
+  实测 `status` 由 `installed=-` 恢复为 `installed=7.6.5`
 - `Get-InstalledVersion` 数组展开 bug（`@versionArgs` 解析异常导致所有工具显示未安装）
 - 7z 版本解析（首行为空行）
 - `Get-EnvLock` 静态元数据与锁文件同步（如 Extract 类型变更）

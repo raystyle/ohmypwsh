@@ -13,7 +13,7 @@
             SumsPattern  = 'PowerShell-[0-9.]+-win-x64\.msi'
             Dir          = 'pwsh'
             Bin          = ''
-            Exe          = '%LOCALAPPDATA%\Programs\PowerShell\7\pwsh.exe'
+            Exe          = '%ProgramFiles%\PowerShell\7\pwsh.exe'
             Extract      = 'msi'
             Kind         = 'installer'
             Sha256       = ''
