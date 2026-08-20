@@ -18,22 +18,27 @@
 - 自定义解压类型 `gsudo`：`Expand-Archive` 后只取 `x64\` 展平到安装根，删除 `x86/arm64/net46-AnyCpu`。
 - pin v2.6.1 → deploy 到 `D:\ohmyenv\gsudo` + 前置注册 PATH；sha256 回填。
 
-## sudo 别名与 Windows 内置 sudo 冲突
+## 命令命名：只用 gsudo，不建 sudo 别名
 
-- `scripts\set-gsudo-config.ps1` 把 `gsudo.exe` 同源复制为 `sudo.exe`（幂等，供「sudo」命令使用）。
-- **注意**：Windows 11 / Server 2025（Build 26100）自带 `C:\WINDOWS\system32\sudo.exe`
-  （Windows Sudo，本机已启用，版本 1.0.1）。因 Machine PATH 位于 User PATH 之前，
-  `sudo` 会优先解析到 system32 的 Windows 内置 sudo，而非 gsudo。
-- 结论：本机直接使用 `gsudo <cmd>` 无冲突；若确需 `sudo` 指向 gsudo，可在 pwsh profile 加
-  `Set-Alias sudo gsudo`（或调整 PATH 顺序），否则 `sudo` 命中 Windows 内置 sudo。
+- **决策（用户指示）**：命令统一叫 `gsudo`，不创建 `sudo.exe` 别名，避免与 Windows 内置
+  sudo 冲突。
+- **冲突背景**：Windows 11 / Server 2025（Build 26100）自带 `C:\WINDOWS\system32\sudo.exe`
+  （Windows Sudo，本机已启用，版本 1.0.1）。因 Machine PATH 位于 User PATH 之前，若建
+  `sudo.exe` 也会被 system32 的 Windows 内置 sudo 抢先命中。
+- 使用方式：`gsudo <命令>`、`gsudo { PowerShell 脚本块 }`、`gsudo`（提升当前 shell）。
 
-## 授权缓存（UAC 一次后一段时间内免重复）
+## 授权缓存（UAC 一次后一段时间内免重复，按需开启）
 
-- 默认缓存：gsudo 会在当前控制台会话内缓存提权令牌，一段时间内重复 `gsudo` 不再弹 UAC。
-- 显式缓存会话：`gsudo cache on`（关闭 `gsudo cache off`，查看 `gsudo status`）。
+- 默认 `CacheMode=Explicit`：每次提权都弹 UAC，除非手动开启缓存会话。
+- 会话级缓存（无需改配置、无需提权）：`gsudo cache on`（关闭 `gsudo cache off`，查看
+  `gsudo status`）。
+- 自动缓存：`gsudo config CacheMode Auto`（首次弹 UAC 后自动开缓存会话，`CacheDuration`
+  默认 5 分钟）。注意：`CacheMode` 属于全局系统设置，需提权写入（实测本机走
+  `HKLM:\SOFTWARE\gsudo`）；不默认开启。
 
 ## 踩坑
 
 - `gsudo.portable.zip` 是多架构目录，不能用默认 zip 单目录展平（有 4 个顶层目录），需专用
   `gsudo` 解压类型只保留 x64。
-- `sudo.exe` shim 只是同名复制，`--help`/`--version` 仍显示 `gsudo`（程序名不随文件名变化）。
+- `gsudo config CacheMode Auto` 会触发提权并写入全局（HKLM），不是 per-user 配置；
+  若要回退默认：`gsudo config CacheMode --global --reset`。

@@ -89,7 +89,7 @@
 - 已完成：Bun 接管（oven-sh/bun 1.3.14 部署到 `D:\ohmyenv\bun` + `set-bun-config.ps1` 幂等配置
   全局 `~/.bunfig.toml` / 局部 `bunfig.toml` 镜像 npmmirror）
 - 已完成：gsudo 接管（gerardog/gsudo 2.6.1 部署到 `D:\ohmyenv\gsudo`，专用 x64 展平解压 +
-  `set-gsudo-config.ps1` 创建 `sudo.exe` 同源 shim；Windows 内置 sudo 冲突提示）
+  命令统一叫 `gsudo`，不建 `sudo` 别名，避免 Windows 内置 sudo 冲突）
 
 ## 阶段 5：项目重定位（未开始，远期）
 

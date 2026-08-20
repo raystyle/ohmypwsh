@@ -56,7 +56,7 @@
 - `research\claude-code-onboarding.md`：Claude Code 首次启动 onboarding 与安装警告（登录验证 / 工作区信任 / .local PATH 检查踩坑）
 - `research\node-fnm.md`：Node.js/npm 接管（fnm，弃用 nvm-windows，`.nvmrc` 无缝切换）
 - `research\bun.md`：Bun 接管（oven-sh/bun + `bunfig.toml` npmmirror）
-- `research\gsudo.md`：gsudo 接管（gerardog/gsudo + `sudo.exe` shim + Windows 内置 sudo 冲突）
+- `research\gsudo.md`：gsudo 接管（gerardog/gsudo，命令统一叫 `gsudo`，避开 Windows 内置 sudo）
 
 ## 项目目录索引
 
