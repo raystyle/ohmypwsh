@@ -16,6 +16,7 @@ $cargoHome  = Join-Path $rustHome '.cargo'
 $cargoBin   = Join-Path $cargoHome 'bin'
 $rustcExe   = Join-Path $cargoBin 'rustc.exe'
 $cargoExe   = Join-Path $cargoBin 'cargo.exe'
+$rustupExe  = Join-Path $cargoBin 'rustup.exe'
 $initExe    = Join-Path $envRoot 'cache\rustup-init.exe'
 $initUrl    = 'https://rsproxy.cn/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe'
 
@@ -51,6 +52,10 @@ if ((Test-Path -LiteralPath $rustcExe) -and (& $rustcExe --version 2>$null)) {
     ) -Wait -PassThru -NoNewWindow
     if ($p.ExitCode -ne 0) { throw "rustup-init 失败 exit=$($p.ExitCode)" }
 }
+
+# ── 2.5 保持最新 stable（幂等；官方固定 6 周发布，stable 只收安全补丁）──
+& $rustupExe update stable
+& $rustupExe default stable
 
 # ── 3. cargo 镜像（rsproxy sparse，幂等写入）──
 $cargoCfg = Join-Path $cargoHome 'config.toml'
