@@ -10,7 +10,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [En
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
 # 工具分层：核心基础工具（密钥 key / 智能体环境 agent / 项目管理 project / 基础工具 base）
 #           + 扩展工具 extras；ToolNames 顺序 = 引导安装/展示/日常更新顺序（核心先装齐，再稳定扩展）
-$script:ToolNames = @('pwsh', 'age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship')
+$script:ToolNames = @('pwsh', 'age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'dotnet', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship')
 $script:ToolCategories = @{
     key     = '密钥'
     agent   = '智能体环境'
@@ -119,6 +119,16 @@ function New-ToolDef {
                 Bin            = '7z'
                 Exe            = '7z\7z.exe'
                 Extract        = '7z-extra'
+            }
+        }
+        'dotnet' {
+            @{
+                Category = 'base'
+                CdnUrl   = 'https://dotnetcli.azureedge.net/dotnet/Sdk/{version}/dotnet-sdk-{version}-win-x64.zip'
+                Dir      = 'dotnet'
+                Bin      = 'dotnet'
+                Exe      = 'dotnet\dotnet.exe'
+                Extract  = 'zip'
             }
         }
         'uv' {
@@ -362,6 +372,13 @@ function Resolve-ToolVersion {
         [string]$Version
     )
     $d = $Lock.Tools[$Tool]
+    if ($d.CdnUrl) {
+        # CDN 直链来源（非 GitHub release，如 dotnet SDK）
+        $ver = if ($Version) { $Version } elseif ($d.Version) { $d.Version } elseif ($Tag) { $Tag.TrimStart('v') } else { throw "$Tool 需 -Version 指定版本（CDN 来源）" }
+        $assetUrl  = $d.CdnUrl.Replace('{version}', $ver)
+        $assetName = Split-Path $assetUrl -Leaf
+        return @{ Tool = $Tool; Tag = "v$ver"; Version = $ver; AssetName = $assetName; AssetSize = 0; AssetUrl = $assetUrl; Release = $null }
+    }
     if ($Latest) {
         $release = Get-GitHubRelease -Repo $d.Repo -Latest
     } elseif ($Tag) {
@@ -500,6 +517,7 @@ function Get-InstalledVersion {
         'codex' { if ($line -match 'codex-cli\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'aria2' { if ($line -match 'aria2 version (\d+\.\d+\.\d+)') { return $Matches[1] } }
         '7z'    { if ($line -match '7-Zip[^\r\n]*?(\d+\.\d+)') { return $Matches[1] } }
+        'dotnet' { if ($line -match '^(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'uv'    { if ($line -match 'uv (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'python' { if ($line -match 'Python (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'rg'    { if ($line -match 'ripgrep (\d+\.\d+\.\d+)') { return $Matches[1] } }

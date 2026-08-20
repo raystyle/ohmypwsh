@@ -126,6 +126,21 @@
             BootstrapAsset = '7zr.exe'
             Sha256       = '081DF9E9311DFD9C9E0E98C1C80180B99BB51E4CB24156B5F3057FE3C259D70A'
         }
+        'dotnet' = @{
+            Version      = '10.0.400'
+            Tag          = 'v10.0.400'
+            TagPrefix    = ''
+            Repo         = ''
+            AssetPattern = ''
+            Asset        = 'dotnet-sdk-10.0.400-win-x64.zip'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'dotnet'
+            Bin          = 'dotnet'
+            Exe          = 'dotnet\dotnet.exe'
+            Extract      = 'zip'
+            Sha256       = '83FBF0699A984D08063579B06EDFC8C327AF62234B1AAEEADC5D7AE7F5A0514A'
+        }
         'uv' = @{
             Version      = '0.12.5'
             Tag          = '0.12.5'

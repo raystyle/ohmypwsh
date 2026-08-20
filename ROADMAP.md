@@ -81,6 +81,8 @@
 - 已完成：PowerShell 模块 / .NET 库 / VS Build Tools 研究（`docs\research\powershell-dotnet-vsbuild.md`）
   —— 结论：模块按需 `Install-PSResource`（已有 `psmodule.ps1`）；.NET SDK 可接管但需扩展 CDN
   直链下载源（最新 10.0.400，官方 CDN 非 GitHub）；VS Build Tools 体积数 GB 维持 omc
+- 已完成：.NET SDK 接管（10.0.400，`CdnUrl` CDN 直链下载源扩展 + 部署到 `D:\ohmyenv\dotnet` +
+  PATH 前置，实测 `dotnet --list-sdks` 10.0.400）
 
 ## 阶段 5：项目重定位（未开始，远期）
 
