@@ -96,6 +96,10 @@ ohmypwsh/
    ├─ ohmyenv.ps1               CLI：query / deploy / install / update / pin / status
    ├─ helpers.ps1               模块函数（下载、安装、Invoke-GitHubApi 限流兜底）
    ├─ env.psd1                  工具版本锁定清单（唯一 pin 来源，版本不硬编码）
+   ├─ omp.psm1                  PowerShell 7 模块（omp 别名 → Invoke-Omp）
+   ├─ omp.psd1                  模块清单（ModuleVersion / 导出 / 元数据）
+   ├─ deploy-omp.ps1            部署 omp 模块到 EnvRoot\modules\omp + 注册 PSModulePath
+   ├─ bootstrap.ps1             PS5.1 人类初始部署入口（装 pwsh7 + 部署 omp + 注册 EnvRoot）
    ├─ modules.psd1              PowerShell 模块锁定清单（psmodule.ps1 维护）
    ├─ psmodule.ps1              PowerShell 模块管理器（在线/离线、PS5/PS7、打包）
    ├─ set-deepseek-key.ps1      DeepSeek API Key 交互式设置（用户级环境变量）

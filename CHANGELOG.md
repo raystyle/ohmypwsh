@@ -6,6 +6,13 @@
 
 ### Added
 
+- `omp.psd1` 模块清单（ModuleVersion 0.1.0，导出 `Invoke-Omp` + `omp` 别名）+ `deploy-omp.ps1`
+  部署器（拷贝 omp.psm1 / omp.psd1 / helpers.ps1 / env.psd1 到 `EnvRoot\modules\omp` + 注册
+  PSModulePath，幂等）；`Get-EnvLock` 尊重 `OHMYENV_ROOT` 环境变量（`-EnvRoot` 参数 >
+  `OHMYENV_ROOT` > 锁定值），使安装后的 omp 模块可重定位
+- PS5.1 兼容 `bootstrap.ps1`（UTF-8 BOM）：人类初始部署入口——装/升级 pwsh7（复用
+  `set-pwsh.ps1`）→ 定位 pwsh7（轮询等待提权异步安装）→ 用 pwsh7 跑 `deploy-omp.ps1` →
+  注册 `OHMYENV_ROOT` 用户环境变量；实测本机幂等跑通
 - 建立 `AGENTS.md` 规则 1：踩坑必须当场沉淀为脚本或文档命令
 - 建立 `AGENTS.md` 规则 2：环境感知，默认使用 pwsh（PowerShell 7）
 - 建立 `AGENTS.md` 规则 3：文档规范（CHANGELOG / ROADMAP / `docs\plans\` 方案文档）

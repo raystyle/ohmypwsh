@@ -77,6 +77,7 @@ PowerShell 7 安装 / 升级（pwsh 不能自更新，必须独立终端用 PS5.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File D:\ohmypwsh\scripts\set-pwsh.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File D:\ohmypwsh\scripts\bootstrap.ps1   # 人类初始部署入口（装 pwsh7 + 部署 omp + 注册 EnvRoot）
 ```
 
 日常环境脚本：
@@ -90,6 +91,7 @@ pwsh -NoProfile -File scripts\set-claude-config.ps1        # Claude Code 配置�
 pwsh -NoProfile -File scripts\set-claude-statusline.ps1    # Claude Code 状态栏幂等合并（statusLine 块，纯 PowerShell）
 pwsh -NoProfile -File scripts\set-fnm-config.ps1           # fnm/Node 接管（FNM_DIR/镜像/PATH/profile/.npmrc，幂等）
 pwsh -NoProfile -File scripts\set-bun-config.ps1           # bun 镜像源（全局 ~/.bunfig.toml + 局部 bunfig.toml，幂等）
+pwsh -NoProfile -File scripts\deploy-omp.ps1               # 部署 omp 模块到 EnvRoot\modules\omp（幂等）
 pwsh -NoProfile -File scripts\sops-encrypt-anthropic.ps1   # ANTHROPIC_API_KEY SOPS 加密备份
 pwsh -NoProfile -File scripts\sops-test.ps1                # SOPS 冒烟测试
 pwsh -NoProfile -File scripts\verify-codex-handover.ps1    # codex 原生版交接验证（PASS/FAIL）

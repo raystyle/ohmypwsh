@@ -11,7 +11,7 @@
 | 2 | 密钥管理：age + SOPS 接入 ohmyenv，.sops.yaml 与冒烟测试 | 已完成 |
 | 3 | Codex 接管：原生二进制 + 沙箱 + DeepSeek 密钥迁移到 env_key | 已完成 |
 | 4 | 软件工具扩展：核心基础工具先装齐，扩展工具稳定扩展，pwsh7/7z 等部署方式完善，日常无影响更新 | 进行中 |
-| 5 | 项目重定位：可迁移 Agent 环境部署与管理模块 CLI（EnvRoot 重定位、bootstrap、omp 模块、pack/unpack） | 未开始 |
+| 5 | 项目重定位：可迁移 Agent 环境部署与管理模块 CLI（EnvRoot 重定位、bootstrap、omp 模块、pack/unpack） | 进行中 |
 
 ## 阶段 0：项目基础设施（已完成）
 
@@ -91,7 +91,7 @@
 - 已完成：gsudo 接管（gerardog/gsudo 2.6.1 部署到 `D:\ohmyenv\gsudo`，专用 x64 展平解压 +
   命令统一叫 `gsudo`，不建 `sudo` 别名，避免 Windows 内置 sudo 冲突）
 
-## 阶段 5：项目重定位（未开始，远期）
+## 阶段 5：项目重定位（进行中）
 
 目标：把项目本质收敛为「可迁移 Agent 环境部署与管理模块 CLI」——从原生 PS5.1 一键初始化，升级
 pwsh7，部署模块 CLI，产物分安装包/部署包两类，支持压缩包跨机还原已 pin 工具环境。
@@ -116,6 +116,9 @@ pwsh7，部署模块 CLI，产物分安装包/部署包两类，支持压缩包�
 - 已完成：扫清残留硬编码（`set-claude-config.ps1` / `set-claude-statusline.ps1` /
   `verify-codex-handover.ps1` / `set-pwsh.ps1` / `psmodule.ps1` 全部 EnvRoot/项目根派生；
   `env.psd1` 的 `EnvRoot` 与 `modules.psd1` 的 `ModuleRoot` 为持久化配置保留）
-- `omp.psd1` 模块清单（omp.psm1 已有，补清单 + 安装到 PSModulePath）
-- PS5.1 兼容 `bootstrap.ps1`（装 pwsh7 + 部署 omp 模块 + 注册 PATH，人类初始部署入口）
+- 已完成：`omp.psd1` 模块清单（ModuleVersion 0.1.0，导出 `Invoke-Omp` + `omp` 别名）+
+  `deploy-omp.ps1`（拷贝 omp.psm1/psd1/helpers.ps1/env.psd1 到 `EnvRoot\modules\omp` +
+  注册 PSModulePath，幂等）；实测 `Import-Module omp` + `omp status` 正常
+- 已完成：PS5.1 兼容 `bootstrap.ps1`（UTF-8 BOM；装 pwsh7 → 部署 omp 模块 → 注册
+  `OHMYENV_ROOT` 用户环境变量，人类初始部署入口）；本机实测幂等跑通
 - `ohmyenv unpack` 换机/换路径还原实测（验收标准 2）

@@ -278,9 +278,16 @@ function Get-EnvLock {
         $lock = New-DefaultLock
         Save-EnvLock -Lock $lock
     }
-    # EnvRoot 覆盖（重定位）：显式 -EnvRoot 参数优先于已有锁定（不覆盖环境变量默认）
-    if ($EnvRoot -and $EnvRoot.Trim().TrimEnd('\') -ne $lock.EnvRoot.TrimEnd('\')) {
-        $lock.EnvRoot = $EnvRoot.Trim().TrimEnd('\')
+    # EnvRoot 覆盖（重定位）：-EnvRoot 参数 > OHMYENV_ROOT 环境变量 > 锁定值
+    $override = if ($EnvRoot -and $EnvRoot.Trim()) {
+        $EnvRoot.Trim()
+    } elseif ($env:OHMYENV_ROOT -and $env:OHMYENV_ROOT.Trim()) {
+        $env:OHMYENV_ROOT.Trim()
+    } else {
+        $null
+    }
+    if ($override -and $override.TrimEnd('\') -ne $lock.EnvRoot.TrimEnd('\')) {
+        $lock.EnvRoot = $override.TrimEnd('\')
     }
     foreach ($t in $script:ToolNames) {
         if (-not $lock.Tools.ContainsKey($t)) {
