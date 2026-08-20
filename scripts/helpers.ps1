@@ -556,7 +556,7 @@ function Assert-Sha256 {
 function Save-ReleaseAsset {
     <#
     .SYNOPSIS
-        下载发布资产到 cache（curl.exe 主通道 + Invoke-WebRequest 兜底），命中缓存则复用。
+        下载发布资产到 cache（aria2 主通道 + curl.exe/Invoke-WebRequest 兜底），命中缓存则复用。
     #>
     param(
         [Parameter(Mandatory)][string]$Url,

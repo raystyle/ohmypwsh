@@ -66,7 +66,7 @@ if (-not $isAdmin) {
 if (-not (Test-Path -LiteralPath $msiPath)) {
     Write-Host "[INFO] 下载 $msiUrl ..." -ForegroundColor Cyan
     New-Item -ItemType Directory -Path $cacheDir -Force | Out-Null
-    Invoke-WebRequest -Uri $msiUrl -OutFile $msiPath -UseBasicParsing
+    Save-ReleaseAsset -Url $msiUrl -OutFile $msiPath
 }
 Write-Host "[OK] MSI: $msiPath"
 

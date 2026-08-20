@@ -74,6 +74,8 @@
 - nushell 接管：`New-ToolDef` 新增 `nushell`（官方 `nushell/nushell`，zip + `SHA256SUMS`，`TagPrefix=''`）；pin 0.115.0 → deploy 到 `D:\ohmyenv\nushell`（nu.exe + 8 个 nu_plugin_*.exe）+ PATH 前置；新增 `scripts\set-nushell-config.ps1` 幂等注册 7 个官方插件（参考 omc PostInstall，路径转正斜杠规避 nu 转义，排除 `nu_plugin_stress_internals.exe`）
 - Rust 接管：`scripts\set-rust.ps1`（rustup-init + rsproxy.cn 镜像，`RUSTUP_HOME`/`CARGO_HOME` 重定位到 `D:\ohmyenv\rust`，`cargo config.toml` sparse 镜像，`PATH` 前置 `.cargo\bin`）；实测 rustc/cargo 1.97.1
 - VS Build Tools 接管：`scripts\set-vsbuild.ps1`（离线布局 `D:\ohmyenv\cache\vsbuild\VSLayout` + `--noWeb` 静默安装到 `D:\ohmyenv\vsbuild`，组件 VCTools / VC.Tools.x86.x64 / Windows11SDK.26100 / VC.CMake.Project + includeRecommended，机器 PATH 加 MSBuild 与 cl.exe，自动提权；先 uninstall 旧 omc 实例）；实测 17.14.39 + cl 19.44.35228 + MSBuild
+- Windows 容器 Docker Engine 接管：`scripts\set-docker.ps1`（官方 `download.docker.com` static zip → `D:\ohmyenv\docker\bin`，daemon.json `data-root=D:\ohmyenv\docker-data`，docker-users 组，卸载旧 rxshell 服务并注册/启动新 `docker` 服务，机器 PATH 前置）；实测 Docker 29.7.1 + windowsfilter + OSType windows；rxshell 残留（`.rxshell` + `C:\ProgramData\rxshell`）已清理
+- WSL 安装/更新：`scripts\set-wsl.ps1`（`microsoft/WSL` 官方 `wsl.<version>.0.x64.msi`，Save-ReleaseAsset 下载 + msiexec 静默安装，自动提权）；实测 WSL 2.6.3.0 → 2.7.12.0，内核 6.18.33.2-2
 
 ### Changed
 
@@ -141,6 +143,7 @@
 - 研究文档 `docs\research\gh-cli.md` 刷新至 gh 2.97.0（2026-07-31）：新增 `discussion`（preview）、`agent-task`（preview）命令与 `reference` 等 HELP TOPICS，更新限流实测（core/graphql/search）
 - 日常实测升级：yq 4.53.4 → 4.53.6（同主版本，无影响；sha256 回填）
 - omc 双轨与已接管项清理（2026-08-20）：`omc.ps1` 注册移除 aria2/bun/pwsh/just/ast-grep/nushell；脚本 `.removed-20260820` 改名保留；`.envs` 二进制与 `.envs\tools\bun` 目录改名保留；nushell 旧配置 `%APPDATA%\nushell` 与 omc `.config\nushell` 清理；`CLAUDE.md` 注册表与工具一览同步
+- 文件下载默认 aria2：`set-docker.ps1` / `set-vsbuild.ps1` / `set-pwsh.ps1` 的直连下载改用 `Save-ReleaseAsset`（aria2 主通道 → curl → Invoke-WebRequest 兜底）；`Save-ReleaseAsset` 注释同步修正
 
 ### Fixed
 

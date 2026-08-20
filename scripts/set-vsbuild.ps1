@@ -73,10 +73,10 @@ try {
             $p = Start-Process -FilePath $layoutBs -ArgumentList $args -Wait -PassThru
         } else {
             Write-Log '[INFO] 未发现离线布局，走在线安装'
-            if (-not (Test-Path -LiteralPath $bsExe)) {
-                Write-Log '[INFO] 下载 VS Build Tools 引导器...'
-                Invoke-WebRequest -Uri $bsUrl -OutFile $bsExe -UseBasicParsing -TimeoutSec 600
-            }
+        if (-not (Test-Path -LiteralPath $bsExe)) {
+            Write-Log '[INFO] 下载 VS Build Tools 引导器...'
+            Save-ReleaseAsset -Url $bsUrl -OutFile $bsExe
+        }
             if (Test-Path -LiteralPath $setupExe) {
                 Write-Log "[INFO] 使用现有 VS Installer: $setupExe"
                 $args = @('install', '--productId', 'Microsoft.VisualStudio.Product.BuildTools', '--quiet', '--norestart', '--installPath', $installPath) + $components

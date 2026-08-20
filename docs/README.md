@@ -109,6 +109,8 @@ ohmypwsh/
    ├─ set-nushell-config.ps1    官方 nushell 插件注册（nu_plugin_* 逐个 plugin add，幂等）
    ├─ set-rust.ps1              Rust 接管（rustup + stable + rsproxy.cn 镜像，幂等）
    ├─ set-vsbuild.ps1           VS Build Tools 接管（离线布局 --noWeb 安装，需提权，幂等）
+   ├─ set-docker.ps1            Windows 容器 Docker Engine 接管（官方 static 二进制 + 服务注册，需提权）
+   ├─ set-wsl.ps1               WSL 安装/更新（microsoft/WSL 官方 x64 MSI，需提权）
    ├─ set-claude-key.ps1        Claude Code (GLM) API Key 设置/迁移（-FromOmcProfile）
    ├─ set-claude-config.ps1     Claude Code 配置（安装 + env + settings.json 合并）
    ├─ sops-encrypt-anthropic.ps1 ANTHROPIC_API_KEY SOPS 加密备份
@@ -118,6 +120,6 @@ ohmypwsh/
    └─ verify-tools-handover.ps1 rg/jq/yq 交接验证（解析/版本 PASS/FAIL）
 ```
 
-外部环境目录（git 之外，由 ohmyenv 管理）：`D:\ohmyenv` —— gh / git / age / sops / codex / aria2 / 7z / uv / python / rg / jq / yq / rmux / starship / just / ast-grep / nushell / rust / vsbuild 安装根；`D:\ohmyenv\modules` 为 PowerShell 模块共享部署根（用户 PSModulePath 追加）；`uv-cache` / `uv-tools` 为 uv 缓存与工具目录。
+外部环境目录（git 之外，由 ohmyenv 管理）：`D:\ohmyenv` —— gh / git / age / sops / codex / aria2 / 7z / uv / python / rg / jq / yq / rmux / starship / just / ast-grep / nushell / rust / vsbuild / docker（docker-data） 安装根；`D:\ohmyenv\modules` 为 PowerShell 模块共享部署根（用户 PSModulePath 追加）；`uv-cache` / `uv-tools` 为 uv 缓存与工具目录。
 
 > 目录分类规则见 `AGENTS.md`「目录与分类规范」；本索引随文件增删同步维护。
