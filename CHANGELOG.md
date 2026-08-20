@@ -161,6 +161,8 @@
 - `docs\research\rmux-usage.md` 独立窗口流程改为「wt → rmux → claude」：窗口直接跑 `rmux new-session -A -s claude -c D:\ohmypwsh claude`（会话存在则 attach）；**无色彩真正根因 = Codex 沙箱注入的 `NO_COLOR=1`**（一路传给 daemon→窗格→claude，置空无效必须 `Remove-Item Env:NO_COLOR`）+ `TERM=dumb`；wt 路径改用 `(Get-Command wt.exe).Source` 动态解析不再硬编码 WindowsApps；实测 daemon 在最后一个会话被杀后自动退出
 - `docs\research\rmux-usage.md` 补充 Codex 环境注入研究结论：`NO_COLOR=1`/`TERM=dumb` 等是 unified exec 硬编码常量表（`UNIFIED_EXEC_ENV`，源码 `codex-rs/core/src/unified_exec/process_manager.rs`），在 `shell_environment_policy` 之后覆写，`sandbox_mode=danger-full-access` 只关隔离不改这套注入 → 只能工作流层清理
 - 双端 rmux skill 定稿 + Claude Code review 回归：Codex 侧（`.agents\skills\rmux`）与 Claude 侧（`.claude\skills\rmux`）统一为「新开终端窗口 + rmux 同终端多窗格分别操作 codex/claude」；skill-creator `quick_validate` 通过（PYTHONUTF8=1 解决 GBK 读取，uv --with pyyaml 补依赖）；按 Claude Code review 修复 8 项（单 agent 变体 cwd、TUI capture 空、会话复用守卫、旧 daemon 污染守卫、list-clients 竞态、`--wait-text`、tiny CLI 说明、PATH 副作用注释）+ 新增 send-keys 提交原语（发送后验证已提交，未提交补 Enter）；双窗格（codex+claude）真机回归通过（新窗口 xterm-256color 彩色、两侧均可操作）
+- `Invoke-GitHubApi` 兜底扩展：api.github.com 直连发生 SSL/TLS/连接/超时失败时也切换 `gh api` 认证通道（原先仅 403/rate-limit/502/503/504）；本机 `ohmyenv daily -DryRun` 曾因 api.github.com 直连 SSL 失败中断，修复后全量 20 工具经 gh api 兜底跑通
+- `Resolve-ToolVersion -Latest` 的 `v` 前缀丢失（TagPrefix 空串回写）：pwsh/age/sops/git/gh/yq/rmux/starship 未在 `New-ToolDef` 显式声明 `TagPrefix`，`Save-EnvLock` 把 `$null` 写成 `''`，重载后不再按默认 `v` 剥前缀，导致 `daily -DryRun` 把同版本/补丁升级误判为「跨主版本」；为这 8 个工具显式补 `TagPrefix='v'` 并同步 `env.psd1`，yq 4.53.4→4.53.6 恢复为「同主版本预览」
 
 ### Removed
 

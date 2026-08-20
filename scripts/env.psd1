@@ -5,7 +5,7 @@
         'pwsh' = @{
             Version      = '7.6.5'
             Tag          = 'v7.6.5'
-            TagPrefix    = ''
+            TagPrefix    = 'v'
             Repo         = 'PowerShell/PowerShell'
             AssetPattern = '^PowerShell-[0-9.]+-win-x64\.msi$'
             Asset        = 'PowerShell-7.6.5-win-x64.msi'
@@ -21,7 +21,7 @@
         'age' = @{
             Version      = '1.3.1'
             Tag          = 'v1.3.1'
-            TagPrefix    = ''
+            TagPrefix    = 'v'
             Repo         = 'FiloSottile/age'
             AssetPattern = '^age-v[0-9.]+-windows-amd64\.zip$'
             Asset        = 'age-v1.3.1-windows-amd64.zip'
@@ -36,7 +36,7 @@
         'sops' = @{
             Version      = '3.13.3'
             Tag          = 'v3.13.3'
-            TagPrefix    = ''
+            TagPrefix    = 'v'
             Repo         = 'getsops/sops'
             AssetPattern = '^sops-v[0-9.]+\.amd64\.exe$'
             Asset        = 'sops-v3.13.3.amd64.exe'
@@ -67,7 +67,7 @@
         'git' = @{
             Version      = '2.55.0.windows.4'
             Tag          = 'v2.55.0.windows.4'
-            TagPrefix    = ''
+            TagPrefix    = 'v'
             Repo         = 'git-for-windows/git'
             AssetPattern = '^PortableGit-[0-9.]+-64-bit\.7z\.exe$'
             Asset        = 'PortableGit-2.55.0.4-64-bit.7z.exe'
@@ -83,7 +83,7 @@
         'gh' = @{
             Version      = '2.97.0'
             Tag          = 'v2.97.0'
-            TagPrefix    = ''
+            TagPrefix    = 'v'
             Repo         = 'cli/cli'
             AssetPattern = '^gh_[0-9.]+_windows_amd64\.zip$'
             Asset        = 'gh_2.97.0_windows_amd64.zip'
@@ -264,7 +264,7 @@
         'yq' = @{
             Version      = '4.53.4'
             Tag          = 'v4.53.4'
-            TagPrefix    = ''
+            TagPrefix    = 'v'
             Repo         = 'mikefarah/yq'
             AssetPattern = '^yq_windows_amd64\.exe$'
             Asset        = 'yq_windows_amd64.exe'
@@ -279,7 +279,7 @@
         'rmux' = @{
             Version      = '0.10.0'
             Tag          = 'v0.10.0'
-            TagPrefix    = ''
+            TagPrefix    = 'v'
             Repo         = 'Helvesec/rmux'
             AssetPattern = '^rmux-[0-9.]+-windows-x86_64\.zip$'
             Asset        = 'rmux-0.10.0-windows-x86_64.zip'
@@ -294,7 +294,7 @@
         'starship' = @{
             Version      = '1.26.0'
             Tag          = 'v1.26.0'
-            TagPrefix    = ''
+            TagPrefix    = 'v'
             Repo         = 'starship/starship'
             AssetPattern = '^starship-x86_64-pc-windows-msvc\.zip$'
             Asset        = 'starship-x86_64-pc-windows-msvc.zip'

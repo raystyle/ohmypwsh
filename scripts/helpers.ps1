@@ -26,6 +26,7 @@ function New-ToolDef {
             @{
                 Category     = 'agent'
                 Kind         = 'installer'
+                TagPrefix    = 'v'
                 Repo         = 'PowerShell/PowerShell'
                 AssetPattern = '^PowerShell-[0-9.]+-win-x64\.msi$'
                 SumsAsset    = 'hashes.sha256'
@@ -39,6 +40,7 @@ function New-ToolDef {
         'age' {
             @{
                 Category     = 'key'
+                TagPrefix    = 'v'
                 Repo         = 'FiloSottile/age'
                 AssetPattern = '^age-v[0-9.]+-windows-amd64\.zip$'
                 Dir          = 'age'
@@ -50,6 +52,7 @@ function New-ToolDef {
         'sops' {
             @{
                 Category     = 'key'
+                TagPrefix    = 'v'
                 Repo         = 'getsops/sops'
                 AssetPattern = '^sops-v[0-9.]+\.amd64\.exe$'
                 Dir          = 'sops'
@@ -77,6 +80,7 @@ function New-ToolDef {
             @{
                 Category     = 'project'
                 Kind         = 'installer'
+                TagPrefix    = 'v'
                 Repo         = 'git-for-windows/git'
                 AssetPattern = '^PortableGit-[0-9.]+-64-bit\.7z\.exe$'
                 Dir          = 'git'
@@ -88,6 +92,7 @@ function New-ToolDef {
         'gh' {
             @{
                 Category     = 'project'
+                TagPrefix    = 'v'
                 Repo         = 'cli/cli'
                 AssetPattern = '^gh_[0-9.]+_windows_amd64\.zip$'
                 Dir          = 'gh'
@@ -226,6 +231,7 @@ function New-ToolDef {
         'yq' {
             @{
                 Category     = 'extras'
+                TagPrefix    = 'v'
                 Repo         = 'mikefarah/yq'
                 AssetPattern = '^yq_windows_amd64\.exe$'
                 Dir          = 'yq'
@@ -237,6 +243,7 @@ function New-ToolDef {
         'rmux' {
             @{
                 Category     = 'extras'
+                TagPrefix    = 'v'
                 Repo         = 'Helvesec/rmux'
                 AssetPattern = '^rmux-[0-9.]+-windows-x86_64\.zip$'
                 SumsAsset    = 'SHA256SUMS'
@@ -250,6 +257,7 @@ function New-ToolDef {
         'starship' {
             @{
                 Category     = 'extras'
+                TagPrefix    = 'v'
                 Repo         = 'starship/starship'
                 AssetPattern = '^starship-x86_64-pc-windows-msvc\.zip$'
                 Dir          = 'starship'
@@ -354,15 +362,13 @@ function Invoke-GitHubApi {
     try {
         return Invoke-RestMethod -Uri $Uri -Headers $headers -TimeoutSec 30
     } catch {
-        if ($_.Exception.Message -match '403|rate limit|502|503|504|Gateway') {
-            $ghExe = Get-Command gh.exe -ErrorAction SilentlyContinue
-            if ($ghExe) {
-                Write-Host '[INFO] 匿名 API 限流，改用 gh api（认证通道）' -ForegroundColor Yellow
-                $apiPath = $Uri.Substring('https://api.github.com'.Length)
-                $json = & $ghExe.Source api $apiPath 2>$null
-                if ($LASTEXITCODE -eq 0 -and $json) {
-                    return ($json | ConvertFrom-Json)
-                }
+        $ghExe = Get-Command gh.exe -ErrorAction SilentlyContinue
+        if ($ghExe -and ($_.Exception.Message -match '403|rate limit|502|503|504|Gateway|SSL|TLS|connect|timed out|timeout')) {
+            Write-Host '[INFO] api.github.com 直连失败，改用 gh api（认证通道）' -ForegroundColor Yellow
+            $apiPath = $Uri.Substring('https://api.github.com'.Length)
+            $json = & $ghExe.Source api $apiPath 2>$null
+            if ($LASTEXITCODE -eq 0 -and $json) {
+                return ($json | ConvertFrom-Json)
             }
         }
         throw

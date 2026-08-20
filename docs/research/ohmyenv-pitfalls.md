@@ -3,6 +3,7 @@
 ## 下载与 API
 
 - **api.github.com 匿名限流（60/h）与 5xx 网关错误**：统一由 `Invoke-GitHubApi` 处理，命中 403/rate-limit/502/503/504 时自动改用 `gh api` 认证通道（5000/h）；gh 装好后即生效（全局兜底，见 AGENTS.md 设计原则）
+- **api.github.com 直连可能 SSL/连接/超时失败而 `gh api` 正常**：`Invoke-GitHubApi` 兜底已从仅 403/5xx 扩展为 SSL/TLS/连接/超时也切 `gh api`（本机实测 direct `Invoke-RestMethod` 报 SSL 失败、`gh api` 返回正常）
 - **aria2 部分连接报 SSL/TLS handshake 失败**：GitHub CDN 瞬态，多线程 + SHA256SUMS 校验兜底，重试即成功
 - **中断的下载会残留进程并锁住缓存文件**：先 `taskkill /PID` 终止孤儿进程，脚本对缓存做 sha256 校验，不匹配自动重下
 - **aria2 报 OK 但文件可能残缺**：SSL/TLS 断连后进度停在 96% 仍回 OK（实测 git 56MB 包缺约 2MB）；新版本升级时缓存无 sha 基准会直接复用 → 安装后版本校验兜底，版本不符时删缓存重下
@@ -32,6 +33,7 @@
 - **omc 工具移交要动五处并改名保留**：`omc.ps1` 的 `$ToolDefs` 注册表、`.scripts\tools\<tool>.ps1` 定义文件、`.envs\tools\bin\<tool>.exe` 二进制（三者改名 `*.removed-YYYYMMDD` 保留）、`CLAUDE.md` 文档同步；`.config\<tool>\config.json` 沿用 gh/git/7z 先例保留不动
 - **进程 PATH 与注册表 PATH 不一致**：开发沙箱/继承环境可能把额外目录（如 codex 自带 `codex-path`）注入进程 PATH 且排前；验证必须重建 PATH（Machine + User 合并，等价全新终端），否则 `Get-Command` 会命中非权威目录
 - **release tag 无 v 前缀也兼容**：`Resolve-ToolVersion` 的 TagPrefix 缺省为 `v`，tag 不匹配前缀时直接用 tag 名作版本（ripgrep 15.2.0 无 v 前缀，正常解析）
+- **TagPrefix 空串与 null 不能混用**：`New-ToolDef` 未显式声明 `TagPrefix` 时，`Save-EnvLock` 会把 `$null` 写成 `''`，重载后 `Resolve-ToolVersion` 把空串当「无前缀」而不再按默认 `v` 剥前缀，导致 `daily -DryRun` 对 v 前缀 tag 工具误判「跨主版本」；凡 tag 带 `v` 的工具必须在 `New-ToolDef` 显式 `TagPrefix='v'`（pwsh/age/sops/git/gh/yq/rmux/starship 已补）
 - **单文件 exe 工具用 `copy` 解压类型**：jq / yq / sops 都是 release 单文件（如 `jq-windows-amd64.exe` / `yq_windows_amd64.exe`），`Extract='copy'` 直接拷入工具目录
 - **python-build-standalone 的 tag 是日期而非版本**：`Resolve-ToolVersion` 新增静态 `VersionPattern`，命中资产名时用捕获组作版本（python 3.12.14 从 `cpython-3.12.14+20260814-...-install_only.tar.gz` 提取）
 - **install_only tarball 顶层套单目录**（`python/` 包裹层）：`targz` 解压已加与 zip 相同的单目录展平（python-build-standalone 实测触发）
