@@ -68,7 +68,7 @@ onboarding 通过后仍会问 "Accessing workspace: D:\ohmypwsh ... Quick safety
 
 ### 5. 关联：rmux send-keys 中文输入丢失
 
-冒烟测试用中文 prompt（"只回复…"）经 `send-keys` 发送时输入框无内容，且产生 `server closed connection before a complete response frame arrived`（乱码字节打到 API）；改英文 prompt 立即正常。详见 `docs\research\rmux-usage.md` 踩坑 7。
+冒烟测试用中文 prompt（"只回复…"）经 `send-keys` 发送时输入框无内容，且产生 `server closed connection before a complete response frame arrived`（乱码字节打到 API）；改英文 prompt 立即正常。详见 win-rmux skill 的 `references/rmux-usage.md`（https://github.com/raystyle/win-rmux）踩坑 7。
 
 ## 待办
 
