@@ -92,6 +92,8 @@ pwsh -NoProfile -File scripts\set-claude-statusline.ps1    # Claude Code 状态�
 pwsh -NoProfile -File scripts\set-fnm-config.ps1           # fnm/Node 接管（FNM_DIR/镜像/PATH/profile/.npmrc，幂等）
 pwsh -NoProfile -File scripts\set-bun-config.ps1           # bun 镜像源（全局 ~/.bunfig.toml + 局部 bunfig.toml，幂等）
 pwsh -NoProfile -File scripts\set-nushell-config.ps1       # 官方 nushell 插件注册（nu_plugin_* 逐个 plugin add，幂等）
+pwsh -NoProfile -File scripts\set-rust.ps1                 # Rust 接管（rustup + stable + rsproxy.cn 镜像，幂等）
+pwsh -NoProfile -File scripts\set-vsbuild.ps1              # VS Build Tools 接管（离线布局 --noWeb 安装，需提权，幂等）
 pwsh -NoProfile -File scripts\deploy-omp.ps1               # 部署 omp 模块到 EnvRoot\modules\omp（幂等）
 pwsh -NoProfile -File scripts\sops-encrypt-anthropic.ps1   # ANTHROPIC_API_KEY SOPS 加密备份
 pwsh -NoProfile -File scripts\sops-test.ps1                # SOPS 冒烟测试

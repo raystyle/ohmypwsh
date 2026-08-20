@@ -72,6 +72,8 @@
 - just 接管：`New-ToolDef` 新增 `just`（`casey/just`，zip + `SHA256SUMS`，`TagPrefix=''`）；pin 1.58.0 → deploy 到 `D:\ohmyenv\just` + PATH 前置；`Get-InstalledVersion` 解析 `just 1.58.0`
 - ast-grep 接管：`New-ToolDef` 新增 `ast-grep`（`ast-grep/ast-grep`，`app-x86_64-pc-windows-msvc.zip` 版本无关资产，`TagPrefix=''`）；pin 0.45.1 → deploy 到 `D:\ohmyenv\ast-grep`（ast-grep.exe + sg.exe）+ PATH 前置；该仓库无官方校验资产，沿用 sha 回填 + 版本校验兜底
 - nushell 接管：`New-ToolDef` 新增 `nushell`（官方 `nushell/nushell`，zip + `SHA256SUMS`，`TagPrefix=''`）；pin 0.115.0 → deploy 到 `D:\ohmyenv\nushell`（nu.exe + 8 个 nu_plugin_*.exe）+ PATH 前置；新增 `scripts\set-nushell-config.ps1` 幂等注册 7 个官方插件（参考 omc PostInstall，路径转正斜杠规避 nu 转义，排除 `nu_plugin_stress_internals.exe`）
+- Rust 接管：`scripts\set-rust.ps1`（rustup-init + rsproxy.cn 镜像，`RUSTUP_HOME`/`CARGO_HOME` 重定位到 `D:\ohmyenv\rust`，`cargo config.toml` sparse 镜像，`PATH` 前置 `.cargo\bin`）；实测 rustc/cargo 1.97.1
+- VS Build Tools 接管：`scripts\set-vsbuild.ps1`（离线布局 `D:\ohmyenv\cache\vsbuild\VSLayout` + `--noWeb` 静默安装到 `D:\ohmyenv\vsbuild`，组件 VCTools / VC.Tools.x86.x64 / Windows11SDK.26100 / VC.CMake.Project + includeRecommended，机器 PATH 加 MSBuild 与 cl.exe，自动提权；先 uninstall 旧 omc 实例）；实测 17.14.39 + cl 19.44.35228 + MSBuild
 
 ### Changed
 
