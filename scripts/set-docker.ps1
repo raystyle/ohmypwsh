@@ -72,18 +72,36 @@ try {
     if ($LASTEXITCODE -ne 0) { $null = net localgroup $group /add 2>&1 }
     $null = net localgroup $group $user /add 2>&1
 
-    # ── 4. daemon.json ──
+    # ── 4. daemon.json（保留用户自定义键，仅确保 data-root 指向 EnvRoot 并补齐缺省键）──
     New-Item -ItemType Directory -Path (Split-Path $daemonJson) -Force | Out-Null
-    $body = @{
-        'data-root' = $dataRoot
-        'group'     = $group
+    $defaults = [ordered]@{
+        'group'      = $group
         'log-driver' = 'json-file'
-        'log-opts'  = @{ 'max-size' = '10m'; 'max-file' = '3' }
-        'exec-opts' = @('isolation=process')
+        'log-opts'   = [ordered]@{ 'max-size' = '10m'; 'max-file' = '3' }
+        'exec-opts'  = @('isolation=process')
     }
-    $json = $body | ConvertTo-Json -Depth 4
-    [System.IO.File]::WriteAllText($daemonJson, $json + "`n", (New-Object System.Text.UTF8Encoding $false))
-    Write-Log "[OK] daemon.json 已写入: $daemonJson (data-root=$dataRoot)"
+    $existing = [ordered]@{}
+    if (Test-Path -LiteralPath $daemonJson) {
+        try { $existing = Get-Content -LiteralPath $daemonJson -Raw | ConvertFrom-Json -AsHashtable } catch {}
+    }
+    $changed = $false
+    if ($existing['data-root'] -ne $dataRoot) { $existing['data-root'] = $dataRoot; $changed = $true }
+    foreach ($k in $defaults.Keys) {
+        if (-not $existing.ContainsKey($k)) { $existing[$k] = $defaults[$k]; $changed = $true }
+    }
+    if ($changed) {
+        $json = $existing | ConvertTo-Json -Depth 5
+        [System.IO.File]::WriteAllText($daemonJson, $json + "`n", (New-Object System.Text.UTF8Encoding $false))
+        Write-Log "[OK] daemon.json 已更新: $daemonJson (data-root=$dataRoot)"
+    } else {
+        Write-Log '[INFO] daemon.json 已就绪（保留现有配置）'
+    }
+
+    # ── 4.5 检查 Windows 容器功能（未启用时告警，不自动重启）──
+    $containersState = (dism.exe /Online /Get-FeatureInfo /FeatureName:Containers 2>&1 | Out-String)
+    if ($containersState -notmatch 'Enabled|已启用|Enable Pending|启用 挂起') {
+        Write-Log '[WARN] Windows 功能 Containers 未确认启用，服务可能无法启动'
+    }
 
     # ── 5. 服务：仅当不存在或指向旧 rxshell 时才重注册 ──
     $dockerd = Join-Path $binDir 'dockerd.exe'
