@@ -111,6 +111,7 @@ ohmypwsh/
    ├─ set-vsbuild.ps1           VS Build Tools 接管（离线布局 --noWeb 安装，需提权，幂等）
    ├─ set-docker.ps1            Windows 容器 Docker Engine 接管（官方 static 二进制 + 服务注册，需提权）
    ├─ set-wsl.ps1               WSL 安装/更新（microsoft/WSL 官方 x64 MSI，需提权）
+   ├─ set-wsl-distro.ps1        WSL 镜像导入/部署（.wsl 产物 → distro，参考 ohmywsl2）
    ├─ set-claude-key.ps1        Claude Code (GLM) API Key 设置/迁移（-FromOmcProfile）
    ├─ set-claude-config.ps1     Claude Code 配置（安装 + env + settings.json 合并）
    ├─ sops-encrypt-anthropic.ps1 ANTHROPIC_API_KEY SOPS 加密备份

@@ -96,6 +96,7 @@ pwsh -NoProfile -File scripts\set-rust.ps1                 # Rust 接管（rustu
 pwsh -NoProfile -File scripts\set-vsbuild.ps1              # VS Build Tools 接管（离线布局 --noWeb 安装，需提权，幂等）
 pwsh -NoProfile -File scripts\set-docker.ps1               # Windows 容器 Docker Engine 接管（官方 static 二进制 + 服务注册，需提权）
 pwsh -NoProfile -File scripts\set-wsl.ps1                  # WSL 安装/更新（microsoft/WSL 官方 x64 MSI，需提权）
+pwsh -NoProfile -File scripts\set-wsl-distro.ps1           # WSL 镜像导入/部署（.wsl 产物 → distro，参考 ohmywsl2）
 pwsh -NoProfile -File scripts\deploy-omp.ps1               # 部署 omp 模块到 EnvRoot\modules\omp（幂等）
 pwsh -NoProfile -File scripts\sops-encrypt-anthropic.ps1   # ANTHROPIC_API_KEY SOPS 加密备份
 pwsh -NoProfile -File scripts\sops-test.ps1                # SOPS 冒烟测试

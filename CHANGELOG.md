@@ -76,6 +76,7 @@
 - VS Build Tools 接管：`scripts\set-vsbuild.ps1`（离线布局 `D:\ohmyenv\cache\vsbuild\VSLayout` + `--noWeb` 静默安装到 `D:\ohmyenv\vsbuild`，组件 VCTools / VC.Tools.x86.x64 / Windows11SDK.26100 / VC.CMake.Project + includeRecommended，机器 PATH 加 MSBuild 与 cl.exe，自动提权；先 uninstall 旧 omc 实例）；实测 17.14.39 + cl 19.44.35228 + MSBuild
 - Windows 容器 Docker Engine 接管：`scripts\set-docker.ps1`（官方 `download.docker.com` static zip → `D:\ohmyenv\docker\bin`，daemon.json `data-root=D:\ohmyenv\docker-data`，docker-users 组，卸载旧 rxshell 服务并注册/启动新 `docker` 服务，机器 PATH 前置）；实测 Docker 29.7.1 + windowsfilter + OSType windows；rxshell 残留（`.rxshell` + `C:\ProgramData\rxshell`）已清理
 - WSL 安装/更新：`scripts\set-wsl.ps1`（`microsoft/WSL` 官方 `wsl.<version>.0.x64.msi`，Save-ReleaseAsset 下载 + msiexec 静默安装，自动提权）；实测 WSL 2.6.3.0 → 2.7.12.0，内核 6.18.33.2-2
+- WSL 镜像导入/部署：`scripts\set-wsl-distro.ps1`（参考 `D:\ohmywsl2\scripts\import.ps1`，`.wsl` 产物 → `wsl --import` distro，自适应 `.wslconfig`，冲突 `-Force`，时区 Asia/Singapore；默认镜像目录 `D:\ohmyenv\images\wsl`，回退参考 `D:\ohmywsl2\images`）
 
 ### Changed
 
