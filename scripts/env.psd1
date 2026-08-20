@@ -2,6 +2,21 @@
 @{
     EnvRoot = 'D:\ohmyenv'
     Tools   = @{
+        'pwsh' = @{
+            Version      = '7.6.5'
+            Tag          = 'v7.6.5'
+            TagPrefix    = ''
+            Repo         = 'PowerShell/PowerShell'
+            AssetPattern = '^PowerShell-[0-9.]+-win-x64\.msi$'
+            Asset        = 'PowerShell-7.6.5-win-x64.msi'
+            SumsAsset    = 'hashes.sha256'
+            SumsPattern  = 'PowerShell-[0-9.]+-win-x64\.msi'
+            Dir          = 'pwsh'
+            Bin          = ''
+            Exe          = 'C:\Program Files\PowerShell\7\pwsh.exe'
+            Extract      = 'msi'
+            Sha256       = ''
+        }
         'age' = @{
             Version      = '1.3.1'
             Tag          = 'v1.3.1'

@@ -1,5 +1,12 @@
 # AGENTS.md
 
+## 项目定位
+
+本仓本质是 **Agent 环境部署与管理模块 CLI**：从 Windows 原生 PowerShell 5.1 一键初始化，升级
+PowerShell 7，部署完整 PowerShell 模块 CLI，再安装 / 管理工具与 agent 环境；所有已部署产物
+（工具 + 配置 + 密钥）支持打包压缩，在另一台 Windows 通过产物压缩包一键还原已 pin 的软件工具
+环境。定位方案见 `docs\plans\0010-portable-agent-env.md`。
+
 ## 规则
 
 1. **踩坑必须当场沉淀**
@@ -66,6 +73,12 @@ pwsh -NoProfile -File scripts\ohmyenv.ps1 daily -DryRun         # 日常无影�
 pwsh -NoProfile -File scripts\ohmyenv.ps1 daily                 # 日常无影响更新（跨主版本保留待确认）
 ```
 
+PowerShell 7 安装 / 升级（pwsh 不能自更新，必须独立终端用 PS5.1 运行）：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File D:\ohmypwsh\scripts\set-pwsh.ps1
+```
+
 日常环境脚本：
 
 ```powershell
@@ -90,3 +103,5 @@ pwsh -NoProfile -File scripts\verify-codex-handover.ps1    # codex 原生版交�
 - **引导安装不依赖 gh（bootstrap 自举）**：首次安装或恢复环境时，不得把已装好的 gh 当作先决条件；通过 `api.github.com` REST API 查询发布资产并直连下载（带 User-Agent、按 tag 查询、失败重试）。
 - **API 限流全局 gh 兜底**：api.github.com 匿名限流（60 次/小时）时，所有查询统一走 `Invoke-GitHubApi`，自动切换到 `gh api` 认证通道（5000 次/小时）；gh 仅在已安装后作为加速/兜底通道。
 - **版本不硬编码，先 pin 后 update**：工具定义（`New-ToolDef`）只含静态元数据，版本/Tag/资产名只存在于 `scripts\env.psd1`（唯一 pin 来源）；新工具先 `ohmyenv pin <tool> [-Latest | -Version X]`，之后用 `ohmyenv update <tool>` 升级并重新 pin。
+- **产物分类（安装包 vs 部署包）**：安装包类（pwsh7 / codex / claude / kimi / git / 7z）只归档原始 installer，二次部署直接安装 + 配置，不进入绿色 EnvRoot；部署包类（age / sops / gh / aria2 / uv / python / rg / jq / yq / rmux / starship）单二进制 + PATH 部署，进入 EnvRoot。判据：官方单二进制/绿色 zip → 部署包；官方安装器装系统位置 → 安装包。
+- **可重定位**：EnvRoot / 项目根不硬编码绝对路径（`D:\ohmyenv` / `D:\ohmypwsh` 等），由配置默认值 + 参数/环境变量覆盖，Bin/Exe/cache/tools 一律从 EnvRoot 推导；保证产物压缩包换机/换路径可还原。

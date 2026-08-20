@@ -10,7 +10,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [En
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
 # 工具分层：核心基础工具（密钥 key / 智能体环境 agent / 项目管理 project / 基础工具 base）
 #           + 扩展工具 extras；ToolNames 顺序 = 引导安装/展示/日常更新顺序（核心先装齐，再稳定扩展）
-$script:ToolNames = @('age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship')
+$script:ToolNames = @('pwsh', 'age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship')
 $script:ToolCategories = @{
     key     = '密钥'
     agent   = '智能体环境'
@@ -22,6 +22,20 @@ $script:ToolCategories = @{
 function New-ToolDef {
     param([Parameter(Mandatory)][string]$Tool)
     switch ($Tool) {
+        'pwsh' {
+            @{
+                Category     = 'agent'
+                Kind         = 'installer'
+                Repo         = 'PowerShell/PowerShell'
+                AssetPattern = '^PowerShell-[0-9.]+-win-x64\.msi$'
+                SumsAsset    = 'hashes.sha256'
+                SumsPattern  = 'PowerShell-[0-9.]+-win-x64\.msi'
+                Dir          = 'pwsh'
+                Bin          = ''
+                Exe          = '%LOCALAPPDATA%\Programs\PowerShell\7\pwsh.exe'
+                Extract      = 'msi'
+            }
+        }
         'age' {
             @{
                 Category     = 'key'
@@ -47,6 +61,7 @@ function New-ToolDef {
         'codex' {
             @{
                 Category     = 'agent'
+                Kind         = 'installer'
                 TagPrefix    = 'rust-v'
                 Repo         = 'openai/codex'
                 AssetPattern = '^codex-package-x86_64-pc-windows-msvc\.tar\.gz$'
@@ -61,6 +76,7 @@ function New-ToolDef {
         'git' {
             @{
                 Category     = 'project'
+                Kind         = 'installer'
                 Repo         = 'git-for-windows/git'
                 AssetPattern = '^PortableGit-[0-9.]+-64-bit\.7z\.exe$'
                 Dir          = 'git'
@@ -94,13 +110,14 @@ function New-ToolDef {
         }
         '7z' {
             @{
-                Category     = 'base'
-                Repo         = 'ip7z/7zip'
-                AssetPattern = '^7z[0-9]+-x64\.exe$'
-                Dir          = '7z'
-                Bin          = '7z'
-                Exe          = '7z\7z.exe'
-                Extract      = '7z-archive'
+                Category       = 'base'
+                Repo           = 'ip7z/7zip'
+                AssetPattern   = '^7z[0-9]+-extra\.7z$'
+                BootstrapAsset = '7zr.exe'
+                Dir            = '7z'
+                Bin            = '7z'
+                Exe            = '7z\7z.exe'
+                Extract        = '7z-extra'
             }
         }
         'uv' {
@@ -188,18 +205,35 @@ function New-ToolDef {
     }
 }
 
+function Get-DefaultEnvRoot {
+    <#
+    .SYNOPSIS
+        EnvRoot 默认解析：显式环境变量 OHMYENV_ROOT > D 盘（存在）> C 盘（回退）。
+    #>
+    if ($env:OHMYENV_ROOT -and $env:OHMYENV_ROOT.Trim()) {
+        return $env:OHMYENV_ROOT.Trim().TrimEnd('\')
+    }
+    if (Test-Path 'D:\') { return 'D:\ohmyenv' }
+    return 'C:\ohmyenv'
+}
+
 function New-DefaultLock {
     $tools = @{}
     foreach ($t in $script:ToolNames) { $tools[$t] = New-ToolDef $t }
-    @{ EnvRoot = 'D:\ohmyenv'; Tools = $tools }
+    @{ EnvRoot = (Get-DefaultEnvRoot); Tools = $tools }
 }
 
 function Get-EnvLock {
+    param([string]$EnvRoot)
     if (Test-Path $script:LockPath) {
         $lock = Import-PowerShellDataFile -Path $script:LockPath
     } else {
         $lock = New-DefaultLock
         Save-EnvLock -Lock $lock
+    }
+    # EnvRoot 覆盖（重定位）：显式 -EnvRoot 参数优先于已有锁定（不覆盖环境变量默认）
+    if ($EnvRoot -and $EnvRoot.Trim().TrimEnd('\') -ne $lock.EnvRoot.TrimEnd('\')) {
+        $lock.EnvRoot = $EnvRoot.Trim().TrimEnd('\')
     }
     foreach ($t in $script:ToolNames) {
         if (-not $lock.Tools.ContainsKey($t)) {
@@ -454,6 +488,7 @@ function Get-InstalledVersion {
     # 跳过空行（如 7z --help 首行为空行）
     $line = (& $ExePath $versionArgs 2>&1 | Where-Object { $_ -and $_.Trim() } | Select-Object -First 1) -join ' '
     switch ($Tool) {
+        'pwsh'  { if ($line -match 'PowerShell\s+(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'gh'   { if ($line -match 'gh version (\d+\.\d+\.\d+)') { return $Matches[1] } }
         'git'  { if ($line -match 'git version (\S+)') { return $Matches[1] } }
         'age'  { if ($line -match '^v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
@@ -497,12 +532,13 @@ function Install-ToolVersion {
     $t  = $Resolution.Tool
     $d  = $Lock.Tools[$t]
     $envRoot    = $Lock.EnvRoot
-    $installDir = Join-Path $envRoot $d.Dir
+    $isMsi      = ($d.Extract -eq 'msi')
+    $installDir = if ($isMsi) { $null } else { Join-Path $envRoot $d.Dir }
     $cachePath  = Join-Path $envRoot "cache\$($Resolution.AssetName)"
-    $exePath    = Join-Path $envRoot $d.Exe
+    $exePath    = if ($isMsi) { [Environment]::ExpandEnvironmentVariables($d.Exe) } else { Join-Path $envRoot $d.Exe }
     $shaBackfilled = $false
 
-    if (-not (Test-SafeUnderRoot -Root $envRoot -Path $installDir)) {
+    if (-not $isMsi -and -not (Test-SafeUnderRoot -Root $envRoot -Path $installDir)) {
         throw "危险路径，拒绝操作: $installDir"
     }
 
@@ -516,7 +552,7 @@ function Install-ToolVersion {
             Save-EnvLock -Lock $Lock
             Write-Host "[OK] 已回填 sha256（命中缓存）" -ForegroundColor Green
         }
-        if ($RegisterPath) { Add-EnvPath -Dir (Join-Path $envRoot $d.Bin) }
+        if ($RegisterPath -and $d.Bin) { Add-EnvPath -Dir (Join-Path $envRoot $d.Bin) }
         if ($UpdateLock -and $d.Tag -ne $Resolution.Tag) {
             # 已安装版本与解析一致但锁定滞后（如上次安装中断）：补齐锁定
             $d.Tag     = $Resolution.Tag
@@ -552,12 +588,21 @@ function Install-ToolVersion {
         $shaBackfilled = $true
     }
 
-    if (Test-Path $installDir) {
-        Remove-Item -LiteralPath $installDir -Recurse -Force
+    if (-not $isMsi) {
+        if (Test-Path $installDir) {
+            Remove-Item -LiteralPath $installDir -Recurse -Force
+        }
+        New-Item -ItemType Directory -Path $installDir -Force | Out-Null
     }
-    New-Item -ItemType Directory -Path $installDir -Force | Out-Null
 
     switch ($d.Extract) {
+        'msi' {
+            # 安装包：per-user 静默安装（不需管理员、可迁移），不绿色解压；MSI 自行注册用户 PATH
+            $perUserTarget = Join-Path $env:LOCALAPPDATA 'Programs\PowerShell\7'
+            $msiArgs = "/i `"$cachePath`" /qn /norestart MSIINSTALLPERUSER=1 APPLICATIONFOLDER=`"$perUserTarget`""
+            Start-Process -FilePath 'msiexec.exe' -ArgumentList $msiArgs -Wait
+            if ($LASTEXITCODE -ne 0) { throw "$t MSI 安装失败（exit=$LASTEXITCODE）" }
+        }
         'zip' {
             Expand-Archive -Path $cachePath -DestinationPath $installDir -Force
             # 展平顶层单目录（如 age zip 的 age/ 包裹层）
@@ -612,7 +657,7 @@ function Install-ToolVersion {
     Write-Host "[OK] $t 安装完成: $installed @ $exePath" -ForegroundColor Green
     if ($shaBackfilled) { Save-EnvLock -Lock $Lock }
 
-    if ($RegisterPath) { Add-EnvPath -Dir (Join-Path $envRoot $d.Bin) }
+    if ($RegisterPath -and $d.Bin) { Add-EnvPath -Dir (Join-Path $envRoot $d.Bin) }
     if ($UpdateLock) {
         $d.Tag    = $Resolution.Tag
         $d.Version = $Resolution.Version
@@ -648,4 +693,265 @@ function Remove-EnvPath {
     [Environment]::SetEnvironmentVariable('Path', ($parts -join ';'), 'User')
     $env:Path = (($env:Path -split ';') | Where-Object { $_ -and $_ -ne $Dir }) -join ';'
     Write-Host "[OK] PATH 已移除: $Dir" -ForegroundColor Green
+}
+
+function Invoke-EnvPack {
+    <#
+    .SYNOPSIS
+        打包部署压缩包：密钥 + 绿色部署包 + 安装包 + 部署器脚本 + manifest。
+        产物输出到 EnvRoot\deploy\ohmyenv-deploy-<时间戳>.zip。
+    #>
+    param([Parameter(Mandatory)][hashtable]$Lock)
+
+    $envRoot   = $Lock.EnvRoot
+    $deployDir = Join-Path $envRoot 'deploy'
+    New-Item -ItemType Directory -Path $deployDir -Force | Out-Null
+
+    $stamp   = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $zipPath = Join-Path $deployDir "ohmyenv-deploy-$stamp.zip"
+    $stage   = Join-Path $env:TEMP "ohmyenv-pack-$stamp"
+    New-Item -ItemType Directory -Path $stage -Force | Out-Null
+
+    $portableDir  = Join-Path $stage 'portable'
+    $installerDir = Join-Path $stage 'installers'
+    $secretsDir   = Join-Path $stage 'secrets'
+    $scriptsDir   = Join-Path $stage 'scripts'
+    foreach ($d in @($portableDir, $installerDir, $secretsDir, $scriptsDir)) {
+        New-Item -ItemType Directory -Path $d -Force | Out-Null
+    }
+
+    $manifest = [ordered]@{ Created = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'); EnvRoot = $envRoot; Tools = [ordered]@{} }
+
+    foreach ($t in $script:ToolNames) {
+        $d = $Lock.Tools[$t]
+        $kind = if ($d.Kind) { $d.Kind } else { 'portable' }
+        if ($kind -eq 'installer') {
+            # 安装包：归档 cache 里的原始 installer（含 BootstrapAsset 如 7zr.exe）
+            $cacheFile = Join-Path $envRoot "cache\$($d.Asset)"
+            if (Test-Path -LiteralPath $cacheFile) {
+                Copy-Item -LiteralPath $cacheFile -Destination (Join-Path $installerDir $d.Asset) -Force
+                Write-Host "[打包] installer: $t ($($d.Asset))" -ForegroundColor Cyan
+            } else {
+                Write-Host "[跳过] installer 缓存缺失: $t ($($d.Asset))" -ForegroundColor Yellow
+            }
+            if ($d.BootstrapAsset) {
+                $boot = Join-Path $envRoot "cache\$($d.BootstrapAsset)"
+                if (Test-Path -LiteralPath $boot) {
+                    Copy-Item -LiteralPath $boot -Destination (Join-Path $installerDir $d.BootstrapAsset) -Force
+                }
+            }
+        } else {
+            # 部署包：归档 EnvRoot 下的绿色产物目录
+            $src = Join-Path $envRoot $d.Dir
+            if (Test-Path -LiteralPath $src) {
+                Copy-Item -LiteralPath $src -Destination (Join-Path $portableDir $d.Dir) -Recurse -Force
+                Write-Host "[打包] portable: $t" -ForegroundColor Cyan
+            } else {
+                Write-Host "[跳过] portable 缺失: $t ($src)" -ForegroundColor Yellow
+            }
+        }
+        $manifest.Tools[$t] = [ordered]@{ Version = $d.Version; Tag = $d.Tag; Asset = $d.Asset; Sha256 = $d.Sha256; Kind = $kind }
+    }
+
+    # 密钥：SOPS 加密副本 + age 私钥（明文 API key 永不进包）
+    $projectRoot = Split-Path $PSScriptRoot -Parent
+    $secretsSrc = Join-Path $projectRoot '.secrets'
+    if (Test-Path -LiteralPath $secretsSrc) {
+        Get-ChildItem -LiteralPath $secretsSrc -File | Copy-Item -Destination $secretsDir -Force
+        Write-Host '[打包] secrets: .secrets 加密副本' -ForegroundColor Cyan
+    }
+    $ageKey = Join-Path $env:APPDATA 'sops\age\keys.txt'
+    if (Test-Path -LiteralPath $ageKey) {
+        Copy-Item -LiteralPath $ageKey -Destination (Join-Path $secretsDir 'age-keys.txt') -Force
+        Write-Host '[打包] secrets: age 私钥' -ForegroundColor Cyan
+    }
+
+    # agent 配置（排除 credentials/auth 等敏感状态，只带可迁移配置模板）
+    $configDir = Join-Path $stage 'config'
+    New-Item -ItemType Directory -Path $configDir -Force | Out-Null
+
+    $codexHome = Join-Path $env:USERPROFILE '.codex'
+    if (Test-Path -LiteralPath (Join-Path $codexHome 'config.toml')) { Copy-Item -LiteralPath (Join-Path $codexHome 'config.toml') -Destination (Join-Path $configDir 'codex-config.toml') -Force }
+    if (Test-Path -LiteralPath (Join-Path $codexHome 'models.json')) { Copy-Item -LiteralPath (Join-Path $codexHome 'models.json') -Destination (Join-Path $configDir 'codex-models.json') -Force }
+    if (Test-Path -LiteralPath (Join-Path $codexHome 'skills')) { Copy-Item -LiteralPath (Join-Path $codexHome 'skills') -Destination (Join-Path $configDir 'codex-skills') -Recurse -Force }
+
+    $claudeHome = Join-Path $env:USERPROFILE '.claude'
+    if (Test-Path -LiteralPath (Join-Path $claudeHome 'settings.json')) { Copy-Item -LiteralPath (Join-Path $claudeHome 'settings.json') -Destination (Join-Path $configDir 'claude-settings.json') -Force }
+    if (Test-Path -LiteralPath (Join-Path $claudeHome 'skills')) { Copy-Item -LiteralPath (Join-Path $claudeHome 'skills') -Destination (Join-Path $configDir 'claude-skills') -Recurse -Force }
+    $claudeJson = Join-Path $env:USERPROFILE '.claude.json'
+    if (Test-Path -LiteralPath $claudeJson) { Copy-Item -LiteralPath $claudeJson -Destination (Join-Path $configDir 'claude.json') -Force }
+
+    $kimiHome = Join-Path $env:USERPROFILE '.kimi-code'
+    foreach ($kf in @('config.toml', 'tui.toml', 'workspaces.json')) {
+        if (Test-Path -LiteralPath (Join-Path $kimiHome $kf)) { Copy-Item -LiteralPath (Join-Path $kimiHome $kf) -Destination (Join-Path $configDir ("kimi-" + $kf)) -Force }
+    }
+    if (Test-Path -LiteralPath (Join-Path $kimiHome 'workspace-trust')) { Copy-Item -LiteralPath (Join-Path $kimiHome 'workspace-trust') -Destination (Join-Path $configDir 'kimi-workspace-trust') -Recurse -Force }
+
+    $starshipCfg = Join-Path $env:USERPROFILE '.config\starship.toml'
+    if (Test-Path -LiteralPath $starshipCfg) { Copy-Item -LiteralPath $starshipCfg -Destination (Join-Path $configDir 'starship.toml') -Force }
+
+    $pwshProfile = Join-Path $env:USERPROFILE 'Documents\PowerShell\profile.ps1'
+    if (Test-Path -LiteralPath $pwshProfile) { Copy-Item -LiteralPath $pwshProfile -Destination (Join-Path $configDir 'profile-pwsh.ps1') -Force }
+    $ps5Profile = Join-Path $env:USERPROFILE 'Documents\WindowsPowerShell\profile.ps1'
+    if (Test-Path -LiteralPath $ps5Profile) { Copy-Item -LiteralPath $ps5Profile -Destination (Join-Path $configDir 'profile-ps5.ps1') -Force }
+    Write-Host '[打包] config: codex/claude/kimi/starship/profile 配置' -ForegroundColor Cyan
+
+    # 部署器脚本（ohmyenv 自身，用于目标机 unpack）
+    Copy-Item -Path (Join-Path $PSScriptRoot '*') -Destination $scriptsDir -Recurse -Force
+
+    $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $stage 'manifest.json') -Encoding utf8
+    Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zipPath -Force
+    Remove-Item -LiteralPath $stage -Recurse -Force
+
+    $size = (Get-Item -LiteralPath $zipPath).Length
+    Write-Host "[OK] 部署包已产出: $zipPath" -ForegroundColor Green
+    "  size : {0:N1} MB" -f ($size / 1MB)
+    $zipPath
+}
+
+function Invoke-EnvUnpack {
+    <#
+    .SYNOPSIS
+        从部署压缩包离线还原工具环境（幂等）：已装且版本 >= pin 跳过，未装部署，版本低升级。
+    #>
+    param(
+        [Parameter(Mandatory)][hashtable]$Lock,
+        [Parameter(Mandatory)][string]$ZipPath
+    )
+    if (-not (Test-Path -LiteralPath $ZipPath)) { throw "部署包不存在: $ZipPath" }
+
+    $envRoot = $Lock.EnvRoot
+    New-Item -ItemType Directory -Path $envRoot -Force | Out-Null
+    $stage = Join-Path $env:TEMP ("ohmyenv-unpack-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+    New-Item -ItemType Directory -Path $stage -Force | Out-Null
+
+    try {
+        Expand-Archive -LiteralPath $ZipPath -DestinationPath $stage -Force
+        $manifest = Get-Content -LiteralPath (Join-Path $stage 'manifest.json') -Raw | ConvertFrom-Json
+
+        foreach ($t in $script:ToolNames) {
+            $m = $manifest.Tools.$t
+            if (-not $m) { continue }
+            $d = $Lock.Tools[$t]
+            $kind = if ($m.Kind) { $m.Kind } else { 'portable' }
+            $pinVersion = [version]$m.Version
+
+            # 检测目标机已装版本
+            $isMsi   = ($d.Extract -eq 'msi')
+            $exePath = if ($isMsi) { [Environment]::ExpandEnvironmentVariables($d.Exe) } else { Join-Path $envRoot $d.Exe }
+            $installed = Get-InstalledVersion -ExePath $exePath -Tool $t
+
+            # 幂等：已装且版本 >= pin 跳过（版本高不降级）
+            if ($installed -and ([version]$installed -ge $pinVersion)) {
+                Write-Host "[跳过] $t $installed >= $($m.Version)（幂等）" -ForegroundColor DarkGray
+                continue
+            }
+            $label = if ($installed) { "升级 $installed -> $($m.Version)" } else { "部署 $($m.Version)" }
+            Write-Host "[$label] $t" -ForegroundColor Cyan
+
+            if ($kind -eq 'installer') {
+                # 安装包：installers/<asset> 复制到 cache 后走本地安装
+                $asset = $m.Asset
+                $srcInstaller = Join-Path $stage "installers\$asset"
+                if (-not (Test-Path -LiteralPath $srcInstaller)) {
+                    Write-Host "[跳过] installer 缺失: $asset" -ForegroundColor Yellow
+                    continue
+                }
+                $cacheFile = Join-Path $envRoot "cache\$asset"
+                Copy-Item -LiteralPath $srcInstaller -Destination $cacheFile -Force
+                if ($d.BootstrapAsset) {
+                    $bootSrc = Join-Path $stage "installers\$($d.BootstrapAsset)"
+                    if (Test-Path -LiteralPath $bootSrc) {
+                        Copy-Item -LiteralPath $bootSrc -Destination (Join-Path $envRoot "cache\$($d.BootstrapAsset)") -Force
+                    }
+                }
+                if ($m.Sha256) { $d.Sha256 = $m.Sha256 }
+                # msi（pwsh）自更新会破坏会话：提示用 set-pwsh.ps1 独立处理
+                if ($isMsi) {
+                    Write-Host "[HINT] $t 是 MSI 安装包，请关闭所有 PowerShell 后运行:" -ForegroundColor Yellow
+                    Write-Host "       powershell.exe -NoProfile -ExecutionPolicy Bypass -File $(Join-Path $PSScriptRoot 'set-pwsh.ps1')" -ForegroundColor Yellow
+                    continue
+                }
+                $resolution = @{ Tool = $t; Tag = $m.Tag; Version = $m.Version; AssetName = $asset; AssetUrl = $null; AssetSize = 0; Release = $null }
+                Install-ToolVersion -Lock $Lock -Resolution $resolution -RegisterPath -Force
+            } else {
+                # 部署包：portable/<dir> 解压到 EnvRoot + 幂等注册 PATH
+                $src = Join-Path $stage "portable\$($d.Dir)"
+                if (-not (Test-Path -LiteralPath $src)) {
+                    Write-Host "[跳过] portable 缺失: $($d.Dir)" -ForegroundColor Yellow
+                    continue
+                }
+                $dst = Join-Path $envRoot $d.Dir
+                if (Test-Path -LiteralPath $dst) { Remove-Item -LiteralPath $dst -Recurse -Force }
+                Copy-Item -LiteralPath $src -Destination $dst -Recurse -Force
+                if ($d.Bin) { Add-EnvPath -Dir (Join-Path $envRoot $d.Bin) }
+                $verify = Get-InstalledVersion -ExePath (Join-Path $envRoot $d.Exe) -Tool $t
+                Write-Host "[OK] $t 部署完成: $verify" -ForegroundColor Green
+            }
+        }
+
+        # 密钥恢复：age 私钥 + .secrets 加密副本
+        $projectRoot = Split-Path $PSScriptRoot -Parent
+        $ageKeySrc = Join-Path $stage 'secrets\age-keys.txt'
+        if (Test-Path -LiteralPath $ageKeySrc) {
+            $ageDir = Join-Path $env:APPDATA 'sops\age'
+            New-Item -ItemType Directory -Path $ageDir -Force | Out-Null
+            Copy-Item -LiteralPath $ageKeySrc -Destination (Join-Path $ageDir 'keys.txt') -Force
+            Write-Host '[OK] age 私钥已恢复' -ForegroundColor Green
+        }
+        $secretsSrc = Join-Path $stage 'secrets'
+        $secretsDst = Join-Path $projectRoot '.secrets'
+        if (Test-Path -LiteralPath $secretsSrc) {
+            New-Item -ItemType Directory -Path $secretsDst -Force | Out-Null
+            Get-ChildItem -LiteralPath $secretsSrc -File -Filter *.enc | Copy-Item -Destination $secretsDst -Force
+            Write-Host '[OK] .secrets 加密副本已恢复' -ForegroundColor Green
+        }
+
+        # agent 配置恢复（幂等写回用户目录）
+        $configDir = Join-Path $stage 'config'
+        if (Test-Path -LiteralPath $configDir) {
+            $codexHome = Join-Path $env:USERPROFILE '.codex'
+            New-Item -ItemType Directory -Path $codexHome -Force | Out-Null
+            foreach ($kf in @('config.toml', 'models.json')) {
+                $src = Join-Path $configDir ("codex-" + $kf)
+                if (Test-Path -LiteralPath $src) { Copy-Item -LiteralPath $src -Destination (Join-Path $codexHome $kf) -Force }
+            }
+            if (Test-Path -LiteralPath (Join-Path $configDir 'codex-skills')) { Copy-Item -LiteralPath (Join-Path $configDir 'codex-skills') -Destination (Join-Path $codexHome 'skills') -Recurse -Force }
+
+            $claudeHome = Join-Path $env:USERPROFILE '.claude'
+            New-Item -ItemType Directory -Path $claudeHome -Force | Out-Null
+            if (Test-Path -LiteralPath (Join-Path $configDir 'claude-settings.json')) { Copy-Item -LiteralPath (Join-Path $configDir 'claude-settings.json') -Destination (Join-Path $claudeHome 'settings.json') -Force }
+            if (Test-Path -LiteralPath (Join-Path $configDir 'claude-skills')) { Copy-Item -LiteralPath (Join-Path $configDir 'claude-skills') -Destination (Join-Path $claudeHome 'skills') -Recurse -Force }
+            if (Test-Path -LiteralPath (Join-Path $configDir 'claude.json')) { Copy-Item -LiteralPath (Join-Path $configDir 'claude.json') -Destination (Join-Path $env:USERPROFILE '.claude.json') -Force }
+
+            $kimiHome = Join-Path $env:USERPROFILE '.kimi-code'
+            New-Item -ItemType Directory -Path $kimiHome -Force | Out-Null
+            foreach ($kf in @('config.toml', 'tui.toml', 'workspaces.json')) {
+                $src = Join-Path $configDir ("kimi-" + $kf)
+                if (Test-Path -LiteralPath $src) { Copy-Item -LiteralPath $src -Destination (Join-Path $kimiHome $kf) -Force }
+            }
+            if (Test-Path -LiteralPath (Join-Path $configDir 'kimi-workspace-trust')) { Copy-Item -LiteralPath (Join-Path $configDir 'kimi-workspace-trust') -Destination (Join-Path $kimiHome 'workspace-trust') -Recurse -Force }
+
+            if (Test-Path -LiteralPath (Join-Path $configDir 'starship.toml')) {
+                $starshipDir = Join-Path $env:USERPROFILE '.config'
+                New-Item -ItemType Directory -Path $starshipDir -Force | Out-Null
+                Copy-Item -LiteralPath (Join-Path $configDir 'starship.toml') -Destination (Join-Path $starshipDir 'starship.toml') -Force
+            }
+            if (Test-Path -LiteralPath (Join-Path $configDir 'profile-pwsh.ps1')) {
+                $pDir = Join-Path $env:USERPROFILE 'Documents\PowerShell'
+                New-Item -ItemType Directory -Path $pDir -Force | Out-Null
+                Copy-Item -LiteralPath (Join-Path $configDir 'profile-pwsh.ps1') -Destination (Join-Path $pDir 'profile.ps1') -Force
+            }
+            if (Test-Path -LiteralPath (Join-Path $configDir 'profile-ps5.ps1')) {
+                $pDir = Join-Path $env:USERPROFILE 'Documents\WindowsPowerShell'
+                New-Item -ItemType Directory -Path $pDir -Force | Out-Null
+                Copy-Item -LiteralPath (Join-Path $configDir 'profile-ps5.ps1') -Destination (Join-Path $pDir 'profile.ps1') -Force
+            }
+            Write-Host '[OK] agent 配置已恢复（codex/claude/kimi/starship/profile）' -ForegroundColor Green
+        }
+
+        Write-Host '[OK] unpack 完成' -ForegroundColor Green
+    } finally {
+        Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }

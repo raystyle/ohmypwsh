@@ -5,16 +5,18 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('query', 'deploy', 'install', 'update', 'pin', 'lock', 'status', 'daily', 'help')]
+    [ValidateSet('query', 'deploy', 'install', 'update', 'pin', 'lock', 'status', 'daily', 'pack', 'unpack', 'help')]
     [string]$Command = 'help',
 
     [Parameter(Position = 1)]
-    [ValidateSet('gh', 'git', 'age', 'sops', 'codex', 'aria2', '7z', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship', 'all')]
+    [ValidateSet('pwsh', 'gh', 'git', 'age', 'sops', 'codex', 'aria2', '7z', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship', 'all')]
     [string]$Tool = 'all',
 
     [switch]$Latest,
     [string]$Tag,
     [string]$Version,
+    [string]$Zip,
+    [string]$EnvRoot,
     [switch]$Force,
     [switch]$DryRun,
     [switch]$IncludeBreaking
@@ -23,7 +25,7 @@ param(
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'helpers.ps1')
 
-$lock  = Get-EnvLock
+$lock  = Get-EnvLock -EnvRoot $EnvRoot
 $tools = if ($Tool -eq 'all') { @($script:ToolNames) } else { @($Tool) }
 
 function Show-Help {
@@ -135,10 +137,11 @@ switch ($Command) {
                 Write-Host "  [$($script:ToolCategories[$cat])]" -ForegroundColor Yellow
                 $lastCat = $cat
             }
-            $exePath = Join-Path $lock.EnvRoot $d.Exe
-            $bin     = Join-Path $lock.EnvRoot $d.Bin
+            $isMsi   = ($d.Extract -eq 'msi')
+            $exePath = if ($isMsi) { [Environment]::ExpandEnvironmentVariables($d.Exe) } else { Join-Path $lock.EnvRoot $d.Exe }
+            $bin     = if ($d.Bin) { Join-Path $lock.EnvRoot $d.Bin } else { '' }
             $installed = Get-InstalledVersion -ExePath $exePath -Tool $t
-            $inPath = ([Environment]::GetEnvironmentVariable('Path', 'User') -split ';') -contains $bin
+            $inPath = if ($d.Bin) { ([Environment]::GetEnvironmentVariable('Path', 'User') -split ';') -contains $bin } else { $false }
             "  $t : locked=$($d.Version)  installed=$(if ($installed) { $installed } else { '-' })  path=$inPath"
             "       exe = $exePath"
         }
@@ -188,6 +191,21 @@ switch ($Command) {
         $report | Add-Content -Path $logFile -Encoding utf8
         Write-Host "[LOG] $logFile" -ForegroundColor DarkGray
         if ($held -gt 0) { exit 2 }
+    }
+
+    'pack' {
+        Invoke-EnvPack -Lock $lock
+    }
+
+    'unpack' {
+        $zip = $Zip
+        if (-not $zip) {
+            $deployDir = Join-Path $lock.EnvRoot 'deploy'
+            $zip = Get-ChildItem -LiteralPath $deployDir -Filter 'ohmyenv-deploy-*.zip' -ErrorAction SilentlyContinue |
+                   Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
+            if (-not $zip) { throw "未找到部署包，先运行: ohmyenv pack" }
+        }
+        Invoke-EnvUnpack -Lock $lock -ZipPath $zip
     }
 
     default { Show-Help }

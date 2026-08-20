@@ -50,6 +50,13 @@
 - `set-claude-key.ps1` 重写为 Codex 风格：交互输入 → 用户环境变量 → 自动 SOPS 加密备份（回读验证、明文即删）
 - rmux 双端项目级 skill：`.claude\skills\rmux\SKILL.md`（Claude Code）与 `.agents\skills\rmux\SKILL.md`（Codex，仓库根向上扫描），经 skill-creator `quick_validate` 校验；研究文档 `docs\research\rmux-usage.md`（send-keys 目标/tiny CLI/备屏捕获等实测坑）
 - 方案文档 `docs\plans\0009-claude-takeover.md`：Claude Code 完全接管（YOLO/状态栏/env 收敛/omc 清理/双端 rmux skill）
+- 建立方案 `docs\plans\0010-portable-agent-env.md`：项目本质重定位为「可迁移 Agent 环境部署与管理模块 CLI」（原生 PS5.1 bootstrap → 升级 pwsh7 → 部署模块 CLI → 工具/agent/密钥管理 → 产物压缩包跨机还原）
+- 产物分类定稿：安装包（pwsh7 / codex / claude / kimi / git / 7z，只归档原始 installer，二次部署直接安装配置，不进绿色 env）vs 部署包（age / sops / gh / aria2 / uv / python / rg / jq / yq / rmux / starship，单二进制 + PATH 进 EnvRoot）
+- README / AGENTS.md「项目定位」/ ROADMAP 阶段 5 同步新定位与三条主链（bootstrap / 管理 / 迁移）
+- pwsh7 纳入工具清单（安装包类）：`New-ToolDef` 新增 `pwsh`（`PowerShell/PowerShell`，MSI 资产 + `hashes.sha256` 校验，`Extract='msi'`，`Exe='%LOCALAPPDATA%\Programs\PowerShell\7\pwsh.exe'`）；`ToolNames` 置顶为 agent 层第一工具；pin `v7.6.5`
+- ohmyenv 支持 `msi` 安装类型：下载 MSI 到缓存 → per-user 静默安装（`MSIINSTALLPERUSER=1`，不需管理员）→ 版本验证；msi 类 Bin 为空不注册 env PATH，`status` 对 msi 用 `ExpandEnvironmentVariables` 解析系统路径
+- PowerShell 7 一键幂等安装/升级脚本 `scripts\set-pwsh.ps1`（PS5.1 兼容 + UTF-8 BOM）：检测系统已装 pwsh7（Program Files / LOCALAPPDATA）→ 决定新装 / 升级 / 跳过；非管理员自动提权重启；缓存复用 MSI；msiexec 静默安装（UpgradeCode 自动替换旧版）；重新检测验证版本。因 pwsh 不能安全自更新（替换正在运行的 exe/dll 破坏会话），由 `powershell.exe` 独立运行
+- PowerShell 7 遥测关闭：`set-pwsh.ps1` 安装/升级加 `DISABLE_TELEMETRY=1`，安装后幂等写用户级 `POWERSHELL_TELEMETRY_OPTOUT=1` + `POWERSHELL_UPDATECHECK=Off`；研究文档 `docs\research\powershell-telemetry.md`（官方 about_Telemetry + GitHub Issue 实测）
 
 ### Changed
 
@@ -98,6 +105,15 @@
 - omc 移除 uv 注册（`$BaseScripts` 清出、`uv.ps1`/`uv.exe` 改名保留、CLAUDE.md 同步）；claude 2.1.187 验证仍可用
 - `ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic` + 遥测关闭等优化 env 就位；`claude --version` = 2.1.233（新装，支持 `[1m]`）
 
+- Codex 状态栏移除 `used-tokens`（会话累计 token 如 `2.09M used` 的冗余显示）：保留 `context-remaining` 反映 1M 窗口实际占用；`scripts\set-codex-statusline.ps1` 默认状态栏组合同步去除该项
+- Claude Code 状态栏移除 token 总量显示（`27.2k tok` / `2.09M tok` 等累计值）：保留 `ctx [1M] %` 反映窗口占用；`scripts\claude-statusline.ps1` 删除 token 段
+- rmux 会话/窗格/布局三组原语实测定稿：上 2 下 1 = `new-session` + `split-window -h` + `split-window -f -v`（`-f` 全宽跨整窗是下排全宽的关键，实测 layout 字符串与 pane 坐标落盘）；恢复 attach = 新 wt 窗口 `attach-session -d -t NAME`（关 wt 仅 detach，daemon/会话保留，恢复不 new 不 kill-server）；`docs\research\rmux-usage.md` 与双端 SKILL.md 同步
+- Kimi Code 接管配置：`scripts\set-kimi-config.ps1` 按官方默认位置 `~/.kimi-code` 安装/更新维护（不进 `D:\ohmyenv`，与 Claude Code 一致）；幂等合并 `config.toml`：`default_model=kimi-code/k3` + `default_permission_mode=yolo` + `telemetry=false`
+- Kimi 工作区信任：`set-kimi-config.ps1` 按 `workspaces.json` 批量写 `workspace-trust\<workspace_id>` 信任标记（`{"root":"<路径>","trustedAt":<unix 毫秒>}`），跳过目录 trust 弹窗；实测 `D:\ohmypwsh` 已标记
+- Claude Code 状态栏 context 显示统一为 `context: 已用% (已用/窗口)`（如 `context: 0% (0/1M)`）：`claude-statusline.ps1` 用 `used_percentage` + `context_window_size` 计算窗口内占用（`FmtTok` 格式化 0/k/M）；Codex 状态栏为内置组件无自定义 command，无法用该格式，仅能 `context-used`（`Context 3% used`）+ `context-window-size`（`1M window`）近似
+- Codex 状态栏精简：移除 `run-state`（Ready 状态）与 `permissions`（Full Access 显示）；`context-remaining` 换成 `context-used` + `context-window-size`（显示 `Context 3% used · 1M window`），与 Claude 已用%语义对齐；`set-codex-statusline.ps1` 默认组合同步
+- rmux send-keys 回车原语实测修正：回车键名只有 `Enter` 有效（`C-m` 被当字面量 `^M` 污染输入框）；TUI agent（codex/claude/kimi）提交判断改用进程 CPU 增长（capture 因 alternate screen 为空），发送前记 CPU、发送后增量 >0.5 判定已提交，不再盲目连发回车；`docs\research\rmux-usage.md` 踩坑第 8 条 + SKILL.md「Agent 状态判断原语」同步
+
 ### Fixed
 
 - `Get-InstalledVersion` 数组展开 bug（`@versionArgs` 解析异常导致所有工具显示未安装）
@@ -121,3 +137,7 @@
 - `docs\research\rmux-usage.md` 独立窗口流程改为「wt → rmux → claude」：窗口直接跑 `rmux new-session -A -s claude -c D:\ohmypwsh claude`（会话存在则 attach）；**无色彩真正根因 = Codex 沙箱注入的 `NO_COLOR=1`**（一路传给 daemon→窗格→claude，置空无效必须 `Remove-Item Env:NO_COLOR`）+ `TERM=dumb`；wt 路径改用 `(Get-Command wt.exe).Source` 动态解析不再硬编码 WindowsApps；实测 daemon 在最后一个会话被杀后自动退出
 - `docs\research\rmux-usage.md` 补充 Codex 环境注入研究结论：`NO_COLOR=1`/`TERM=dumb` 等是 unified exec 硬编码常量表（`UNIFIED_EXEC_ENV`，源码 `codex-rs/core/src/unified_exec/process_manager.rs`），在 `shell_environment_policy` 之后覆写，`sandbox_mode=danger-full-access` 只关隔离不改这套注入 → 只能工作流层清理
 - 双端 rmux skill 定稿 + Claude Code review 回归：Codex 侧（`.agents\skills\rmux`）与 Claude 侧（`.claude\skills\rmux`）统一为「新开终端窗口 + rmux 同终端多窗格分别操作 codex/claude」；skill-creator `quick_validate` 通过（PYTHONUTF8=1 解决 GBK 读取，uv --with pyyaml 补依赖）；按 Claude Code review 修复 8 项（单 agent 变体 cwd、TUI capture 空、会话复用守卫、旧 daemon 污染守卫、list-clients 竞态、`--wait-text`、tiny CLI 说明、PATH 副作用注释）+ 新增 send-keys 提交原语（发送后验证已提交，未提交补 Enter）；双窗格（codex+claude）真机回归通过（新窗口 xterm-256color 彩色、两侧均可操作）
+
+### Removed
+
+- rmux skill 迁移至独立仓库 https://github.com/raystyle/win-rmux：删除 `.agents\skills\rmux` / `.claude\skills\rmux` 双端 skill 与 `docs\research\rmux-usage.md`（研究已迁入 win-rmux 的 `skills/win-rmux/references/rmux-usage.md`）；本项目只保留 rmux 的 ohmyenv 安装管理（pin / update / pack 部署包类）

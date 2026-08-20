@@ -38,7 +38,7 @@
 - `0006-psmodule-manager.md`：PowerShell 模块管理器（在线/离线、PS5/PS7、自研模块打包）
 - `0007-uv-python-takeover.md`：uv/Python 接管（uv 最新 + Python 3.12 为准）
 - `0008-claude-code-config.md`：Claude Code 扩展配置（GLM-5.3 1M 上下文）
-- `0009-claude-takeover.md`：Claude Code 完全接管（YOLO/状态栏/env 收敛/omc 清理 + 双端 rmux skill）
+- `0009-claude-takeover.md`：Claude Code 完全接管（YOLO/状态栏/env 收敛/omc 清理；rmux skill 已迁至 win-rmux 独立仓库）
 
 ## 研究文档
 
@@ -53,7 +53,6 @@
 - `research\omc-psmodule-management.md`：omc 的 PowerShell 模块管理机制（本地仓库 + 双 shell 交叉部署 + 锁文件）
 - `research\powershell-encoding.md`：PS5/PS7 编码兼容研究（优先注意规则）
 - `research\claude-code-statusline-api.md`：Claude Code 状态栏（statusLine）API 契约研究
-- `research\rmux-usage.md`：RMUX 正确用法研究（gh 调研 + 本机实测踩坑）
 - `research\claude-code-onboarding.md`：Claude Code 首次启动 onboarding 与安装警告（登录验证 / 工作区信任 / .local PATH 检查踩坑）
 
 ## 项目目录索引

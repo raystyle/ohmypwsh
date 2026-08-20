@@ -11,6 +11,7 @@
 | 2 | 密钥管理：age + SOPS 接入 ohmyenv，.sops.yaml 与冒烟测试 | 已完成 |
 | 3 | Codex 接管：原生二进制 + 沙箱 + DeepSeek 密钥迁移到 env_key | 已完成 |
 | 4 | 工具分层与日常更新：核心基础工具（密钥/智能体/项目管理/基础工具）先装齐，扩展工具稳定扩展，日常无影响更新 | 进行中 |
+| 5 | 项目重定位：可迁移 Agent 环境部署与管理模块 CLI（安装包/部署包分类、pwsh7 纳入、EnvRoot 重定位、bootstrap、pack/unpack） | 进行中 |
 
 ## 阶段 0：项目基础设施（已完成）
 
@@ -67,7 +68,35 @@
 - 已完成：uv/Python 接管（uv 0.12.5 最新 + Python 3.12.14 为准，`UV_*` 全部迁入 `D:\ohmyenv`，源确认为 aliyun/nju，omc 注册移除）
 - 已完成：Claude Code 扩展配置（2.1.233 + GLM-5.3[1m] 1M 上下文 + bigmodel 端点 + 遥测关闭；密钥 SOPS 加密保存）
 - 已完成：Claude Code 完全接管（YOLO 对齐 Codex + 状态栏纯 PowerShell + 配置收敛 settings.json env + 用户环境变量/`~/.claude` omc 残留清理 + omc 侧 claude 安装器/Profile/旧 exe 删除；`claude -p` 实测 model=glm-5.3[1m]）
-- 已完成：rmux 双端项目级 skill（`.claude/skills/rmux` + `.agents/skills/rmux`，经 skill-creator 校验）
+- 已完成：rmux 双端项目级 skill（已迁移至独立仓库 https://github.com/raystyle/win-rmux；本项目只维护 rmux 的安装管理）
 - 已决定：不挂自动升级任务（2026-08-19 用户指示，`ohmyenv daily` 保持手动执行）
 - 待办（可选）：按需继续接管更多扩展工具
 - 研究中：PowerShell 模块 / .NET 库 / VS Build Tools 现状与接管可行性（`docs\research\powershell-dotnet-vsbuild.md`）
+
+## 阶段 5：项目重定位（进行中）
+
+目标：把项目本质收敛为「可迁移 Agent 环境部署与管理模块 CLI」——从原生 PS5.1 一键初始化，升级
+pwsh7，部署模块 CLI，产物分安装包/部署包两类，支持压缩包跨机还原已 pin 工具环境。
+
+方案：`docs\plans\0010-portable-agent-env.md`。
+
+已完成：
+
+- 项目本质定位落盘（README / AGENTS.md「项目定位」/ 方案 0010）
+- 产物分类定稿：安装包（pwsh7 / codex / claude / kimi / git / 7z，只归档 installer，二次安装）
+  vs 部署包（age / sops / gh / aria2 / uv / python / rg / jq / yq / rmux / starship，单二进制
+  + PATH，进 EnvRoot）
+- pwsh7 v7.6.5 纳入工具清单（安装包类，MSI + `hashes.sha256` 校验，`Extract='msi'` per-user /
+ 系统位置检测）
+- `scripts\set-pwsh.ps1` 一键幂等安装/升级（PS5.1 兼容 + UTF-8 BOM，检测 → 新装/升级/跳过 →
+  提权 → msiexec → 验证）；实测：关闭所有 pwsh 后 cmd 启动 `powershell.exe ... set-pwsh.ps1`
+  升级 7.6.4 → 7.6.5 成功
+- PowerShell 7 遥测关闭（`DISABLE_TELEMETRY=1` + `POWERSHELL_TELEMETRY_OPTOUT=1` +
+  `POWERSHELL_UPDATECHECK=Off`，研究文档 `docs\research\powershell-telemetry.md`）
+
+进行中 / 待办：
+
+- EnvRoot / 项目根参数化，扫清 `D:\ohmyenv` / `D:\ohmypwsh` 硬编码
+- PS5.1 兼容 `bootstrap.ps1`（装 pwsh7 + 部署模块 + 注册 PATH）
+- 脚本收敛为 `ohmyenv.psm1` / `ohmyenv.psd1` 模块
+- `ohmyenv pack` / `ohmyenv unpack` 打包迁移与换机还原实测
