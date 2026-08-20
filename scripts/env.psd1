@@ -156,6 +156,21 @@
             Extract      = 'zip'
             Sha256       = '8183BED4348CB78FDFD8ABB3D1247FBEAB7B2082F941363929C61E747C001E10'
         }
+        'bun' = @{
+            Version      = '1.3.14'
+            Tag          = 'bun-v1.3.14'
+            TagPrefix    = 'bun-v'
+            Repo         = 'oven-sh/bun'
+            AssetPattern = '^bun-windows-x64\.zip$'
+            Asset        = 'bun-windows-x64.zip'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'bun'
+            Bin          = 'bun'
+            Exe          = 'bun\bun.exe'
+            Extract      = 'zip'
+            Sha256       = '0A0620930B6675D7BA440E81F4E0E00D3CFBE096C4B140D3FFF02205E9E18922'
+        }
         'uv' = @{
             Version      = '0.12.5'
             Tag          = '0.12.5'

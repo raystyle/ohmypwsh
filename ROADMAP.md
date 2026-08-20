@@ -86,6 +86,8 @@
 - 已完成：Node.js/npm 接管（fnm 1.39.0 部署到 `D:\ohmyenv\fnm` + `set-fnm-config.ps1` 幂等配置
   `FNM_DIR=D:\ohmyenv\fnm-data`/镜像 npmmirror/profile 块/`.npmrc` registry；`fnm install --lts`
   安装 node v24.19.0 并设默认；项目根 `.nvmrc` 无缝切换）
+- 已完成：Bun 接管（oven-sh/bun 1.3.14 部署到 `D:\ohmyenv\bun` + `set-bun-config.ps1` 幂等配置
+  全局 `~/.bunfig.toml` / 局部 `bunfig.toml` 镜像 npmmirror）
 
 ## 阶段 5：项目重定位（未开始，远期）
 
