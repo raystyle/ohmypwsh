@@ -141,6 +141,21 @@
             Extract      = 'zip'
             Sha256       = '83FBF0699A984D08063579B06EDFC8C327AF62234B1AAEEADC5D7AE7F5A0514A'
         }
+        'nvm' = @{
+            Version      = '1.2.2'
+            Tag          = '1.2.2'
+            TagPrefix    = ''
+            Repo         = 'coreybutler/nvm-windows'
+            AssetPattern = '^nvm-noinstall\.zip$'
+            Asset        = 'nvm-noinstall.zip'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'nvm'
+            Bin          = 'nvm'
+            Exe          = 'nvm\nvm.exe'
+            Extract      = 'zip'
+            Sha256       = '74232EA51C060ECD44ECF2CEBEE314ED9E3F6DA56E1F9484D8D46C4E8BB6AE0E'
+        }
         'uv' = @{
             Version      = '0.12.5'
             Tag          = '0.12.5'

@@ -116,6 +116,8 @@
 - 7z 绿色部署落地：新增 `7z-extra` 解压类型（下载 `7zr.exe` + `7zXXXX-extra.7z` → 7zr 解压 → `x64/7za.exe` shim 成 `7z.exe` 单文件 1.3MB，替换旧的 tar 解压多文件部署）；`New-ToolDef` 7z 改 `AssetPattern='^7z[0-9]+-extra\.7z$'` + `BootstrapAsset='7zr.exe'` + `TagPrefix=''`；`Install-ToolVersion` 支持 BootstrapAsset 额外下载；`Save-EnvLock` 补充 `Kind`/`BootstrapAsset` 可选字段写盘；修复无 v 前缀 tag（7z tag 为 `26.02`）的 `-Version` 解析（`TagPrefix` 空串判断）；`Get-InstalledVersion` 7z 正则兼容 7za 的 `7-Zip (a) 26.02 (x64)` 输出
 - .NET SDK 接管：`New-ToolDef` 新增 `dotnet`（`CdnUrl` CDN 直链模板，非 GitHub）；`Resolve-ToolVersion` 支持 `CdnUrl` 来源（`-Version` 拼 CDN URL，AssetName 从 URL 推导）；pin 10.0.400 → deploy 到 `D:\ohmyenv\dotnet`（286MB zip，aria2 15MiB/s）+ PATH 前置；`Get-InstalledVersion` dotnet 版本解析；实测 `dotnet --list-sdks` 10.0.400
 - omc 旧 dotnet 清理：`omc.ps1` `$DevTools` 移除 dotnet（排序列表同步）+ `CLAUDE.md` 移除 dotnet 说明；`dotnet.ps1` / `dotnet-install.ps1` 改名保留 `.removed-20260820`；`.envs\dev\dotnet` 与 `.config\dotnet` 改名保留；实测 `dotnet` 解析到 `D:\ohmyenv\dotnet\dotnet.exe` 10.0.400
+- Node.js/npm 接管（nvm-windows）：研究文档 `docs\research\node-nvm-windows.md`（nvm-sh/nvm 不支持 Windows，Windows 用 coreybutler/nvm-windows）；`New-ToolDef` 新增 `nvm`（`nvm-noinstall.zip` 绿色，`TagPrefix=''` 无 v 前缀）；pin 1.2.2 → deploy 到 `D:\ohmyenv\nvm`（nvm.exe 7MB）；`scripts\set-node-config.ps1` 幂等配置（`NVM_HOME`/`NVM_SYMLINK`/PATH/settings.txt 镜像 npmmirror/`.npmrc` registry）
+- omc 旧 node 清理：`omc.ps1` `$DevTools` 移除 node（排序列表 + DESCRIPTION 同步）+ `CLAUDE.md` 移除 node 说明；`node.ps1` / `.envs\dev\node` 改名保留 `.removed-20260820`
 
 ### Fixed
 
