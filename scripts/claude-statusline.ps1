@@ -22,6 +22,13 @@ function Seg([string]$text, [string]$code = '') {
     return $text
 }
 
+# token 数格式化：0 / 31k / 1M
+function FmtTok([double]$n) {
+    if ($n -ge 1MB) { return '{0:N0}M' -f ($n / 1MB) }
+    if ($n -ge 1KB) { return '{0:N0}k' -f ($n / 1KB) }
+    return [string][long]$n
+}
+
 $parts = [System.Collections.Generic.List[string]]::new()
 
 # ── 2. 模型（display_name 优先，回退 id） ──
@@ -32,33 +39,20 @@ if ($d.model) {
 $m = Seg $model '36'
 if ($m) { $parts.Add($m) }
 
-# ── 3. 上下文：剩余 %（回退已用 % 换算），1M 窗口标注 ──
+# ── 3. 上下文：context: 已用% (已用/窗口)，对齐 Codex 语义 ──
 if ($d.context_window) {
     $cw = $d.context_window
-    $win = $cw.context_window_size
-    $ctxPct = $null
-    if ($null -ne $cw.remaining_percentage) {
-        $ctxPct = [math]::Floor([double]$cw.remaining_percentage)
-    } elseif ($null -ne $cw.used_percentage) {
-        $ctxPct = 100 - [math]::Floor([double]$cw.used_percentage)
+    $win = [double]$cw.context_window_size
+    $usedPct = $null
+    if ($null -ne $cw.used_percentage) {
+        $usedPct = [math]::Floor([double]$cw.used_percentage)
+    } elseif ($null -ne $cw.remaining_percentage) {
+        $usedPct = 100 - [math]::Floor([double]$cw.remaining_percentage)
     }
-    if ($null -ne $ctxPct) {
-        $winTag = ''
-        if ($win -and [double]$win -ge 1000000) { $winTag = '[1M] ' }
-        $c = Seg ("ctx $winTag$ctxPct%") '32'
+    if ($null -ne $usedPct -and $win -gt 0) {
+        $usedTok = [math]::Round($win * $usedPct / 100)
+        $c = Seg ("context: ${usedPct}% ($(FmtTok $usedTok)/$(FmtTok $win))") '32'
         if ($c) { $parts.Add($c) }
-    }
-}
-
-# ── 4. 会话 token 总量 ──
-if ($d.context_window -and $d.context_window.total_input_tokens) {
-    $total = [long]$d.context_window.total_input_tokens + [long]$d.context_window.total_output_tokens
-    if ($total -gt 0) {
-        $tok = if ($total -ge 1MB) { '{0:N1}M' -f ($total / 1MB) }
-               elseif ($total -ge 1KB) { '{0:N1}k' -f ($total / 1KB) }
-               else { "$total" }
-        $t = Seg ("$tok tok") '2'
-        if ($t) { $parts.Add($t) }
     }
 }
 

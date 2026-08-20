@@ -6,11 +6,9 @@
 
 param(
     [string[]]$StatusLine = @(
-        'run-state',
         'model-with-reasoning',
-        'context-remaining',
-        'used-tokens',
-        'permissions',
+        'context-used',
+        'context-window-size',
         'current-dir',
         'git-branch',
         'branch-changes'
