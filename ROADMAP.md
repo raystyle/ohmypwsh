@@ -78,7 +78,9 @@
   `7z.exe` 单文件 1.3MB，替换旧的 tar 解压多文件部署；实测解压功能正常）
 - 已决定：不挂自动升级任务（2026-08-19 用户指示，`ohmyenv daily` 保持手动执行）
 - 待办（可选）：按需继续接管更多扩展工具
-- 研究中：PowerShell 模块 / .NET 库 / VS Build Tools 现状与接管可行性（`docs\research\powershell-dotnet-vsbuild.md`）
+- 已完成：PowerShell 模块 / .NET 库 / VS Build Tools 研究（`docs\research\powershell-dotnet-vsbuild.md`）
+  —— 结论：模块按需 `Install-PSResource`（已有 `psmodule.ps1`）；.NET SDK 可接管但需扩展 CDN
+  直链下载源（最新 10.0.400，官方 CDN 非 GitHub）；VS Build Tools 体积数 GB 维持 omc
 
 ## 阶段 5：项目重定位（未开始，远期）
 

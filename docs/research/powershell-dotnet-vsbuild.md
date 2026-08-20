@@ -45,9 +45,24 @@
 ### 结论与可选项
 
 - .NET 完全由 omc 便携式托管（SDK + 三套运行库同目录），与 ohmyenv 的「自包含目录 + pin」机制天然兼容
-- 可选 A（ohmyenv 接管）：dotnet 官方发布提供 `dotnet-sdk-10.0.x-win-x64.zip`（自解压/zip），可走 `New-ToolDef` + pin/deploy，与 gh/git 同模式；运行库随 SDK 自带
+- 可选 A（ohmyenv 接管）：dotnet 官方发布提供 `dotnet-sdk-<ver>-win-x64.zip`（绿色 zip，SDK + runtime 同目录），可走 `New-ToolDef` + pin/deploy，与 gh/git 同模式；运行库随 SDK 自带
 - 可选 B（维持 omc）：继续由 omc 管理，ohmyenv 不介入
 - 注意：pwsh 自身跑在机器级 .NET 10.0.10（MSI），与 omc 的 dotnet 互不相干；**卸载/接管 omc dotnet 不影响 pwsh**
+
+### 接管补充（2026-08-20 实测）
+
+- **最新版本**：dotnet/sdk `v10.0.400`（当前 omc 锁定 10.0.203，已落后）
+- **下载源不在 GitHub release**：dotnet/sdk 的 GitHub release 只有 tag、无资产；官方下载走
+  CDN 直链（实测 HTTP 200）：
+  - `https://dotnetcli.azureedge.net/dotnet/Sdk/<ver>/dotnet-sdk-<ver>-win-x64.zip`
+  - `https://builds.dotnet.microsoft.com/dotnet/Sdk/<ver>/dotnet-sdk-<ver>-win-x64.zip`
+- **ohmyenv 接管需扩展 CDN 直链下载源**：现有 `Resolve-ToolVersion` / `Save-ReleaseAsset` 只走
+  GitHub API + GitHub release 资产，dotnet 需要新增「版本查询走 release.json / 下载走 CDN 直链」
+  的来源类型（类似 7z 的 BootstrapAsset 扩展思路，但版本查询也要改）。
+- **版本查询方案**：dotnet 官方 `https://dotnetcli.azureedge.net/dotnet/Sdk/10.0.400/
+  productCommit-*.txt` 或 `release.json`（channels）可解析版本；或直接 `pin dotnet -Version
+  10.0.400` 锁定，查询只做 CDN 直链下载。
+- **体积**：`dotnet-sdk-10.0.400-win-x64.zip` 约 250 MB 级，符合部署包 zip 解压模式。
 
 ## VS Build Tools
 
