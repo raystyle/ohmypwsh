@@ -132,6 +132,7 @@
 - nvm-windows 与 omc 旧 node 卸载清理：删除用户 `NVM_HOME`/`NVM_SYMLINK` 环境变量与 PATH 残留 `D:\ohmyenv\nvm`/`D:\ohmyenv\nodejs`；物理删除 `D:\ohmyenv\nvm`、`D:\ohmyenv\cache\nvm-noinstall.zip`、`D:\Oh-My-Claude\.scripts\dev\node.ps1.removed-*`、`D:\Oh-My-Claude\.envs\dev\node.removed-*`
 - Bun 接管：研究文档 `docs\research\bun.md`；`New-ToolDef` 新增 `bun`（`bun-windows-x64.zip` 单文件，`TagPrefix='bun-v'`）；pin 1.3.14 → deploy 到 `D:\ohmyenv\bun`（bun.exe 98MB）+ PATH 前置；`scripts\set-bun-config.ps1` 幂等配置全局 `~/.bunfig.toml` + 局部 `bunfig.toml`（`[install] registry = npmmirror`）
 - gsudo 接管：研究文档 `docs\research\gsudo.md`；`New-ToolDef` 新增 `gsudo`（`gsudo.portable.zip` 多架构，`TagPrefix='v'`）+ 新增 `gsudo` 解压类型（只取 x64 展平、删 x86/arm64/net46）；pin 2.6.1 → deploy 到 `D:\ohmyenv\gsudo` + PATH 前置；命令统一叫 `gsudo`（不建 `sudo` 别名，避免与 Windows 内置 sudo 冲突）
+- 研究文档 `docs\research\gh-cli.md` 刷新至 gh 2.97.0（2026-07-31）：新增 `discussion`（preview）、`agent-task`（preview）命令与 `reference` 等 HELP TOPICS，更新限流实测（core/graphql/search）
 
 ### Fixed
 

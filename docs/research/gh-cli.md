@@ -1,13 +1,13 @@
 # gh（GitHub CLI）研究
 
-> 2026-08-19 本机实测采集（gh 2.91.0，由 `ohmyenv` 管理）。配套文档：`docs\research\gh-git-https-ssh.md`（HTTPS/SSH 配置）。
+> 2026-08-20 本机实测采集（gh 2.97.0，由 `ohmyenv` 管理）。配套文档：`docs\research\gh-git-https-ssh.md`（HTTPS/SSH 配置）。
 
 ## 一、现状（本机）
 
 | 项目 | 值 |
 | --- | --- |
-| 版本 | 2.91.0（2026-04-22 发布） |
-| 安装位置 | `D:\ohmyenv\gh`（ohmyenv 管理，`scripts\env.psd1` pin v2.91.0 + sha256） |
+| 版本 | 2.97.0（2026-07-31 发布） |
+| 安装位置 | `D:\ohmyenv\gh`（ohmyenv 管理，`scripts\env.psd1` pin v2.97.0 + sha256） |
 | PATH | `D:\ohmyenv\gh\bin`（用户 PATH 前置） |
 | 认证 | github.com，账号 raystyle，keyring 存储，active |
 | 默认协议 | `git_protocol=https`（HTTPS 走 gh 凭据助手） |
@@ -19,25 +19,34 @@
 `gh config list` 当前值：
 
 ```text
-git_protocol=https  editor=  prompt=enabled  prefer_editor_prompt=disabled
-pager=  http_unix_socket=  browser=  color_labels=disabled
-accessible_colors=disabled  accessible_prompter=disabled
-spinner=enabled  telemetry=enabled
+git_protocol=https
+editor=
+prompt=enabled
+prefer_editor_prompt=disabled
+pager=
+http_unix_socket=
+browser=
+color_labels=disabled
+accessible_colors=disabled
+accessible_prompter=disabled
+spinner=enabled
+telemetry=enabled
 ```
 
 ## 二、API 通道与限流（兜底设计）
 
 - api.github.com 匿名限流：60 次/小时/IP
-- `gh api` 认证通道：5000 次/小时（实测 `remaining=5000`）
+- `gh api` 认证通道：core 5000 次/小时（实测 `used=3`、`remaining=4997`）；graphql 同为 5000 次/小时（`used=9`、`remaining=4991`）；search 单独 30 次/小时
 - 项目设计原则：bootstrap 阶段不依赖 gh（直连 api.github.com + User-Agent + 失败重试）；gh 安装后作为加速/兜底通道，`Invoke-GitHubApi` 在 403/5xx 时自动切 `gh api`
 
-## 三、能力面（命令地图，v2.91）
+## 三、能力面（命令地图，v2.97）
 
 Core：
 
 ```text
 auth（认证）  browse（浏览器打开）  codespace  gist  issue  org
-pr  project（Projects）  release（发布/资产）  repo  skill（agent skills，preview）
+discussion（Discussions，preview）  pr  project（Projects）  release（发布/资产）
+repo  skill（agent skills，preview）
 ```
 
 GitHub Actions：
@@ -46,7 +55,9 @@ GitHub Actions：
 cache（Actions 缓存）  run（工作流运行）  workflow（工作流）
 ```
 
-其他：`api`（统一 REST 通道）、`alias`、`attestation`（工件签名验证）、`completion`、`config`、`copilot`（preview）、`extension`、`gpg-key`、`label`、`licenses`、`preview`、`ruleset`（仓库规则）、`search`、`secret`、`ssh-key`、`status`（跨仓库聚合 issues/PRs/通知）、`variable`。
+其他：`agent-task`（agent tasks，preview）、`api`（统一 REST 通道）、`alias`、`attestation`（工件签名验证）、`completion`、`config`、`copilot`（preview）、`extension`、`gpg-key`、`label`、`licenses`、`preview`、`ruleset`（仓库规则）、`search`、`secret`、`ssh-key`、`status`（跨仓库聚合 issues/PRs/通知）、`variable`。
+
+HELP TOPICS：`environment`（可用环境变量）、`exit-codes`（退出码约定）、`formatting`（JSON 输出格式化）、`mintty`（MinTTY 终端适配）、`reference`（全命令综合参考）、`telemetry`、`accessibility`、`actions`。
 
 本项目已用到的关键命令：
 
@@ -68,11 +79,14 @@ gh auth status                        # 认证与 scopes 巡检
 ## 五、值得关注的特性（按需启用）
 
 - `gh skill`（agent skills，preview）：GitHub 侧技能生态，与 Codex 技能（`~/.codex/skills`）可形成对照，暂不引入
+- `gh agent-task`（agent tasks，preview）：`gh agent-task create` 创建 agent 任务，别名 `gh agent` / `gh agents`，与本项目 agent 环境主题相关，可观察其任务模型演进
+- `gh discussion`（preview）：仓库 Discussions 管理，协作面放开后可用
 - `gh copilot`（preview）：Copilot CLI，按需评估
 - `gh status`：一条命令聚合相关仓库的 issues / PRs / 通知，日常巡检好用
 - `gh secret` / `gh variable`：Actions 密钥与变量管理，后续可配合 SOPS（`.secrets`）做 CI 密钥轮换
 - `gh attestation` + `ruleset`：供应链签名验证与仓库规则，适合放开协作时启用
 - `gh completion`：可写入 `$PROFILE` 获得 Tab 补全（当前未配置）
+- `gh reference`：本地即可查全命令综合参考，替代部分在线手册依赖
 
 ## 六、建议 / 待办
 
