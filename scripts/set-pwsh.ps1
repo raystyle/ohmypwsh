@@ -62,11 +62,43 @@ if (-not $isAdmin) {
     exit 0
 }
 
+# PS5.1 兼容的下载器（aria2 主通道 → curl → Invoke-WebRequest 兜底）
+function Save-ReleaseAssetPs5 {
+    param([Parameter(Mandatory)][string]$Url, [Parameter(Mandatory)][string]$OutFile)
+    $outDir = Split-Path -Parent $OutFile
+    New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+    if (Test-Path -LiteralPath $OutFile) {
+        Write-Host "[INFO] 已有缓存，复用: $OutFile" -ForegroundColor DarkGray
+        return
+    }
+    $aria2 = (Get-Command aria2c.exe -ErrorAction SilentlyContinue).Source
+    if ($aria2) {
+        $outName = Split-Path -Leaf $OutFile
+        & $aria2 -x 16 -s 16 -k 1M --file-allocation=none --auto-file-renaming=false --allow-overwrite=true --summary-interval=0 --console-log-level=warn --connect-timeout=20 --timeout=60 --max-tries=3 --retry-wait=5 -d $outDir -o $outName $Url
+        if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $OutFile)) {
+            Write-Host "[OK] 已下载（aria2）: $OutFile" -ForegroundColor Green
+            return
+        }
+        Write-Host "[WARN] aria2 下载失败，改用 curl" -ForegroundColor Yellow
+    }
+    $curl = (Get-Command curl.exe -ErrorAction SilentlyContinue).Source
+    if ($curl) {
+        & $curl -L --fail --retry 5 --retry-delay 3 --connect-timeout 20 -sS -o $OutFile $Url
+        if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $OutFile)) {
+            Write-Host "[OK] 已下载（curl）: $OutFile" -ForegroundColor Green
+            return
+        }
+        Write-Host "[WARN] curl 下载失败，改用 Invoke-WebRequest 兜底" -ForegroundColor Yellow
+    }
+    Invoke-WebRequest -Uri $Url -OutFile $OutFile -UseBasicParsing -TimeoutSec 600
+    Write-Host "[OK] 已下载（Invoke-WebRequest）: $OutFile" -ForegroundColor Green
+}
+
 # ── 3. 下载 MSI（缓存命中则复用）──
 if (-not (Test-Path -LiteralPath $msiPath)) {
     Write-Host "[INFO] 下载 $msiUrl ..." -ForegroundColor Cyan
     New-Item -ItemType Directory -Path $cacheDir -Force | Out-Null
-    Invoke-WebRequest -Uri $msiUrl -OutFile $msiPath -UseBasicParsing
+    Save-ReleaseAssetPs5 -Url $msiUrl -OutFile $msiPath
 }
 Write-Host "[OK] MSI: $msiPath"
 

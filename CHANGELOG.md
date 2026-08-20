@@ -143,7 +143,7 @@
 - 研究文档 `docs\research\gh-cli.md` 刷新至 gh 2.97.0（2026-07-31）：新增 `discussion`（preview）、`agent-task`（preview）命令与 `reference` 等 HELP TOPICS，更新限流实测（core/graphql/search）
 - 日常实测升级：yq 4.53.4 → 4.53.6（同主版本，无影响；sha256 回填）
 - omc 双轨与已接管项清理（2026-08-20）：`omc.ps1` 注册移除 aria2/bun/pwsh/just/ast-grep/nushell；脚本 `.removed-20260820` 改名保留；`.envs` 二进制与 `.envs\tools\bun` 目录改名保留；nushell 旧配置 `%APPDATA%\nushell` 与 omc `.config\nushell` 清理；`CLAUDE.md` 注册表与工具一览同步
-- 文件下载默认 aria2：`set-docker.ps1` / `set-vsbuild.ps1` 的直连下载改用 `Save-ReleaseAsset`（aria2 主通道 → curl → Invoke-WebRequest 兜底）；`set-pwsh.ps1` 保持 `Invoke-WebRequest`（PS5.1 引导阶段 aria2/helpers 未就绪）
+- 文件下载默认 aria2：`set-docker.ps1` / `set-vsbuild.ps1` 改用 `Save-ReleaseAsset`（aria2 主通道 → curl → Invoke-WebRequest 兜底）；`set-pwsh.ps1` 内联 PS5.1 兼容 `Save-ReleaseAssetPs5`（aria2 → curl → IWR）；`bootstrap.ps1` 提前安装 aria2 供后续下载加速
 
 ### Fixed
 
@@ -178,7 +178,7 @@
 - 版本无关资产名的升级缓存复用 bug：`yq_windows_amd64.exe` 等资产文件名不含版本号，升级时 `Save-ReleaseAsset` 无 sha 基准直接复用旧缓存，导致安装后「版本不符」；新增 `-Force` 参数，`Install-ToolVersion` 在 `Resolution.Tag -ne 锁定 Tag`（升级）时强制重下，yq 4.53.4→4.53.6 实测修复
 - aria2 下载长时间 0B 卡住：GitHub CDN 偶发 SSL/TLS handshake 失败，aria2 缺超时会卡住；下载参数加 `--connect-timeout=20 --timeout=60 --max-tries=3 --retry-wait=5` 快速失败并回落 curl
 - 下载未校验官方哈希（安全问题）：所有包此前只回填自算 sha256、未对照官方哈希；新增 `Get-OfficialSha256` 强制安装/升级前校验官方 SHA256SUMS 或逐资产 `.sha256`；无官方校验源的工具（age/git/aria2/7z/fnm/jq/ast-grep/oscdimg/dotnet）显式 WARN 并保留 sha 回填 + 版本校验兜底
-- `set-pwsh.ps1` 误改 `Save-ReleaseAsset` 回归：该脚本由 `powershell.exe`（PS5.1）运行且不 dot-source `helpers.ps1`，`Save-ReleaseAsset` 未定义，且引导阶段 aria2 未必就绪 → 还原为 `Invoke-WebRequest`
+- `set-pwsh.ps1` 误改 `Save-ReleaseAsset` 回归：该脚本由 `powershell.exe`（PS5.1）运行且不 dot-source `helpers.ps1`，`Save-ReleaseAsset` 未定义 → 先还原 `Invoke-WebRequest`，再内联 PS5.1 兼容 `Save-ReleaseAssetPs5`（aria2 主通道）
 
 ### Removed
 
