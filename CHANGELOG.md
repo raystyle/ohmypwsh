@@ -6,6 +6,10 @@
 
 ### Added
 
+- oscdimg 接管：研究文档 `docs\research\oscdimg.md`；`New-ToolDef` 新增 `oscdimg`（微软符号
+  服务器固定 `CdnUrl`，`Extract='copy'` 单二进制）；`Get-InstalledVersion` 对 oscdimg 读
+  `FileVersion`（无 `--version`）；pin 2.56 → deploy 到 `D:\ohmyenv\oscdimg`（140KB）+ PATH
+  前置；sha256 `2000...861` 校验（ISO 制作工具，为 VS Build Tools 离线 ISO 打包做准备）
 - `omp.psd1` 模块清单（ModuleVersion 0.1.0，导出 `Invoke-Omp` + `omp` 别名）+ `deploy-omp.ps1`
   部署器（拷贝 omp.psm1 / omp.psd1 / helpers.ps1 / env.psd1 到 `EnvRoot\modules\omp` + 注册
   PSModulePath，幂等）；`Get-EnvLock` 尊重 `OHMYENV_ROOT` 环境变量（`-EnvRoot` 参数 >

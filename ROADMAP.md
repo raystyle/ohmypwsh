@@ -90,6 +90,8 @@
   全局 `~/.bunfig.toml` / 局部 `bunfig.toml` 镜像 npmmirror）
 - 已完成：gsudo 接管（gerardog/gsudo 2.6.1 部署到 `D:\ohmyenv\gsudo`，专用 x64 展平解压 +
   命令统一叫 `gsudo`，不建 `sudo` 别名，避免 Windows 内置 sudo 冲突）
+- 已完成：oscdimg 接管（微软符号服务器固定 URL + `copy` 单二进制，pin 2.56 部署到
+  `D:\ohmyenv\oscdimg`；`Get-InstalledVersion` 读 FileVersion；ISO 制作工具）
 
 ## 阶段 5：项目重定位（进行中）
 

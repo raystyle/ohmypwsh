@@ -57,6 +57,7 @@
 - `research\node-fnm.md`：Node.js/npm 接管（fnm，弃用 nvm-windows，`.nvmrc` 无缝切换）
 - `research\bun.md`：Bun 接管（oven-sh/bun + `bunfig.toml` npmmirror）
 - `research\gsudo.md`：gsudo 接管（gerardog/gsudo，命令统一叫 `gsudo`，避开 Windows 内置 sudo）
+- `research\oscdimg.md`：oscdimg 接管（微软符号服务器固定 URL + FileVersion，ISO 制作工具）
 
 ## 项目目录索引
 

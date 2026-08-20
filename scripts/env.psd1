@@ -141,6 +141,21 @@
             Extract      = 'gsudo'
             Sha256       = '21130BF178D7B9891207F00BFF56F05B6B363CE9CEC7B2D084E45FB12EE51F44'
         }
+        'oscdimg' = @{
+            Version      = '2.56'
+            Tag          = 'v2.56'
+            TagPrefix    = ''
+            Repo         = ''
+            AssetPattern = ''
+            Asset        = 'oscdimg.exe'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'oscdimg'
+            Bin          = 'oscdimg'
+            Exe          = 'oscdimg\oscdimg.exe'
+            Extract      = 'copy'
+            Sha256       = '2000160B2C5044691B2F9A0AC308E5207F273D4880A572457AF16D05886BA861'
+        }
         'dotnet' = @{
             Version      = '10.0.400'
             Tag          = 'v10.0.400'

@@ -9,7 +9,7 @@ param(
     [string]$Command = 'help',
 
     [Parameter(Position = 1)]
-    [ValidateSet('pwsh', 'gh', 'git', 'age', 'sops', 'codex', 'aria2', '7z', 'gsudo', 'dotnet', 'fnm', 'bun', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship', 'all')]
+    [ValidateSet('pwsh', 'gh', 'git', 'age', 'sops', 'codex', 'aria2', '7z', 'gsudo', 'oscdimg', 'dotnet', 'fnm', 'bun', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship', 'all')]
     [string]$Tool = 'all',
 
     [switch]$Latest,
@@ -42,7 +42,7 @@ ohmyenv - 环境依赖管理 CLI
   ohmyenv.ps1 daily   [-DryRun] [-IncludeBreaking]  # 日常无影响更新（同主版本自动，跨主版本待确认）
   ohmyenv.ps1 help
 
-工具: gh / git / age / sops / codex / aria2 / 7z / gsudo / dotnet / fnm / bun / uv / python / rg / jq / yq / rmux / starship（all = 全部）
+工具: gh / git / age / sops / codex / aria2 / 7z / gsudo / oscdimg / dotnet / fnm / bun / uv / python / rg / jq / yq / rmux / starship（all = 全部）
 
 示例:
   ohmyenv.ps1 query gh -Latest

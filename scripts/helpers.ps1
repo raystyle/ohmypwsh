@@ -10,7 +10,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [En
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
 # 工具分层：核心基础工具（密钥 key / 智能体环境 agent / 项目管理 project / 基础工具 base）
 #           + 扩展工具 extras；ToolNames 顺序 = 引导安装/展示/日常更新顺序（核心先装齐，再稳定扩展）
-$script:ToolNames = @('pwsh', 'age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'gsudo', 'dotnet', 'fnm', 'bun', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship')
+$script:ToolNames = @('pwsh', 'age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'gsudo', 'oscdimg', 'dotnet', 'fnm', 'bun', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship')
 $script:ToolCategories = @{
     key     = '密钥'
     agent   = '智能体环境'
@@ -131,6 +131,16 @@ function New-ToolDef {
                 Bin          = 'gsudo'
                 Exe          = 'gsudo\gsudo.exe'
                 Extract      = 'gsudo'
+            }
+        }
+        'oscdimg' {
+            @{
+                Category = 'base'
+                CdnUrl   = 'https://msdl.microsoft.com/download/symbols/oscdimg.exe/688CABB065000/oscdimg.exe'
+                Dir      = 'oscdimg'
+                Bin      = 'oscdimg'
+                Exe      = 'oscdimg\oscdimg.exe'
+                Extract  = 'copy'
             }
         }
         'dotnet' {
@@ -544,6 +554,12 @@ function Get-InstalledVersion {
         [Parameter(Mandatory)][string]$Tool
     )
     if (-not (Test-Path $ExePath)) { return $null }
+    if ($Tool -eq 'oscdimg') {
+        # oscdimg 无 --version，读文件版本（FileVersion，如 2.56）
+        $vi = (Get-Item -LiteralPath $ExePath -ErrorAction SilentlyContinue).VersionInfo
+        if ($vi -and $vi.FileVersion) { return $vi.FileVersion.Trim() }
+        return $null
+    }
     $versionArgs = switch ($Tool) {
         '7z'   { @('--help') }
         'rmux' { @('-V') }   # rmux 为 tmux 风格，--version 不支持，用 -V
