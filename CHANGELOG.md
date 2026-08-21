@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-21
+
 ### Added
 
 - win-rmux 三 agent 全仓代码审查：新增研究文档 `docs\research\win-rmux-multi-agent-review.md`
