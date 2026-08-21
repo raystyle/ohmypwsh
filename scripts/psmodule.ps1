@@ -78,7 +78,10 @@ function Add-PSModulePathEntry {
     $user = $reg.GetValue('PSModulePath', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
     $reg.Close()
     $parts = @(if ($null -ne $user) { $user -split ';' | Where-Object { $_ } })
-    if ($parts -contains $Dir) {
+    # 比较用展开后形式：$parts 存的是未展开（%USERPROFILE%），传入 $Dir 是展开后的字面路径
+    $expandedDir = [Environment]::ExpandEnvironmentVariables($Dir)
+    $partsExpanded = @($parts | ForEach-Object { [Environment]::ExpandEnvironmentVariables($_) })
+    if ($partsExpanded -contains $expandedDir) {
         Write-Host "[INFO] PSModulePath 已存在: $Dir" -ForegroundColor DarkGray
         return
     }
@@ -93,9 +96,10 @@ function Remove-PSModulePathEntry {
     $reg = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
     $user = $reg.GetValue('PSModulePath', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
     $reg.Close()
-    $parts = @(if ($null -ne $user) { $user -split ';' | Where-Object { $_ -and $_ -ne $Dir } })
+    $expandedDir = [Environment]::ExpandEnvironmentVariables($Dir)
+    $parts = @(if ($null -ne $user) { $user -split ';' | Where-Object { $_ } | Where-Object { [Environment]::ExpandEnvironmentVariables($_) -ne $expandedDir } })
     Set-UserEnvVar -Name 'PSModulePath' -Value ($parts -join ';')
-    $env:PSModulePath = (($env:PSModulePath -split ';') | Where-Object { $_ -and $_ -ne $Dir }) -join ';'
+    $env:PSModulePath = (($env:PSModulePath -split ';') | Where-Object { $_ -and [Environment]::ExpandEnvironmentVariables($_) -ne $expandedDir }) -join ';'
     Write-Host "[OK] PSModulePath 已移除: $Dir" -ForegroundColor Green
 }
 

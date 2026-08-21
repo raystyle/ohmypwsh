@@ -827,9 +827,13 @@ function Install-ToolVersion {
             throw "$t 离线还原缺少主资产缓存: $($Resolution.AssetName)（部署包中未含或未拷贝到 cache）"
         }
         if ($forceDownload) {
-            # 缓存 tag 与锁定不一致，离线无法校验，若带期望 sha 则校验缓存本身，否则报错避免用错资产
-            if ($expectedSha -and (Get-FileHash -LiteralPath $cachePath -Algorithm SHA256).Hash -ne $expectedSha) {
-                throw "$t 离线缓存 sha256 与清单不符，无法离线还原（需联网或重新打包）"
+            # 缓存 tag 与锁定不一致（跨源打包还原），离线无法获取期望 sha 时不可静默信任——必须能校验
+            if ($expectedSha) {
+                if ((Get-FileHash -LiteralPath $cachePath -Algorithm SHA256).Hash -ne $expectedSha) {
+                    throw "$t 离线缓存 sha256 与清单不符，无法离线还原（需联网或重新打包）"
+                }
+            } else {
+                throw "$t 离线还原含跨 tag 资产（$($Resolution.Tag)）但无可用 sha 校验，拒绝使用错 tag 缓存（需联网或统一 tag 打包）"
             }
         }
     } else {
@@ -1004,7 +1008,10 @@ function Add-EnvPath {
     $reg = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
     $user = $reg.GetValue('Path', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
     $parts = @(if ($null -ne $user) { $user -split ';' | Where-Object { $_ } })
-    if ($parts -contains $Dir) {
+    # 比较用展开后形式：$parts 存未展开（%USERPROFILE%），$Dir 是展开后的字面路径
+    $expandedDir = [Environment]::ExpandEnvironmentVariables($Dir)
+    $partsExpanded = @($parts | ForEach-Object { [Environment]::ExpandEnvironmentVariables($_) })
+    if ($partsExpanded -contains $expandedDir) {
         Write-Host "[INFO] PATH 已存在，跳过: $Dir" -ForegroundColor DarkGray
         $reg.Close()
         return
@@ -1020,10 +1027,11 @@ function Remove-EnvPath {
     param([Parameter(Mandatory)][string]$Dir)
     $reg = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
     $user = $reg.GetValue('Path', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
-    $parts = @(if ($null -ne $user) { $user -split ';' | Where-Object { $_ -and $_ -ne $Dir } })
+    $expandedDir = [Environment]::ExpandEnvironmentVariables($Dir)
+    $parts = @(if ($null -ne $user) { $user -split ';' | Where-Object { $_ } | Where-Object { [Environment]::ExpandEnvironmentVariables($_) -ne $expandedDir } })
     $reg.SetValue('Path', ($parts -join ';'), [Microsoft.Win32.RegistryValueKind]::ExpandString)
     $reg.Close()
-    $env:Path = (($env:Path -split ';') | Where-Object { $_ -and $_ -ne $Dir }) -join ';'
+    $env:Path = (($env:Path -split ';') | Where-Object { $_ -and [Environment]::ExpandEnvironmentVariables($_) -ne $expandedDir }) -join ';'
     Write-Host "[OK] PATH 已移除: $Dir" -ForegroundColor Green
 }
 
@@ -1130,10 +1138,12 @@ function Invoke-EnvPack {
     if (Test-Path -LiteralPath $ps5Profile) { Copy-Item -LiteralPath $ps5Profile -Destination (Join-Path $configDir 'profile-ps5.ps1') -Force }
     Write-Host '[打包] config: codex/claude/kimi/starship/profile 配置' -ForegroundColor Cyan
 
-    # 部署器脚本（ohmyenv 自身，用于目标机 unpack）；排除 __pycache__ 字节码缓存（无意义 + 膨胀）
+    # 部署器脚本（ohmyenv 自身，用于目标机 unpack）；排除所有 __pycache__ 字节码缓存（顶层 + 嵌套）
     Get-ChildItem -LiteralPath $PSScriptRoot -Force |
         Where-Object { $_.Name -ne '__pycache__' } |
         Copy-Item -Destination $scriptsDir -Recurse -Force
+    Get-ChildItem -LiteralPath $scriptsDir -Recurse -Directory -Filter '__pycache__' -ErrorAction SilentlyContinue |
+        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
     # portable 目录完整性清单：相对路径 -> sha256（unpack 时校验防篡改/传输损坏）
     foreach ($t in $script:ToolNames) {

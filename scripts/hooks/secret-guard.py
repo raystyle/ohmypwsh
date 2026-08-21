@@ -48,7 +48,8 @@ SECRET_PATTERNS = [
     (r"secret[_-]?key\s*[:=]\s*[\"']?[A-Za-z0-9_.\-]{16,}[\"']?", "Generic Secret Key"),
     (r"token\s*[:=]\s*[\"']?[A-Za-z0-9_.\-]{16,}[\"']?", "Generic Token"),
     (r"bearer\s+[A-Za-z0-9_\-\.]{20,}", "Bearer Token"),
-    (r"password\s*[:=]\s*\"[^\"']{8,}\"", "Hardcoded Password (quoted)"),
+    (r"password\s*[:=]\s*\"[^\"']{8,}\"", "Hardcoded Password (double-quoted)"),
+    (r"password\s*[:=]\s*'[^\"']{8,}'", "Hardcoded Password (single-quoted)"),
     (r"password\s*[:=]\s*[^\"'\s]{8,}[\"']?", "Hardcoded Password (bare)"),
 ]
 
@@ -67,7 +68,9 @@ def guard_self_file(file_path):
     - 研究/审查文档限定在仓库 docs/research 内（其内容是合法模式字面量）。"""
     if not file_path:
         return False
-    p = str(file_path).replace("\\", "/").lower()
+    p = str(file_path).replace("\\", "/").strip().lower()
+    if not p.startswith("/"):
+        p = "/" + p   # 归一化，使相对路径（如 scripts/hooks/secret-guard.py）也能匹配
     # guard 脚本本体（部署于 scripts/hooks 及各 agent 的 hooks 目录）
     if p.endswith("/secret-guard.py"):
         return True

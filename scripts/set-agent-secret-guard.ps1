@@ -149,7 +149,7 @@ $codexConfig = Join-Path $codexHome 'config.toml'
 $t = if (Test-Path -LiteralPath $codexConfig) { Get-Content -LiteralPath $codexConfig -Raw } else { '' }
 # 按「块」处理 [features]：从 [features] 到下一个 [表头] 或文末之间的内容才归它管，
 # 避免跨 table 误匹配、避免在已有 hooks=false 时追加重复 hooks=true 键（非法 TOML）。
-$featuresBlockRegex = '(?m)^\s*\[features\]\s*$(\r?\n)([\s\S]*?)(?=^\s*\[[^\[\r\n]+\]\s*$|\z)'
+$featuresBlockRegex = '(?m)^\s*\[features\]\s*$(\r?\n|\z)([\s\S]*?)(?=^\s*\[[^\[\r\n]+\]\s*$|\z)'
 if ($t -notmatch '(?m)^\s*\[features\]\s*$') {
     # 无 [features] 表：整体追加
     $nl = if ($t.TrimEnd()) { "`n`n" } else { '' }
@@ -164,15 +164,15 @@ if ($t -notmatch '(?m)^\s*\[features\]\s*$') {
     $hasHook    = [bool]($block -match '(?mi)^[ \t]*hooks[ \t]*=')
     $hookFalse  = [bool]($block -match '(?mi)^[ \t]*hooks[ \t]*=\s*false(?:[ \t]*(?:#.*)?)?\r?$')
     if (-not $hasHook) {
-        # 块内无 hooks 键：在块尾追加 hooks=true（空块也安全：追加到表头行后）
-        $insert = if ([string]::IsNullOrWhiteSpace($block)) { "hooks = true`n" } else { ($block.TrimEnd()) + "`nhooks = true`n" }
-        $updatedBlock = ($wholeBlock -replace "(?m)^(\[features\]\s*$)", "`$1`n$insert")
+        # 块内无 hooks 键：整块尾追加 hooks=true（空块同样适用：\`[features]\`n -> 追加）。
+        # 用整块替换而非「表头锚定 + 插入」，避免已有键整段重复（codex/kimi 实测复现的回归）。
+        $updatedBlock = $wholeBlock.TrimEnd() + "`nhooks = true`n"
         $t = $t.Replace($wholeBlock, $updatedBlock)
         Set-Content -LiteralPath $codexConfig -Value $t -Encoding utf8
         Write-Host '[OK] Codex config.toml 已启用 hooks' -ForegroundColor Green
     } elseif ($hookFalse) {
-        # 块内 hooks=false（含带行尾注释的 false）：限定在块内翻 true
-        $updatedBlock = $wholeBlock -replace '(?m)^([ \t]*hooks[ \t]*=[ \t]*)false([ \t]*(?:#.*)?)?[ \t]*\r?$', '$1true'
+        # 块内 hooks=false（含带行尾注释的 false）：限定在块内翻 true，保留行尾注释（$2）
+        $updatedBlock = $wholeBlock -replace '(?m)^([ \t]*hooks[ \t]*=[ \t]*)false([ \t]*(?:#.*)?)?[ \t]*\r?$', '$1true$2'
         $t = $t.Replace($wholeBlock, $updatedBlock)
         Set-Content -LiteralPath $codexConfig -Value $t -Encoding utf8
         Write-Host '[OK] Codex config.toml hooks 已改为 true' -ForegroundColor Green
@@ -180,8 +180,7 @@ if ($t -notmatch '(?m)^\s*\[features\]\s*$') {
         Write-Host '[INFO] Codex hooks 特性已启用' -ForegroundColor DarkGray
     }
 } else {
-    # 理论上不会到这：有 [features] 表但块正则失败（罕见），保守提示
-    Write-Host '[INFO] Codex hooks 特性检测跳过（无法解析块）' -ForegroundColor DarkGray
+    Write-Warning 'Codex config.toml 含 [features] 表但无法解析其块，hooks 特性可能未启用，请人工检查'
 }
 
 # ── 3. Kimi Code CLI: ~/.kimi-code/config.toml（[[hooks]]，timeout 秒）──
