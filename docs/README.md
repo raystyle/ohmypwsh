@@ -119,12 +119,14 @@ ohmypwsh/
    ├─ set-claude-key.ps1        Claude Code (GLM) API Key 设置/迁移（-FromOmcProfile）
    ├─ set-claude-config.ps1     Claude Code 配置（安装 + env + settings.json 合并）
    ├─ set-reasonix.ps1          Reasonix Desktop 接管（DeepSeek 密钥复用 + 桌面快捷方式）
+   ├─ set-agent-secret-guard.ps1 Agent 密钥泄露防护 hook（Claude Code + Codex CLI）
    ├─ sops-encrypt-anthropic.ps1 ANTHROPIC_API_KEY SOPS 加密备份
    ├─ sops-encrypt-deepseek.ps1 SOPS 重加密/回读验证
    ├─ sops-test.ps1             SOPS 冒烟测试
    ├─ verify-codex-handover.ps1 Codex 交接验证（原生版解析 PASS/FAIL）
    ├─ verify-tools-handover.ps1 rg/jq/yq 交接验证（解析/版本 PASS/FAIL）
-   └─ wsl\                      ohmywsl WSL 镜像组件脚本（base/ dev/ clean.sh tool-versions.sh，build-wsl-image.ps1 使用）
+   ├─ wsl\                      ohmywsl WSL 镜像组件脚本（base/ dev/ clean.sh tool-versions.sh，build-wsl-image.ps1 使用）
+   └─ hooks\                    Agent hook 脚本（secret-guard.py 等）
 ```
 
 外部环境目录（git 之外，由 ohmyenv 管理）：`D:\ohmyenv` —— gh / git / age / sops / codex / aria2 / 7z / uv / python / rg / jq / yq / rmux / starship / just / ast-grep / nushell / rust / vsbuild / docker（docker-data） / reasonix 安装根；`D:\ohmyenv\modules` 为 PowerShell 模块共享部署根（用户 PSModulePath 追加）；`uv-cache` / `uv-tools` 为 uv 缓存与工具目录。
