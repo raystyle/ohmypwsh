@@ -1,4 +1,4 @@
-# modules.psd1 - PowerShell 模块锁定清单（由 psmodule.ps1 维护，勿手改）
+﻿# modules.psd1 - PowerShell 模块锁定清单（由 psmodule.ps1 维护，勿手改）
 @{
     ModuleRoot = 'D:\ohmyenv\modules'
     Modules    = @{

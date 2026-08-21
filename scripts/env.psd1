@@ -1,4 +1,4 @@
-# env.psd1 - 环境依赖锁定清单（由 ohmyenv CLI 维护，勿手改）
+﻿# env.psd1 - 环境依赖锁定清单（由 ohmyenv CLI 维护，勿手改）
 @{
     EnvRoot = 'D:\ohmyenv'
     Tools   = @{

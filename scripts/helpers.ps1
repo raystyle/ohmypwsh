@@ -403,7 +403,8 @@ function Save-EnvLock {
     }
     $lines.Add('    }')
     $lines.Add('}')
-    $lines | Set-Content -Path $script:LockPath -Encoding utf8
+    # 规则 4：env.psd1 会被 PS5.1（bootstrap.ps1 Import-PowerShellDataFile）读取，含中文必须 UTF-8 带 BOM
+    $lines | Set-Content -Path $script:LockPath -Encoding utf8BOM
     Write-Host "[OK] 锁定清单已写入: $script:LockPath" -ForegroundColor Green
 }
 
@@ -708,6 +709,46 @@ function Test-SafeUnderRoot {
     $fullPath.StartsWith($fullRoot, [System.StringComparison]::OrdinalIgnoreCase)
 }
 
+function Test-VersionAtLeast {
+    <#
+    .SYNOPSIS
+        稳健版本比较：$Actual -ge $Minimum。容忍 prerelease/后缀段（如 git 2.55.0.windows.4、
+        pwsh 7.6.4）、无法 [version] 解析的版本号。
+        解析策略：提取两侧前导数字段（如 2.55.0）逐段比较（不足补 0）；
+        任一侧无法提取数字段时，回退字符串序比较。
+    #>
+    param(
+        [AllowNull()][string]$Actual,
+        [Parameter(Mandatory)][string]$Minimum
+    )
+    if ([string]::IsNullOrWhiteSpace($Actual)) { return $false }
+
+    # 提取前导数字段为整型数组；无法提取返回 $null
+    function ConvertTo-NumSegments {
+        param([string]$v)
+        if ($v -match '^\s*(\d+(\.\d+)*)') {
+            , @($Matches[1] -split '\.' | ForEach-Object { [int]$_ })
+        } else {
+            $null
+        }
+    }
+    $sa = ConvertTo-NumSegments $Actual
+    $sm = ConvertTo-NumSegments $Minimum
+    if ($null -ne $sa -and $null -ne $sm) {
+        $sa = @($sa); $sm = @($sm)
+        $n = [Math]::Max($sa.Count, $sm.Count)
+        for ($i = 0; $i -lt $n; $i++) {
+            $va = if ($i -lt $sa.Count) { $sa[$i] } else { 0 }
+            $vm = if ($i -lt $sm.Count) { $sm[$i] } else { 0 }
+            if ($va -gt $vm) { return $true }
+            if ($va -lt $vm) { return $false }
+        }
+        return $true   # 数字段完全相等 → 相等即 >=
+    }
+    # 回退：字符串序比较（贴近自然版本序的粗近似）
+    return ($Actual.Trim().CompareTo($Minimum.Trim()) -ge 0)
+}
+
 function Install-ToolVersion {
     <#
     .SYNOPSIS
@@ -718,7 +759,8 @@ function Install-ToolVersion {
         [Parameter(Mandatory)]$Resolution,
         [switch]$RegisterPath,
         [switch]$UpdateLock,
-        [switch]$Force
+        [switch]$Force,
+        [switch]$Offline
     )
     $t  = $Resolution.Tool
     $d  = $Lock.Tools[$t]
@@ -757,7 +799,10 @@ function Install-ToolVersion {
     }
 
     # 优先官方校验源（统一清单 / 逐资产 .sha256），缺失时才回退锁定 sha（同 tag 缓存复用）
-    $expectedSha = Get-OfficialSha256 -Lock $Lock -Resolution $Resolution
+    # Offline（unpack 离线还原）时不联网取官方 sha，直接信任缓存/锁定 sha —— 离线场景不允许网络
+    if (-not $Offline) {
+        $expectedSha = Get-OfficialSha256 -Lock $Lock -Resolution $Resolution
+    }
     if (-not $expectedSha -and $d.Sha256 -and $Resolution.Tag -eq $d.Tag) {
         $expectedSha = $d.Sha256
     }
@@ -771,7 +816,12 @@ function Install-ToolVersion {
     if ($d.BootstrapAsset) {
         $bootUrl  = "https://github.com/$($d.Repo)/releases/download/$($Resolution.Tag)/$($d.BootstrapAsset)"
         $bootPath = Join-Path $envRoot "cache\$($d.BootstrapAsset)"
-        Save-ReleaseAsset -Url $bootUrl -OutFile $bootPath
+        if ($Offline) {
+            # 离线：bootstrap 必须已随部署包归档到 cache，缺失即报错（无法联网补全）
+            if (-not (Test-Path -LiteralPath $bootPath)) { throw "$t 离线还原缺少 BootstrapAsset: $($d.BootstrapAsset)" }
+        } else {
+            Save-ReleaseAsset -Url $bootUrl -OutFile $bootPath
+        }
     }
 
     $sha = (Get-FileHash -LiteralPath $cachePath -Algorithm SHA256).Hash
@@ -794,6 +844,13 @@ function Install-ToolVersion {
     switch ($d.Extract) {
         'msi' {
             # 安装包：per-machine 静默安装（与 set-pwsh.ps1 一致），不绿色解压；MSI 自行注册 PATH
+            # 自更新守卫：pwsh 不能替换运行中的自身，会因文件占用返回 3010（被当成功但实需重启），
+            # 造成「装完版本没变」的困惑。运行在 pwsh7 里时直接提示用 set-pwsh.ps1（独立终端 PS5.1 跑）。
+            if ($t -eq 'pwsh' -and $PSVersionTable.PSEdition -eq 'Core') {
+                Write-Host "[HINT] 正在 pwsh7 内更新 pwsh，会因文件占用失效。请关闭所有 PowerShell 后，用 PS5.1 独立运行:" -ForegroundColor Yellow
+                Write-Host "       powershell.exe -NoProfile -ExecutionPolicy Bypass -File $(Join-Path $PSScriptRoot 'set-pwsh.ps1')" -ForegroundColor Yellow
+                return
+            }
             $msiArgs = "/i `"$cachePath`" /qn /norestart DISABLE_TELEMETRY=1"
             $p = Start-Process -FilePath 'msiexec.exe' -ArgumentList $msiArgs -Wait -PassThru
             if ($p.ExitCode -notin @(0, 3010)) { throw "$t MSI 安装失败（exit=$($p.ExitCode)）" }
@@ -943,7 +1000,7 @@ function Invoke-EnvPack {
         New-Item -ItemType Directory -Path $d -Force | Out-Null
     }
 
-    $manifest = [ordered]@{ Created = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'); EnvRoot = $envRoot; Tools = [ordered]@{} }
+    $manifest = [ordered]@{ Created = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'); EnvRoot = $envRoot; Tools = [ordered]@{}; PortableHashes = [ordered]@{} }
 
     foreach ($t in $script:ToolNames) {
         $d = $Lock.Tools[$t]
@@ -980,8 +1037,10 @@ function Invoke-EnvPack {
     $projectRoot = Split-Path $PSScriptRoot -Parent
     $secretsSrc = Join-Path $projectRoot '.secrets'
     if (Test-Path -LiteralPath $secretsSrc) {
-        Get-ChildItem -LiteralPath $secretsSrc -File | Copy-Item -Destination $secretsDir -Force
-        Write-Host '[打包] secrets: .secrets 加密副本' -ForegroundColor Cyan
+        # 只带 SOPS 加密副本（*.enc），排除可能的明文残留（sops 崩溃时的 *.env）——明文密钥绝不入包
+        Get-ChildItem -LiteralPath $secretsSrc -File -Filter *.enc |
+            Copy-Item -Destination $secretsDir -Force
+        Write-Host '[打包] secrets: .secrets 加密副本（*.enc）' -ForegroundColor Cyan
     }
     $ageKey = Join-Path $env:APPDATA 'sops\age\keys.txt'
     if (Test-Path -LiteralPath $ageKey) {
@@ -1001,8 +1060,8 @@ function Invoke-EnvPack {
     $claudeHome = Join-Path $env:USERPROFILE '.claude'
     if (Test-Path -LiteralPath (Join-Path $claudeHome 'settings.json')) { Copy-Item -LiteralPath (Join-Path $claudeHome 'settings.json') -Destination (Join-Path $configDir 'claude-settings.json') -Force }
     if (Test-Path -LiteralPath (Join-Path $claudeHome 'skills')) { Copy-Item -LiteralPath (Join-Path $claudeHome 'skills') -Destination (Join-Path $configDir 'claude-skills') -Recurse -Force }
-    $claudeJson = Join-Path $env:USERPROFILE '.claude.json'
-    if (Test-Path -LiteralPath $claudeJson) { Copy-Item -LiteralPath $claudeJson -Destination (Join-Path $configDir 'claude.json') -Force }
+    # 注意：不打包 `~/.claude.json` —— 它含账号/OAuth 认证状态（primaryApiKey/oauthAccount），
+    # 属敏感凭据，与「明文密钥不入包」原则相悖；目标机需重新登录。unpack 端对缺失该项已兼容跳过。
 
     $kimiHome = Join-Path $env:USERPROFILE '.kimi-code'
     foreach ($kf in @('config.toml', 'tui.toml', 'workspaces.json')) {
@@ -1021,6 +1080,18 @@ function Invoke-EnvPack {
 
     # 部署器脚本（ohmyenv 自身，用于目标机 unpack）
     Copy-Item -Path (Join-Path $PSScriptRoot '*') -Destination $scriptsDir -Recurse -Force
+
+    # portable 目录完整性清单：相对路径 -> sha256（unpack 时校验防篡改/传输损坏）
+    foreach ($t in $script:ToolNames) {
+        $portableRoot = Join-Path $portableDir $Lock.Tools[$t].Dir
+        if (-not (Test-Path -LiteralPath $portableRoot)) { continue }
+        $hashes = [ordered]@{}
+        Get-ChildItem -LiteralPath $portableRoot -Recurse -File | ForEach-Object {
+            $rel = $_.FullName.Substring($portableRoot.Length).TrimStart('\')
+            $hashes[$rel] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+        }
+        $manifest.PortableHashes[$t] = $hashes
+    }
 
     $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $stage 'manifest.json') -Encoding utf8
     Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zipPath -Force
@@ -1057,15 +1128,14 @@ function Invoke-EnvUnpack {
             if (-not $m) { continue }
             $d = $Lock.Tools[$t]
             $kind = if ($m.Kind) { $m.Kind } else { 'portable' }
-            $pinVersion = [version]$m.Version
 
             # 检测目标机已装版本
             $isMsi   = ($d.Extract -eq 'msi')
             $exePath = if ($isMsi) { [Environment]::ExpandEnvironmentVariables($d.Exe) } else { Join-Path $envRoot $d.Exe }
             $installed = Get-InstalledVersion -ExePath $exePath -Tool $t
 
-            # 幂等：已装且版本 >= pin 跳过（版本高不降级）
-            if ($installed -and ([version]$installed -ge $pinVersion)) {
+            # 幂等：已装且版本 >= pin 跳过（版本高不降级）；容忍 git/pwsh 等含后缀的版本号
+            if ($installed -and (Test-VersionAtLeast -Actual $installed -Minimum $m.Version)) {
                 Write-Host "[跳过] $t $installed >= $($m.Version)（幂等）" -ForegroundColor DarkGray
                 continue
             }
@@ -1096,7 +1166,8 @@ function Invoke-EnvUnpack {
                     continue
                 }
                 $resolution = @{ Tool = $t; Tag = $m.Tag; Version = $m.Version; AssetName = $asset; AssetUrl = $null; AssetSize = 0; Release = $null }
-                Install-ToolVersion -Lock $Lock -Resolution $resolution -RegisterPath -Force
+                # -Offline：unpack 是离线还原，不联网取官方 sha，用 zip 内 installer + manifest.Sha256 本地安装
+                Install-ToolVersion -Lock $Lock -Resolution $resolution -RegisterPath -Force -Offline
             } else {
                 # 部署包：portable/<dir> 解压到 EnvRoot + 幂等注册 PATH
                 $src = Join-Path $stage "portable\$($d.Dir)"
@@ -1107,6 +1178,21 @@ function Invoke-EnvUnpack {
                 $dst = Join-Path $envRoot $d.Dir
                 if (Test-Path -LiteralPath $dst) { Remove-Item -LiteralPath $dst -Recurse -Force }
                 Copy-Item -LiteralPath $src -Destination $dst -Recurse -Force
+                # 包内完整性校验：对照 manifest.PortableHashes（若清单存在）防篡改/传输损坏
+                $expectedHashes = $manifest.PortableHashes.$t
+                if ($expectedHashes) {
+                    $mismatch = 0
+                    foreach ($hf in $expectedHashes.PSObject.Properties) {
+                        $target = Join-Path $dst $hf.Name
+                        if (-not (Test-Path -LiteralPath $target)) { $mismatch++; continue }
+                        if (($expectedHashes.($hf.Name)) -ne (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash) { $mismatch++ }
+                    }
+                    if ($mismatch -gt 0) {
+                        Write-Host "[WARN] $t portable 校验 $mismatch 个文件与清单不符（可能被篡改/损坏）" -ForegroundColor Yellow
+                    } else {
+                        Write-Host "[OK] $t portable 完整性校验通过" -ForegroundColor DarkGray
+                    }
+                }
                 if ($d.Bin) { Add-EnvPath -Dir (Join-Path $envRoot $d.Bin) }
                 $verify = Get-InstalledVersion -ExePath (Join-Path $envRoot $d.Exe) -Tool $t
                 Write-Host "[OK] $t 部署完成: $verify" -ForegroundColor Green
