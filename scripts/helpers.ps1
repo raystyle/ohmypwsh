@@ -751,6 +751,35 @@ function Test-VersionAtLeast {
     return ($Actual.Trim().CompareTo($Minimum.Trim()) -ge 0)
 }
 
+function Ensure-BunxShim {
+    <#
+    .SYNOPSIS
+        为 bun 在部署目录创建 bunx.exe shim（bun 按 argv[0] 切换到 bunx 模式）。
+        优先硬链接（需 NTFS），失败回退 bunx.cmd；幂等。
+    #>
+    param([Parameter(Mandatory)][string]$BunDir)
+    $exe = Join-Path $BunDir 'bun.exe'
+    $shim = Join-Path $bunDir 'bunx.exe'
+    if (-not (Test-Path -LiteralPath $exe)) {
+        Write-Host "[WARN] 未找到 bun.exe，跳过 bunx shim: $exe" -ForegroundColor Yellow
+        return
+    }
+    if (Test-Path -LiteralPath $shim) {
+        Write-Host "[INFO] bunx 已存在，跳过: $shim" -ForegroundColor DarkGray
+        return
+    }
+    try {
+        New-Item -ItemType HardLink -Path $shim -Target $exe -ErrorAction Stop | Out-Null
+        Write-Host "[OK] bunx shim 已创建（硬链接）: $shim" -ForegroundColor Green
+    } catch {
+        # 非 NTFS 等不支持硬链接时，回退 cmd shim（bunx 实为 `bun x`）。
+        # `%~dp0bun.exe` 必须加引号：可重定位环境下目录可能含空格，否则会被拆成多个 token。
+        $cmdBom = "`@echo off`r`n`"`%~dp0bun.exe`" x `%*`r`n"
+        [System.IO.File]::WriteAllText((Join-Path $BunDir 'bunx.cmd'), $cmdBom, (New-Object System.Text.UTF8Encoding $true))
+        Write-Host "[OK] bunx shim 已创建（bunx.cmd 兜底）: $(Join-Path $BunDir 'bunx.cmd')" -ForegroundColor Green
+    }
+}
+
 function Install-ToolVersion {
     <#
     .SYNOPSIS
@@ -788,6 +817,8 @@ function Install-ToolVersion {
             Write-Host "[OK] 已回填 sha256（命中缓存）" -ForegroundColor Green
         }
         if ($RegisterPath -and $d.Bin) { Add-EnvPath -Dir (Join-Path $envRoot $d.Bin) }
+        # 老环境补 bunx shim（bun 已存在但同目录缺 bunx.exe）
+        if ($t -eq 'bun') { Ensure-BunxShim -BunDir $installDir }
         if ($UpdateLock -and $d.Tag -ne $Resolution.Tag) {
             # 已安装版本与解析一致但锁定滞后（如上次安装中断）：补齐锁定
             $d.Tag     = $Resolution.Tag
@@ -898,6 +929,8 @@ function Install-ToolVersion {
                 Get-ChildItem -LiteralPath $inner -Force | Move-Item -Destination $installDir -Force
                 Remove-Item -LiteralPath $inner -Force
             }
+            # bun 单二进制：同目录补 bunx.exe shim（bunx = bun x，bun 按 argv[0] 切换）
+            if ($t -eq 'bun') { Ensure-BunxShim -BunDir $installDir }
         }
         'gsudo' {
             # gsudo.portable.zip 多架构（x64/x86/arm64/net46-AnyCpu）；只取 x64 展平，其余架构删除

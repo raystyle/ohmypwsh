@@ -171,6 +171,16 @@
 
 ### Fixed
 
+- **bunx 命令缺失**：bun 是单二进制部署（`D:\ohmyenv\bun\bun.exe`），Windows 上无官方 `bunx`
+  入口，`bunx <pkg>` 在 PATH 中不可用。`Install-ToolVersion` 在 zip 解压分支（`t -eq 'bun'`）
+  与跳过快速路径均调用新增 `Ensure-BunxShim`：同目录创建 `bunx.exe` 硬链接指向 `bun.exe`
+  （bun 按 `argv[0]` 切换到 bunx 模式，与官方 Windows 安装器一致），硬链接失败回退
+  `bunx.cmd` shim；实测 `bunx prettier --version` / `bunx cowsay` 正常，幂等
+- **bunx.cmd 兜底 shim 带空格路径缺陷**：原 shim 用 `@%~dp0bun.exe x %*`（无引号），部署目录
+  含空格时 Windows 把路径拆成多个 token、把 `bun` 当命令导致失败。改为 `"%~dp0bun.exe" x %*`
+  （引号包裹），满足项目可重定位原则（换机到带空格路径仍可用）；实测带空格临时目录下该
+  shim 正常执行、无引号版本复现 `'bun' is not recognized`
+
 - **`set-reasonix.ps1`**：移除幂等替换对里的 `Bash(git push*)` deny 规则（保留 `Bash(rm -rf*)` 防误删）；消除脚本重跑时把 `git push` 放回 `config.toml` deny 列表、导致无法推送的隐患
 - **仓库归类清理**：根目录 agent 运行时数据 `.reasonix\` 加入 `.gitignore`（会话/任务不入库）；
   `AGENTS.md` 目录分类表新增「运行数据（不入库）」类别，并将 `reasonix.toml`/`bunfig.toml`/`.nvmrc`
