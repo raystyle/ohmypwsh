@@ -171,6 +171,18 @@
 
 ### Fixed
 
+- **三 agent 交叉 review 第三轮**（codex/kimi 独立实测复现的回归 + 边界收口）：
+  - `set-agent-secret-guard.ps1`：`[features]` **非空块无 hooks 时整段重复**（表头锚定+插入，
+    `$block` 又含完整块体→已有键出现两次毁 config.toml）→ 整块 `TrimEnd` 尾追加 `hooks=true`
+    （codex/kimi 一致建议）；`hooks=false→true` 保留行尾注释；`[features]` 为未行无尾换行时
+    也能识别（块正则容 `\z`）+ else 改 `Write-Warning`
+  - `secret-guard.py`：补单引号密码（可含空格，修首轮双引号-only 回归）；`guard_self_file`
+    相对路径归一化前导斜杠
+  - `helpers.ps1`：`pack` 排除 `__pycache__` 覆盖嵌套（拷贝后递归清 `scripts\hooks`）；
+    `Add/Remove-EnvPath` 比较改展开后再比（`%USERPROFILE%` 与字面路径不匹配→重复/删不掉）；
+    Offline 跨 tag 且无 `expectedSha` 时显式报错（不静默用错 tag 缓存）
+  - `psmodule.ps1`：PSModulePath 添加/移除比较改双方 `ExpandEnvironmentVariables` 后比
+
 - **三 agent 交叉 review 第二轮**（修复引入的回归 + 安全/正确性缺口）：
   - `set-kimi-config.ps1`：未定义 `Write-Warn` 改 `Write-Warning`（EAP=Stop 下原必断）；
     域名白名单 `-not $url -match` 运算符优先级致死代码 → `-notmatch`（恶意 URL 现在会被拦）
