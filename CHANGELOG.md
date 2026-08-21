@@ -6,6 +6,9 @@
 
 ### Added
 
+- win-rmux 三 agent 全仓代码审查：新增研究文档 `docs\research\win-rmux-multi-agent-review.md`
+  （用 rmux 执行单元 codex/kimi/claude 只读 review，高风险/中/低问题 + 修复优先级，供
+  stage-5 unpack 迁移验收前先修，结论已同步 `docs\README.md` 研究文档索引）
 - Python3 命令别名：新增 `scripts\set-python-config.ps1`（复制 `EnvRoot\python\python.exe` →
   `python3.exe`，与 Linux 命令对齐，幂等；`python3 --version` 实测 3.12.14）
 - oscdimg 接管：研究文档 `docs\research\oscdimg.md`；`New-ToolDef` 新增 `oscdimg`（微软符号

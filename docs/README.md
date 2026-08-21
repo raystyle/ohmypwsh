@@ -62,6 +62,7 @@
 - `research\oscdimg.md`：oscdimg 接管（微软符号服务器固定 URL + FileVersion，ISO 制作工具）
 - `research\wsl-image-build.md`：ohmywsl WSL 基础镜像构建（流程/清单/踩坑沉淀）
 - `research\agent-secret-guard.md`：Agent 密钥泄露防护统一（Claude Code / Codex / Kimi / Reasonix 四套 hook 格式与阻断语义）
+- `research\win-rmux-multi-agent-review.md`：ohmyenv 全仓代码审查（win-rmux 三 agent review，高风险/中/低问题 + 修复优先级）
 
 ## 项目目录索引
 
