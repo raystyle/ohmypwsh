@@ -46,7 +46,11 @@ if (-not (Test-Path -LiteralPath $Image)) { throw "镜像文件不存在: $Image
 Write-Info "导入镜像: $Image ($([math]::Round((Get-Item $Image).Length/1MB,1)) MB)"
 
 # ── 2. 同名冲突 ──
+# wsl -l -q 输出为 UTF-16LE，需临时切控制台解码编码，否则字符串含 NUL、.Trim() 去不掉导致判定恒错
+$prevEncoding = [Console]::OutputEncoding
+[Console]::OutputEncoding = [System.Text.Encoding]::Unicode
 $existing = wsl -l -q 2>$null | Where-Object { $_.Trim() -eq $Distro }
+[Console]::OutputEncoding = $prevEncoding
 if ($existing) {
     if (-not $Force) { throw "已存在同名 distro $Distro，使用 -Force 覆盖" }
     Write-Warn "已存在 $Distro，-Force 覆盖（旧环境将被销毁）"
@@ -71,7 +75,7 @@ memory=${memoryGB}GB
 processors=${cpu}
 swap=8GB
 networkingMode=mirrored
-dnsTunneling=true
+dnsTunneling=false
 autoProxy=true
 firewall=true
 "@
