@@ -171,6 +171,10 @@
 
 ### Fixed
 
+- **仓库归类清理**：根目录 agent 运行时数据 `.reasonix\` 加入 `.gitignore`（会话/任务不入库）；
+  `AGENTS.md` 目录分类表新增「运行数据（不入库）」类别，并将 `reasonix.toml`/`bunfig.toml`/`.nvmrc`
+  等根目录配置纳入「配置」类；`reasonix.toml` 纳入版本控制（清理长期 untracked 干扰）
+
 - **三 agent 交叉 review 第三轮**（codex/kimi 独立实测复现的回归 + 边界收口）：
   - `set-agent-secret-guard.ps1`：`[features]` **非空块无 hooks 时整段重复**（表头锚定+插入，
     `$block` 又含完整块体→已有键出现两次毁 config.toml）→ 整块 `TrimEnd` 尾追加 `hooks=true`
