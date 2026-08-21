@@ -24,18 +24,23 @@
   `https://npmmirror.com/mirrors/node`。
 - npm registry：`~/.npmrc` 写 `registry=https://registry.npmmirror.com`。
 
-## profile 初始化（PS5 + PS7 同款）
+## profile 初始化（PS5 + PS7 同款，对齐 fnm 官方文档）
 
 ```powershell
 # BEGIN ohmypwsh: fnm
 if (Get-Command fnm -ErrorAction SilentlyContinue) {
-    fnm env --use-on-cd --version-file-strategy=recursive --shell powershell | Out-String | Invoke-Expression
+    fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression
 }
 # END ohmypwsh: fnm
 ```
 
+- 官方推荐写法（docs/README ≥ v1.x Shell Setup）：PowerShell 用
+  `fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression`。
 - `--use-on-cd`：`cd` 进目录自动按 `.nvmrc` / `.node-version` 切换 node。
-- `--version-file-strategy=recursive`：从当前目录向上递归查找版本文件（monorepo 子目录也命中）。
+- **显式 `--shell powershell`**（官方建议）：避免运行时 shell 推断 / process tree 检测，更快。
+- 移除自定义参数 `--version-file-strategy=recursive`，与官方标准保持一致
+  （默认 `local` 策略；默认 node 即 lock `FNM_DIR` 内 default 版本 v24，子目录不命中 .nvmrc
+  时回退 default 仍一致）。
 - `Get-Command fnm` 守卫：fnm 尚未部署时 profile 静默跳过，不报错。
 - profile 文件：PS5 `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1`、
   PS7 `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`。
@@ -65,3 +70,8 @@ if (Get-Command fnm -ErrorAction SilentlyContinue) {
 - node 版本由 fnm 管理（`fnm install` / `fnm use` / `--use-on-cd`），ohmyenv 只 pin fnm 本体。
 - 项目根 `.nvmrc` 为唯一版本入口（`cd` 即切换），内容为具体 LTS 版本号。
 - 镜像 / registry / profile 配置沉淀为 `scripts\set-fnm-config.ps1`（幂等）。
+- **环境变量作用域（明确取舍）**：fnm 只在用户 PATH 放入本体 `fnm.exe`；用户级环境变量有
+  `FNM_DIR` / `FNM_NODE_DIST_MIRROR`，但 **node/npm/npx 与 `FNM_MULTISHELL_PATH` 仅经
+  profile 的 `fnm env` 在当前交互会话注入**，用户注册表和未加载 profile 的会话（`-NoProfile`、
+  CI、agent 非交互 shell）里 node 命令不可用。这是「仅 profile / 动态注入」方案的既定取舍，
+  node 命令的唯一可用来源是加载了 profile 的交互终端。

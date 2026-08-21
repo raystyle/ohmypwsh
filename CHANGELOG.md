@@ -175,6 +175,10 @@
   `--version-file-strategy=recursive`，改用官方推荐 `fnm env --use-on-cd --shell powershell`
   （显式 `--shell powershell` 避免运行时 shell 推断、加快启动）；PS5/PS7 实测 node
   `v24.19.0` / npm / npx 均可用，保持 fnm 动态注入（不静态化 node）。
+- **研究文档同步 + 作用域取舍确认**：`docs/research/node-fnm.md` 更新 profile 块示例为官方
+  写法，并在「接管决策」明确记录——node 命令可用于仅经 profile 的 `fnm env` 注入到交互会话；
+  用户注册表仅静态含 fnm 本体与 `FNM_DIR` / `FNM_NODE_DIST_MIRROR`，非交互会话（
+  `-NoProfile` / CI / agent）无 node 命令，此为「仅 profile」方案既定取舍。
 - **`reasonix.toml` 不入仓库**：其 `[permissions] allow` 随每次会话命令批准漂移、`[sandbox]`
   含本机路径，随仓库管理反复污染工作区。加入 `.gitignore` 并 `git rm --cached`（保留本地
   运行文件）；同步 `AGENTS.md` 目录分类表，从「配置（可提交）」归入「运行数据（不入库）」。
