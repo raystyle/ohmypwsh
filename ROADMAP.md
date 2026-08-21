@@ -93,6 +93,8 @@
   命令统一叫 `gsudo`，不建 `sudo` 别名，避免 Windows 内置 sudo 冲突）
 - 已完成：oscdimg 接管（微软符号服务器固定 URL + `copy` 单二进制，pin 2.56 部署到
   `D:\ohmyenv\oscdimg`；`Get-InstalledVersion` 读 FileVersion；ISO 制作工具）
+- 已完成：Reasonix Desktop 接管（`set-reasonix.ps1`：desktop-v1.31.0，DeepSeek 密钥复用，
+  config.toml + .env + 桌面快捷方式；reasonix-cli v1.31.0）
 
 ## 阶段 5：项目重定位（进行中）
 

@@ -37,6 +37,7 @@ pwsh -NoProfile -File D:\ohmypwsh\scripts\ohmyenv.ps1 deploy all     # 或 pin/u
 pwsh -NoProfile -File D:\ohmypwsh\scripts\set-codex-statusline.ps1
 pwsh -NoProfile -File D:\ohmypwsh\scripts\set-claude-config.ps1
 pwsh -NoProfile -File D:\ohmypwsh\scripts\set-claude-statusline.ps1
+pwsh -NoProfile -File D:\ohmypwsh\scripts\set-reasonix.ps1
 pwsh -NoProfile -File D:\ohmypwsh\scripts\set-starship-config.ps1
 # set-deepseek-key / set-claude-key：交互式写入密钥 + SOPS 加密备份
 ```
@@ -108,6 +109,7 @@ ohmypwsh/
 | Codex | DeepSeek 模型、`config.toml`、状态栏 |
 | Claude Code | GLM 模型、`settings.json`（env/YOLO/statusLine）、原生路径 |
 | Kimi Code | `~/.kimi-code` 配置 + 工作区信任 |
+| Reasonix Desktop | DeepSeek 密钥复用、`config.toml` + `.env`、桌面快捷方式 |
 | Shell | starship 提示行、profile 守卫 |
 
 ### Windows 容器 / WSL
