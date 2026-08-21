@@ -12,6 +12,7 @@
 | 3 | Codex 接管：原生二进制 + 沙箱 + DeepSeek 密钥迁移到 env_key | 已完成 |
 | 4 | 软件工具扩展：核心基础工具先装齐，扩展工具稳定扩展，pwsh7/7z 等部署方式完善，日常无影响更新 | 进行中 |
 | 5 | 项目重定位：可迁移 Agent 环境部署与管理模块 CLI（EnvRoot 重定位、bootstrap、omp 模块、pack/unpack） | 进行中 |
+| 6 | Windows 容器 + WSL 镜像平移：Docker 接管、WSL 引擎更新、ohmywsl 基础镜像构建/导入 | 进行中 |
 
 ## 阶段 0：项目基础设施（已完成）
 
@@ -124,3 +125,22 @@ pwsh7，部署模块 CLI，产物分安装包/部署包两类，支持压缩包�
 - 已完成：PS5.1 兼容 `bootstrap.ps1`（UTF-8 BOM；装 pwsh7 → 部署 omp 模块 → 注册
   `OHMYENV_ROOT` 用户环境变量，人类初始部署入口）；本机实测幂等跑通
 - `ohmyenv unpack` 换机/换路径还原实测（验收标准 2）
+
+## 阶段 6：Windows 容器 + WSL 镜像平移（进行中）
+
+目标：在可迁移 Agent 环境基础上，纳入「Windows 容器 Docker + WSL 引擎/基础镜像」的一键部署、
+备份与镜像平移，完整覆盖 Windows 智能体环境（配套 WSL 与 Windows 容器）。
+
+方案：`docs\plans\0011-windows-agent-env-oneclick.md`。
+
+- 已完成：Windows 容器 Docker Engine 接管（`set-docker.ps1`：官方 static 二进制 → EnvRoot、
+  daemon.json data-root、docker-users 组、服务注册/启动；旧 rxshell 宿主清理）
+- 已完成：WSL 引擎安装/更新（`set-wsl.ps1`：microsoft/WSL 官方 MSI；实测 2.6.3.0 → 2.7.12.0）
+- 已完成：ohmywsl WSL 基础镜像构建迁移接管（`build-wsl-image.ps1` + `scripts\wsl\` 组件脚本；
+  官方 Ubuntu 24.04.4 → dev 工具链 → clean → export/gzip；首次构建成功 1.65GB）
+- 已完成：WSL 镜像导入/部署（`set-wsl-distro.ps1`：`.wsl` → `wsl --import` distro + 自适应
+  `.wslconfig`）
+- 已完成：WSL 网络/DNS 坑修复（`.wslconfig` `dnsTunneling=false` 走系统 DNS；aria2 优先下载）
+- 已完成：WSL node 管理从 nvm 切换为 fnm（与主项目 Windows fnm 对齐）
+- 待办：WSL 扩展增量安装部署（在基础镜像上按工具 pin/update/deploy，与主项目一致）
+- 待办：Docker 镜像/数据卷备份平移（`docker save` / data-root 归档随包还原）与换机实测

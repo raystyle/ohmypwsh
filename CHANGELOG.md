@@ -149,6 +149,7 @@
 - 文件下载默认 aria2：`set-docker.ps1` / `set-vsbuild.ps1` 改用 `Save-ReleaseAsset`（aria2 主通道 → curl → Invoke-WebRequest 兜底）；`set-pwsh.ps1` 内联 PS5.1 兼容 `Save-ReleaseAssetPs5`（aria2 → curl → IWR）；`bootstrap.ps1` 提前安装 aria2 供后续下载加速
 - WSL node 管理从 nvm 切换为 fnm：`scripts\wsl\dev\node.sh` 改用 `fnm 1.39.0` + Node LTS + npmmirror（与主项目 Windows fnm 对齐）；修复 `fnm current` 输出 `none` 但退出码 0 导致误判已装
 - `build-wsl-image.ps1` 构建修复：Ubuntu 镜像下载 curl 优先（releases.ubuntu.com 对 aria2 TLS 失败）；WSL stderr UTF-16 乱码抑制 + `--set-sparse`；`.wslconfig` 推荐模板（mirrored + `dnsTunneling=false` 走系统 DNS + autoProxy + sparseVhd）；失败保留构建 distro 现场
+- 文档/路线整理：新增方案 `docs\plans\0011-windows-agent-env-oneclick.md`（一键部署/配置/备份/镜像平移，含 WSL + Windows 容器）；ROADMAP 新增阶段 6「Windows 容器 + WSL 镜像平移」；docs/README 方案索引补 `0010` / `0011`
 
 ### Fixed
 

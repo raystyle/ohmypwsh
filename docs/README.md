@@ -39,6 +39,8 @@
 - `0007-uv-python-takeover.md`：uv/Python 接管（uv 最新 + Python 3.12 为准）
 - `0008-claude-code-config.md`：Claude Code 扩展配置（GLM-5.3 1M 上下文）
 - `0009-claude-takeover.md`：Claude Code 完全接管（YOLO/状态栏/env 收敛/omc 清理；rmux skill 已迁至 win-rmux 独立仓库）
+- `0010-portable-agent-env.md`：项目本质重定位为「可迁移 Agent 环境部署与管理模块 CLI」（EnvRoot 重定位、bootstrap、omp 模块、pack/unpack）
+- `0011-windows-agent-env-oneclick.md`：Windows 智能体环境一键部署/配置/备份/镜像平移（工具 + agent + WSL + Windows 容器）
 
 ## 研究文档
 
