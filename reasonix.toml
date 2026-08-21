@@ -2,4 +2,4 @@
 allow = []
 
 [sandbox]
-allow_write = ["${HOME}/AppData/Local/Temp", "${HOME}/.claude/skills/win-rmux"]
+allow_write = ["${HOME}/AppData/Local/Temp", "${HOME}/.claude/skills/win-rmux", "D:\\win-rmux\\skills\\win-rmux", "D:\\win-rmux\\reviews"]
