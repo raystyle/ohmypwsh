@@ -827,9 +827,11 @@ function Install-ToolVersion {
             throw "$t 离线还原缺少主资产缓存: $($Resolution.AssetName)（部署包中未含或未拷贝到 cache）"
         }
         if ($forceDownload) {
-            # 缓存 tag 与锁定不一致（跨源打包还原），离线无法获取期望 sha 时不可静默信任——必须能校验
-            if ($expectedSha) {
-                if ((Get-FileHash -LiteralPath $cachePath -Algorithm SHA256).Hash -ne $expectedSha) {
+            # 缓存 tag 与锁定不一致（跨源打包还原）。unpack 已在 L1225 把包内清单 sha 注入 $d.Sha256，
+            # 用它校验缓存——这才是新资产的包时基准（比 $expectedSha 可靠：$expectedSha 依赖 Tag 相等，
+            # 跨 tag 时互斥恒空）。
+            if ($d.Sha256) {
+                if ((Get-FileHash -LiteralPath $cachePath -Algorithm SHA256).Hash -ne $d.Sha256) {
                     throw "$t 离线缓存 sha256 与清单不符，无法离线还原（需联网或重新打包）"
                 }
             } else {
