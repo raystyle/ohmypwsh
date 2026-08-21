@@ -78,6 +78,7 @@
 - WSL 安装/更新：`scripts\set-wsl.ps1`（`microsoft/WSL` 官方 `wsl.<version>.0.x64.msi`，Save-ReleaseAsset 下载 + msiexec 静默安装，自动提权）；实测 WSL 2.6.3.0 → 2.7.12.0，内核 6.18.33.2-2
 - WSL 镜像导入/部署：`scripts\set-wsl-distro.ps1`（参考 `D:\ohmywsl2\scripts\import.ps1`，`.wsl` 产物 → `wsl --import` distro，自适应 `.wslconfig`，冲突 `-Force`，时区 Asia/Singapore；默认镜像目录 `D:\ohmyenv\images\wsl`，回退参考 `D:\ohmywsl2\images`）
 - ohmywsl WSL 镜像构建迁移接管：`scripts\build-wsl-image.ps1` + `scripts\wsl\`（base/base-config apt-sources git、dev/node bun rust uv go zig、clean.sh、tool-versions.sh 已从 `D:\ohmywsl2` 迁入）；官方 Ubuntu 24.04.4 下载/校验到 EnvRoot 缓存，构建 distro `ohmyenv-wsl-build`，产物 `.wsl` + 报告落 `D:\ohmyenv\images\wsl`，不再依赖 `D:\ohmywsl2\images\wsl`
+- WSL 基础镜像首次构建成功：`ohmywsl-0.1.0-wsl-amd64.wsl`（1.65 GB，dev 变体，SHA256 `987fd91b…`）；node v24.19.0(fnm)/bun 1.4.0/rust 1.98.0/uv 0.12.5/go 1.27.0/zig 0.16.0 + rust-analyzer/gopls/zls；研究文档 `docs\research\wsl-image-build.md`
 
 ### Changed
 
@@ -146,6 +147,8 @@
 - 日常实测升级：yq 4.53.4 → 4.53.6（同主版本，无影响；sha256 回填）
 - omc 双轨与已接管项清理（2026-08-20）：`omc.ps1` 注册移除 aria2/bun/pwsh/just/ast-grep/nushell；脚本 `.removed-20260820` 改名保留；`.envs` 二进制与 `.envs\tools\bun` 目录改名保留；nushell 旧配置 `%APPDATA%\nushell` 与 omc `.config\nushell` 清理；`CLAUDE.md` 注册表与工具一览同步
 - 文件下载默认 aria2：`set-docker.ps1` / `set-vsbuild.ps1` 改用 `Save-ReleaseAsset`（aria2 主通道 → curl → Invoke-WebRequest 兜底）；`set-pwsh.ps1` 内联 PS5.1 兼容 `Save-ReleaseAssetPs5`（aria2 → curl → IWR）；`bootstrap.ps1` 提前安装 aria2 供后续下载加速
+- WSL node 管理从 nvm 切换为 fnm：`scripts\wsl\dev\node.sh` 改用 `fnm 1.39.0` + Node LTS + npmmirror（与主项目 Windows fnm 对齐）；修复 `fnm current` 输出 `none` 但退出码 0 导致误判已装
+- `build-wsl-image.ps1` 构建修复：Ubuntu 镜像下载 curl 优先（releases.ubuntu.com 对 aria2 TLS 失败）；WSL stderr UTF-16 乱码抑制 + `--set-sparse`；`.wslconfig` 推荐模板（mirrored + `dnsTunneling=false` 走系统 DNS + autoProxy + sparseVhd）；失败保留构建 distro 现场
 
 ### Fixed
 

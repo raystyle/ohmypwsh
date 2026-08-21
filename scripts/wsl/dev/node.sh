@@ -49,8 +49,10 @@ install_fnm() {
 install_node() {
     local ver="${1:-}"
     fnm_env
-    if [ -z "$ver" ] && "$FNM_BIN" current >/dev/null 2>&1; then
-        log_ok "node: $($FNM_BIN current)（已安装）"
+    local cur
+    cur=$("$FNM_BIN" current 2>/dev/null || true)
+    if [ -z "$ver" ] && [ -n "$cur" ] && [ "$cur" != "none" ] && [ "$cur" != "system" ]; then
+        log_ok "node: $cur（已安装）"
     else
         local target="${ver:---lts}"
         "$FNM_BIN" install "$target"

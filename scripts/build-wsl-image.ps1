@@ -160,6 +160,7 @@ try {
     Write-Host "[完成] 镜像模板: $ImageFile" -ForegroundColor Green
     Write-Host "[完成] 报告: $ReportFile" -ForegroundColor Green
 }
-finally {
-    if (Test-WslDistro $DistroName) { wsl --unregister $DistroName 2>$null | Out-Null }
+catch {
+    Write-Host "[WARN] 构建失败，构建 distro $DistroName 保留现场供调试（wsl -d $DistroName）；手动清理: wsl --unregister $DistroName" -ForegroundColor Yellow
+    throw
 }

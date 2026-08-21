@@ -58,6 +58,7 @@
 - `research\bun.md`：Bun 接管（oven-sh/bun + `bunfig.toml` npmmirror）
 - `research\gsudo.md`：gsudo 接管（gerardog/gsudo，命令统一叫 `gsudo`，避开 Windows 内置 sudo）
 - `research\oscdimg.md`：oscdimg 接管（微软符号服务器固定 URL + FileVersion，ISO 制作工具）
+- `research\wsl-image-build.md`：ohmywsl WSL 基础镜像构建（流程/清单/踩坑沉淀）
 
 ## 项目目录索引
 
