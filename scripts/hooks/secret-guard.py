@@ -44,11 +44,11 @@ SECRET_PATTERNS = [
     (r"postgres(ql)?://[^:]+:[^@\s]+@", "PostgreSQL URI with password"),
     (r"mysql://[^:]+:[^@\s]+@", "MySQL URI with password"),
     (r"redis://[^:]+:[^@\s]+@", "Redis URI with password"),
-    (r"api[_-]?key\s*[:=]\s*[\"']?[A-Za-z0-9]{16,}[\"']?", "Generic API Key"),
-    (r"secret[_-]?key\s*[:=]\s*[\"']?[A-Za-z0-9]{16,}[\"']?", "Generic Secret Key"),
-    (r"token\s*[:=]\s*[\"']?[A-Za-z0-9]{16,}[\"']?", "Generic Token"),
+    (r"api[_-]?key\s*[:=]\s*[\"']?[A-Za-z0-9_.\-]{16,}[\"']?", "Generic API Key"),
+    (r"secret[_-]?key\s*[:=]\s*[\"']?[A-Za-z0-9_.\-]{16,}[\"']?", "Generic Secret Key"),
+    (r"token\s*[:=]\s*[\"']?[A-Za-z0-9_.\-]{16,}[\"']?", "Generic Token"),
     (r"bearer\s+[A-Za-z0-9_\-\.]{20,}", "Bearer Token"),
-    (r"password\s*[:=]\s*[\"'][^\"']{8,}[\"']", "Hardcoded Password"),
+    (r"password\s*[:=]\s*[\"']?[^\"'\s]{8,}[\"']?", "Hardcoded Password"),
 ]
 
 SECRET_ENV_NAMES = [
@@ -115,8 +115,15 @@ def get_text_to_scan(payload, event_type, cli_format):
                 elif tool_name in ("Read", "Write", "Edit", "ReadFile", "WriteFile", "StrReplaceFile"):
                     file_path = tool_input.get("file_path", tool_input.get("path", ""))
                     content = tool_input.get("content", "")
-                    text = f"{file_path} {content}"
-                    context = f"{tool_name} file"
+                    # 豁免 guard 自身/其研究文档：这些文件是「密钥模式的声明/文档」，本身不是真密钥，
+                    # 扫描它们会因内容含 mysql://、api_key 等模式字面量而误拦（review 实测踩到）。
+                    base = os.path.basename(str(file_path)).lower()
+                    if base in ("secret-guard.py", "agent-secret-guard.md", "win-rmux-multi-agent-review.md"):
+                        text = ""  # 跳过扫描
+                        context = f"{tool_name} file (guard self-exempt)"
+                    else:
+                        text = f"{file_path} {content}"
+                        context = f"{tool_name} file"
                 else:
                     text = json.dumps(tool_input)
                     context = f"{tool_name} tool"

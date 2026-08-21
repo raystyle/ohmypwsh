@@ -145,15 +145,33 @@ Write-Host "[OK] Codex hooks 已合并: $codexHooksFile" -ForegroundColor Green
 
 $codexConfig = Join-Path $codexHome 'config.toml'
 $t = if (Test-Path -LiteralPath $codexConfig) { Get-Content -LiteralPath $codexConfig -Raw } else { '' }
+# 按「块」处理 [features]：从 [features] 到下一个 [表头] 或文末之间的内容才归它管，
+# 避免跨 table 误匹配、避免在已有 hooks=false 时追加重复 hooks=true 键（非法 TOML）。
+$featuresBlockRegex = '(?m)^\s*\[features\]\s*$(\r?\n)([\s\S]*?)(?=^\s*\[[^\[\r\n]+\]\s*$|\z)'
 if ($t -notmatch '(?m)^\s*\[features\]\s*$') {
-    Add-Content -LiteralPath $codexConfig -Value "`n[features]`nhooks = true`n" -Encoding utf8
+    # 无 [features] 表：整体追加
+    $nl = if ($t.TrimEnd()) { "`n`n" } else { '' }
+    Add-Content -LiteralPath $codexConfig -Value "$nl[features]`nhooks = true`n" -Encoding utf8
     Write-Host '[OK] Codex config.toml 已启用 hooks' -ForegroundColor Green
-} elseif ($t -notmatch '(?ms)\[features\].*?hooks\s*=\s*true') {
-    $t = $t -replace '(?m)^\[features\]\s*$', "[features]`nhooks = true"
-    Set-Content -LiteralPath $codexConfig -Value $t -Encoding utf8
-    Write-Host '[OK] Codex config.toml 已启用 hooks' -ForegroundColor Green
+} elseif ($t -match $featuresBlockRegex) {
+    $block = $Matches[2]
+    if ($block -notmatch '(?mi)^\s*hooks\s*=') {
+        # 块内无 hooks 键：在块尾追加
+        $newBlock = ($block.TrimEnd()) + "`nhooks = true`n"
+        $t = $t.Replace($block, $newBlock)
+        Set-Content -LiteralPath $codexConfig -Value $t -Encoding utf8
+        Write-Host '[OK] Codex config.toml 已启用 hooks' -ForegroundColor Green
+    } elseif ($block -match '(?mi)^\s*hooks\s*=\s*false') {
+        # 块内有 hooks=false：改为 true（避免追加重复键）
+        $t = $t -replace '(?m)^(\s*hooks\s*=\s*)false\s*$', '$1true'
+        Set-Content -LiteralPath $codexConfig -Value $t -Encoding utf8
+        Write-Host '[OK] Codex config.toml hooks 已改为 true' -ForegroundColor Green
+    } else {
+        Write-Host '[INFO] Codex hooks 特性已启用' -ForegroundColor DarkGray
+    }
 } else {
-    Write-Host '[INFO] Codex hooks 特性已启用' -ForegroundColor DarkGray
+    # 理论上不会到这：有 [features] 表但块正则失败（罕见），保守提示
+    Write-Host '[INFO] Codex hooks 特性检测跳过（无法解析块）' -ForegroundColor DarkGray
 }
 
 # ── 3. Kimi Code CLI: ~/.kimi-code/config.toml（[[hooks]]，timeout 秒）──
