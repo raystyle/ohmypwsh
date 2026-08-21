@@ -171,6 +171,40 @@
 
 ### Fixed
 
+- **unpack 版本解析崩溃**：新增 `Test-VersionAtLeast` 稳健版本比较，`Invoke-EnvUnpack` 不再用
+  `[version]` 强转——git `2.55.0.windows.4` 等含后缀版本号可正确比较，跨机还原不再因
+  `InvalidCastException` 中断（`scripts\helpers.ps1`）
+- **unpack 离线化**：`Install-ToolVersion` 新增 `-Offline`，跳过联网取官方 sha，用 zip 内
+  installer + `manifest.Sha256` 本地安装；BootstrapAsset 离线缺失即报错（`scripts\helpers.ps1`）
+- **unpack 包内完整性**：pack 时对 portable 目录生成 `relative-path->sha256` 清单存 manifest，
+  unpack 部署后对照校验，防篡改/传输损坏（`scripts\helpers.ps1`）
+- **pack 明文密钥**：`.secrets` 只带 `*.enc`（排除明文 `*.env` 残留）；不再打包 `~/.claude.json`
+  （含账号/OAuth 认证状态）；age 私钥保留（迁移必需，目标机需重新登录）
+- **pwsh MSI 自更新守卫**：pwsh7 内 `deploy/update/daily` 更新 pwsh 时提示改用
+  `set-pwsh.ps1`（独立终端 PS5.1 跑），避免文件占用 3010「装完没变化」
+- **锁文件 BOM（规则 4）**：`Save-EnvLock`/`Save-ModuleLock` 改 `utf8BOM`；现有
+  `env.psd1`/`modules.psd1`/PS5 profile 写器补 UTF-8 BOM（PS5.1 读含中文不再乱码）
+- **set-wsl-distro**：`wsl -l -q` UTF-16 未解码导致同名冲突判定恒错（临时切
+  `[Console]::OutputEncoding` Unicode，照 build-wsl-image.ps1）；`dnsTunneling` 由 `true` 改
+  `false`（与 CHANGELOG/ROADMAP/research 结论一致，修复 WSL DNS 解析超时）
+- **缓存假重下**：`Save-ReleaseAsset` 缓存 sha 不匹配删文件后误落「复用缓存」分支返谎报复用，
+  导致 `Get-FileHash` 对不存在文件报错——改为删文件后继续下载
+- **无校验即执行降险**：`set-kimi-config.ps1` 从裸 `irm|iex` 改为落盘脚本供审计 + 来源域名
+  白名单 + 非空校验；BootstrapAsset（7zr.exe 等首次解压器）下载/离线命中后校验非空 + PE
+  （MZ 头）
+- **secret-guard 漏报/误报**：通用 key/token/password 字符类补 `_`/`-`/`.`（GLM 等含点 key 可
+  检出）、password 允许无引号；Read/Write guard 自身或研究文档时豁免扫描（防模式字面量误拦）；
+  Codex `[features]` 改块级处理（修复跨 table 误匹配 + `hooks=false` 时重复 `hooks=true` 键致
+  非法 TOML）；Claude matcher 扩至 WebFetch/WebSearch/NotebookEdit/Task/MCP__
+- **psmodule.ps1 `-Latest`**：pin 命令补充 `[switch]$Latest` 参数声明（原为碰巧工作的未定义变量）
+- **REG_EXPAND_SZ 保留**：`Set-UserEnvVar` 新 helper，Add/Remove-EnvPath、deploy-omp、
+  psmodule 的 PSModulePath 全部改注册表直写保留 ExpandString——修复 `%USERPROFILE%` 等引用
+  被降级为字面路径静默失效
+- **密钥掩码**：`set-deepseek-key.ps1`/`set-claude-key.ps1` 的 `Read-Host` 加 `-MaskInput`（密钥
+  不回显）；set-deepseek-key 补 SOPS 加密备份（对齐 claude 版）
+- **omp daily**：`return 2` 误导（函数无法设宿主退出码）改为明确提示 + 结构化返回，需要退出码
+  语义用 `ohmyenv.ps1 daily`
+
 - pwsh 检测路径修正：`New-ToolDef pwsh` 的 `Exe` 由 `%LOCALAPPDATA%\Programs\PowerShell\7\pwsh.exe`
   改为 `%ProgramFiles%\PowerShell\7\pwsh.exe`（`set-pwsh.ps1` 实际为 per-machine MSI 安装）；
   `Install-ToolVersion` msi 分支同步改为 per-machine 静默安装（`DISABLE_TELEMETRY=1` +
