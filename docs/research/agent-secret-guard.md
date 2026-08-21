@@ -71,6 +71,13 @@
   `python3`），同一 `secret-guard.py` 可直接复用。
 - 部署脚本按 `secret-guard.py` 定位并更新命令（upsert），重复运行不追加重复 hook，也能把旧
   绝对路径命令迁移为 `python3`。
+- **改源码必须重部署**：每一处对 `scripts\hooks\secret-guard.py` 的修改，都必须重跑
+  `pwsh -NoProfile -File scripts\set-agent-secret-guard.ps1`，把新副本推到四个 CLI 的 hooks 目录
+  （`~/.claude/hooks`、`~/.codex/hooks`、`~/.kimi-code/hooks`、`%APPDATA%\reasonix\hooks`）。
+  已部署副本是**复制**而非软链，重跑脚本前它们依旧是旧版——常见踩坑是「改了源码但各 agent
+  仍跑旧 hook」，导致修复不生效或新旧行为不一（2026-08-21 实测：改了 guard_self_file 豁免后
+  未重部署，Reasonix PostToolUse 仍用旧 hook 把测试命令里的 `AKIA...EXAMPLE` 误拦）。
+  验证方式：比对各副本与源码的 sha256 是否一致。
 
 ## 测试
 
