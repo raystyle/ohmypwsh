@@ -71,7 +71,7 @@ $repl = @(
     @('# display_currency = "auto"', 'display_currency = "CNY"'),
     @('# prefer = "auto"', 'prefer = "pwsh"'),
     @('mode  = "ask"', 'mode  = "yolo"'),
-    @('# deny = ["Bash(rm -rf*)", "Bash(git push*)"]', 'deny = ["Bash(rm -rf*)", "Bash(git push*)"]'),
+    @('# deny = ["Bash(rm -rf*)"]', 'deny = ["Bash(rm -rf*)"]'),
     @('# forbid_read = []', 'forbid_read = ["${USERPROFILE}\\.ssh", "${USERPROFILE}\\.aws"]')
 )
 $changed = $false

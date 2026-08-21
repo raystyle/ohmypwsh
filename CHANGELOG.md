@@ -171,6 +171,7 @@
 
 ### Fixed
 
+- **`set-reasonix.ps1`**：移除幂等替换对里的 `Bash(git push*)` deny 规则（保留 `Bash(rm -rf*)` 防误删）；消除脚本重跑时把 `git push` 放回 `config.toml` deny 列表、导致无法推送的隐患
 - **仓库归类清理**：根目录 agent 运行时数据 `.reasonix\` 加入 `.gitignore`（会话/任务不入库）；
   `AGENTS.md` 目录分类表新增「运行数据（不入库）」类别，并将 `reasonix.toml`/`bunfig.toml`/`.nvmrc`
   等根目录配置纳入「配置」类；`reasonix.toml` 纳入版本控制（清理长期 untracked 干扰）
