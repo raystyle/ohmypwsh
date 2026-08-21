@@ -73,7 +73,17 @@ try {
     }
     if ($needDownload) {
         Write-Host "[INFO] 下载 $WslUrl ..."
-        Save-ReleaseAsset -Url $WslUrl -OutFile $OriginalWsl
+        # releases.ubuntu.com 对 aria2 的 TLS 握手偶发失败/降速，curl.exe(schannel) 更稳；失败再回退 aria2
+        $curl = (Get-Command curl.exe -ErrorAction SilentlyContinue).Source
+        if ($curl) {
+            & $curl -L --fail --retry 5 --retry-delay 3 --connect-timeout 20 -sS -o $OriginalWsl $WslUrl
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $OriginalWsl)) {
+                Write-Host '[WARN] curl 下载失败，改用 aria2' -ForegroundColor Yellow
+                Save-ReleaseAsset -Url $WslUrl -OutFile $OriginalWsl
+            }
+        } else {
+            Save-ReleaseAsset -Url $WslUrl -OutFile $OriginalWsl
+        }
         if ((Get-FileHash $OriginalWsl -Algorithm SHA256).Hash.ToLower() -ne $WslSha256) { throw '官方镜像 SHA256 校验失败' }
     }
 
@@ -86,8 +96,9 @@ try {
 
     # 3. 导入构建 distro
     Write-Host "[INFO] 导入构建 distro $DistroName ..."
-    wsl --import $DistroName $CacheDir $OriginalWsl --version 2 | Out-Null
+    wsl --import $DistroName $CacheDir $OriginalWsl --version 2 2>$null | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "WSL 导入失败 exit=$LASTEXITCODE" }
+    wsl --manage $DistroName --set-sparse true --allow-unsafe 2>$null | Out-Null
 
     # 4. base-config（root）
     $baseScript = ConvertTo-WslPath "$ComponentDir\base\base-config.sh"

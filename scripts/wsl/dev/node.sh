@@ -1,6 +1,6 @@
 #!/bin/bash
 # ===================================================
-# node.sh — nvm + Node.js LTS + npmmirror
+# node.sh — fnm + Node.js LTS + npmmirror（与主项目 Windows fnm 对齐）
 # 以用户 ray 执行
 # 用法:
 #   bash node.sh install [版本]   # 默认最新 LTS；可指定如 20.18.0 / 22
@@ -11,52 +11,61 @@ set -eo pipefail
 trap 'echo "[ERROR] $0:行 $LINENO 失败（命令: $BASH_COMMAND）" >&2' ERR
 
 ACTION="${1:-install}"
-VERSION="${2:-}"   # 可选：指定 Node 版本（如 20.18.0 / 22），默认最新 LTS
+VERSION="${2:-}"
+
+FNM_DIR="$HOME/.local/share/fnm"
+FNM_BIN="$FNM_DIR/fnm"
+FNM_VERSION="1.39.0"
+FNM_URL="https://github.com/Schniz/fnm/releases/download/v${FNM_VERSION}/fnm-linux.zip"
 
 log_ok()   { echo "[OK]    $1"; }
 log_warn() { echo "[WARN]  $1"; }
 log_info() { echo "[INFO]  $1"; }
 
-export NVM_DIR="$HOME/.nvm"
-
-# 获取 nvm 最新 tag（GitHub API；失败回退固定版本）
-get_nvm_tag() {
-    local tag
-    tag=$(curl -gs --max-time 15 "https://api.github.com/repos/nvm-sh/nvm/releases/latest" 2>/dev/null | jq -r '.tag_name // empty' 2>/dev/null)
-    [ -n "$tag" ] || tag="v0.40.1"
-    echo "$tag"
+fnm_env() {
+    export FNM_NODE_DIST_MIRROR="https://npmmirror.com/mirrors/node"
+    eval "$("$FNM_BIN" env --shell bash)"
 }
 
-# 安装 nvm。已装且动作=install 则跳过。
-install_nvm() {
-    if [ -d "$NVM_DIR" ]; then
-        log_ok "nvm: 已安装（$NVM_DIR）"
+install_fnm() {
+    if [ -x "$FNM_BIN" ]; then
+        log_ok "fnm: $($FNM_BIN --version)（已安装）"
         return 0
     fi
-    local NVM_TAG
-    NVM_TAG=$(get_nvm_tag)
-    curl -gsfL --connect-timeout 10 --max-time 60 --retry 2 "https://raw.githubusercontent.com/nvm-sh/nvm/$NVM_TAG/install.sh" | bash >/dev/null 2>&1
-    log_ok "nvm: $NVM_TAG 已安装"
+    log_info "安装 fnm ${FNM_VERSION} ..."
+    mkdir -p "$FNM_DIR"
+    local tmp
+    tmp=$(mktemp -d)
+    curl -fsSL --retry 3 --connect-timeout 15 -o "$tmp/fnm-linux.zip" "$FNM_URL"
+    unzip -oq "$tmp/fnm-linux.zip" -d "$tmp"
+    local bin
+    bin=$(find "$tmp" -type f -name fnm | head -1)
+    [ -n "$bin" ] || { log_warn "fnm-linux.zip 缺少 fnm 二进制"; exit 1; }
+    install -m 0755 "$bin" "$FNM_BIN"
+    rm -rf "$tmp"
+    log_ok "fnm: $($FNM_BIN --version) 已安装"
 }
 
-# 加载 nvm 到当前 shell
-load_nvm() {
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-}
-
-# 安装 Node.js（默认最新 LTS，可指定版本）。已装且未指定版本则跳过。
 install_node() {
     local ver="${1:-}"
-    if [ -z "$ver" ] && command -v node &>/dev/null; then
-        log_ok "node: $(node --version)（已安装）"
+    fnm_env
+    if [ -z "$ver" ] && "$FNM_BIN" current >/dev/null 2>&1; then
+        log_ok "node: $($FNM_BIN current)（已安装）"
     else
         local target="${ver:---lts}"
-        NVM_NODEJS_ORG_MIRROR=https://npmmirror.com/mirrors/node nvm install "$target" >/dev/null 2>&1
-        nvm alias default node >/dev/null 2>&1
-        log_ok "node: $(node --version) 已安装（$([ -n "$ver" ] && echo $ver || echo LTS)）"
+        "$FNM_BIN" install "$target"
+        local resolved
+        resolved=$("$FNM_BIN" ls 2>/dev/null | awk '/lts/{print $2}' | head -1)
+        if [ -z "$resolved" ]; then
+            resolved=$("$FNM_BIN" ls 2>/dev/null | awk '/v[0-9]/{print $2}' | head -1)
+        fi
+        if [ -n "$resolved" ]; then
+            "$FNM_BIN" default "$resolved"
+        fi
+        fnm_env
+        log_ok "node: $($FNM_BIN current) 已安装"
     fi
-
-    if command -v npm &>/dev/null; then
+    if command -v npm >/dev/null 2>&1; then
         log_ok "npm: $(npm --version)"
     else
         log_warn "node: 安装失败"
@@ -64,67 +73,49 @@ install_node() {
     fi
 }
 
-# npm 镜像配置
 config_npm_mirror() {
     npm config set registry https://registry.npmmirror.com 2>/dev/null
     log_ok "npm registry: npmmirror"
 }
 
-# pip 镜像（python3 存在时）
-config_pip_mirror() {
-    if command -v python3 &>/dev/null; then
-        python3 -m pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple 2>/dev/null || true
-    fi
-}
-
-# .bashrc.d 片段：nvm 加载 + 镜像
 config_bashrc() {
     mkdir -p "$HOME/.bashrc.d"
     cat > "$HOME/.bashrc.d/node.sh" << 'EOF'
-# --- nvm (Node 版本管理) + 国内镜像 ---
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-export NVM_NODEJS_ORG_MIRROR=https://npmmirror.com/mirrors/node/
+# --- fnm (Node 版本管理) + 国内镜像 ---
+export FNM_DIR="$HOME/.local/share/fnm"
+export FNM_NODE_DIST_MIRROR="https://npmmirror.com/mirrors/node"
+[ -x "$FNM_DIR/fnm" ] && eval "$("$FNM_DIR/fnm" env --use-on-cd --shell bash)"
 EOF
-    log_ok ".bashrc.d/node.sh: nvm 加载 + 镜像"
+    log_ok ".bashrc.d/node.sh: fnm env + npmmirror"
 }
 
 case "$ACTION" in
     install)
-        install_nvm
-        load_nvm
+        install_fnm
         install_node "$VERSION"
         config_npm_mirror
-        config_pip_mirror
         config_bashrc
         ;;
     update)
-        if [ ! -d "$NVM_DIR" ]; then
-            log_warn "nvm: 未安装，先执行 install"
-            exit 1
-        fi
-        load_nvm
+        install_fnm
+        fnm_env
         if [ -n "$VERSION" ]; then
-            log_info "node: 更新到 $VERSION..."
-            nvm install "$VERSION" >/dev/null 2>&1
-            nvm alias default "$VERSION" >/dev/null 2>&1
+            "$FNM_BIN" install "$VERSION"
+            "$FNM_BIN" default "$VERSION"
         else
-            log_info "node: 更新到最新 LTS..."
-            NVM_NODEJS_ORG_MIRROR=https://npmmirror.com/mirrors/node nvm install --lts >/dev/null 2>&1
-            nvm alias default node >/dev/null 2>&1
+            "$FNM_BIN" install --lts
+            resolved=$("$FNM_BIN" ls 2>/dev/null | awk '/lts/{print $2}' | head -1)
+            [ -n "$resolved" ] && "$FNM_BIN" default "$resolved"
         fi
-        log_ok "node: $(node --version) 已更新"
+        fnm_env
         config_npm_mirror
         ;;
     remove)
-        if [ -d "$NVM_DIR" ]; then
-            rm -rf "$NVM_DIR"
-            rm -f "$HOME/.bashrc.d/node.sh"
-            log_ok "node: 已删除（~/.nvm + ~/.bashrc.d/node.sh）"
-        else
-            log_ok "node: 未安装，无需删除"
+        if [ -x "$FNM_BIN" ]; then
+            "$FNM_BIN" uninstall --all 2>/dev/null || true
         fi
+        rm -f "$HOME/.bashrc.d/node.sh"
+        log_ok "node: 已删除（fnm 节点 + .bashrc.d/node.sh）"
         ;;
     *)
         echo "用法: $0 {install|update|remove}" >&2
