@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.1
 # set-claude-key.ps1 - 交互式设置 ANTHROPIC_API_KEY（用户级环境变量 + SOPS 加密备份）
 # 用法：pwsh -NoProfile -File scripts\set-claude-key.ps1
 # 流程与 set-deepseek-key.ps1 一致：输入密钥 -> 保存用户环境变量 -> 自动调用
@@ -26,3 +26,4 @@ if ($key -notmatch '^[A-Za-z0-9]+\.[A-Za-z0-9]+$') {
 }
 
 Read-Host '按 Enter 关闭此窗口'
+

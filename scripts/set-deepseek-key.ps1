@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.1
 # set-deepseek-key.ps1 - 交互式设置 DEEPSEEK_API_KEY（用户级环境变量）
 # 用法：pwsh -NoProfile -File scripts\set-deepseek-key.ps1
 
@@ -24,3 +24,4 @@ if ($key -notmatch '^sk-') {
 }
 
 Read-Host '按 Enter 关闭此窗口'
+

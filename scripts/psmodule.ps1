@@ -74,7 +74,9 @@ function Save-ModuleLock {
 
 function Add-PSModulePathEntry {
     param([Parameter(Mandatory)][string]$Dir)
-    $user = [Environment]::GetEnvironmentVariable('PSModulePath', 'User')
+    $reg = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
+    $user = $reg.GetValue('PSModulePath', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+    $reg.Close()
     $parts = @(if ($null -ne $user) { $user -split ';' | Where-Object { $_ } })
     if ($parts -contains $Dir) {
         Write-Host "[INFO] PSModulePath 已存在: $Dir" -ForegroundColor DarkGray
@@ -88,7 +90,9 @@ function Add-PSModulePathEntry {
 
 function Remove-PSModulePathEntry {
     param([Parameter(Mandatory)][string]$Dir)
-    $user = [Environment]::GetEnvironmentVariable('PSModulePath', 'User')
+    $reg = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
+    $user = $reg.GetValue('PSModulePath', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+    $reg.Close()
     $parts = @(if ($null -ne $user) { $user -split ';' | Where-Object { $_ -and $_ -ne $Dir } })
     Set-UserEnvVar -Name 'PSModulePath' -Value ($parts -join ';')
     $env:PSModulePath = (($env:PSModulePath -split ';') | Where-Object { $_ -and $_ -ne $Dir }) -join ';'

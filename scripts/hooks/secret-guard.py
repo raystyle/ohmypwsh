@@ -48,7 +48,8 @@ SECRET_PATTERNS = [
     (r"secret[_-]?key\s*[:=]\s*[\"']?[A-Za-z0-9_.\-]{16,}[\"']?", "Generic Secret Key"),
     (r"token\s*[:=]\s*[\"']?[A-Za-z0-9_.\-]{16,}[\"']?", "Generic Token"),
     (r"bearer\s+[A-Za-z0-9_\-\.]{20,}", "Bearer Token"),
-    (r"password\s*[:=]\s*[\"']?[^\"'\s]{8,}[\"']?", "Hardcoded Password"),
+    (r"password\s*[:=]\s*\"[^\"']{8,}\"", "Hardcoded Password (quoted)"),
+    (r"password\s*[:=]\s*[^\"'\s]{8,}[\"']?", "Hardcoded Password (bare)"),
 ]
 
 SECRET_ENV_NAMES = [
@@ -58,6 +59,24 @@ SECRET_ENV_NAMES = [
     "API_KEY", "AUTH_TOKEN", "BEARER_TOKEN", "JWT_SECRET", "KIMI_API_KEY", "MOONSHOT_API_KEY",
     "AZURE_OPENAI_API_KEY", "GOOGLE_API_KEY", "DEEPSEEK_API_KEY", "REASONIX_API_KEY",
 ]
+
+
+def guard_self_file(file_path):
+    """判定某路径是否属于 guard 自身 / 其研究文档（其内容是密钥模式声明，不是真密钥）。
+    - guard 脚本本体（secret-guard.py）允许出现在仓库与各 agent hooks 目录，按 basename 豁免；
+    - 研究/审查文档限定在仓库 docs/research 内（其内容是合法模式字面量）。"""
+    if not file_path:
+        return False
+    p = str(file_path).replace("\\", "/").lower()
+    # guard 脚本本体（部署于 scripts/hooks 及各 agent 的 hooks 目录）
+    if p.endswith("/secret-guard.py"):
+        return True
+    # 研究/审查文档：限定 docs/research 内的固定文档（路径已统一为 /）
+    if "/docs/research/" in p:
+        base = p.rsplit("/", 1)[-1]
+        if base in ("agent-secret-guard.md", "win-rmux-multi-agent-review.md", "win-rmux-pitfalls-accumulate.md"):
+            return True
+    return False
 
 
 def detect_cli_format(payload):
@@ -117,8 +136,7 @@ def get_text_to_scan(payload, event_type, cli_format):
                     content = tool_input.get("content", "")
                     # 豁免 guard 自身/其研究文档：这些文件是「密钥模式的声明/文档」，本身不是真密钥，
                     # 扫描它们会因内容含 mysql://、api_key 等模式字面量而误拦（review 实测踩到）。
-                    base = os.path.basename(str(file_path)).lower()
-                    if base in ("secret-guard.py", "agent-secret-guard.md", "win-rmux-multi-agent-review.md"):
+                    if guard_self_file(file_path):
                         text = ""  # 跳过扫描
                         context = f"{tool_name} file (guard self-exempt)"
                     else:
@@ -135,13 +153,25 @@ def get_text_to_scan(payload, event_type, cli_format):
         if cli_format == "reasonix":
             tool_name = payload.get("toolName", "")
             tool_result = payload.get("toolResult", payload.get("output", ""))
-            text = str(tool_result)
-            context = f"{tool_name} output"
+            # Reasonix Read/Write 输出（guard 自身/文档）可豁免
+            tinput = payload.get("toolArgs", {})
+            fp = tinput.get("file_path", tinput.get("path", "")) if isinstance(tinput, dict) else ""
+            if guard_self_file(fp):
+                text, context = "", f"{tool_name} output (guard self-exempt)"
+            else:
+                text = str(tool_result)
+                context = f"{tool_name} output"
         else:
             tool_name = payload.get("tool_name", "")
+            tinput = payload.get("tool_input", {})
+            fp = tinput.get("file_path", tinput.get("path", "")) if isinstance(tinput, dict) else ""
             tool_response = payload.get("tool_response", payload.get("output", payload.get("tool_output", "")))
-            text = str(tool_response)
-            context = f"{tool_name} output"
+            if guard_self_file(fp):
+                # Read/Edit guard 自身文件的输出（内容即模式定义）不再误拦
+                text, context = "", f"{tool_name} output (guard self-exempt)"
+            else:
+                text = str(tool_response)
+                context = f"{tool_name} output"
 
     elif event_type == "UserPromptSubmit":
         text = payload.get("prompt", "")

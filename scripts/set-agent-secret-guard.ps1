@@ -64,6 +64,8 @@ function Add-NestedJsonHook {
                     $h['command'] = $Command
                     $h['timeout'] = 10
                     $h['statusMessage'] = $Status
+                    # 同步 matcher 到外部 entry（若本调用带 matcher），使存量安装重跑也能应用扩充
+                    if (-not [string]::IsNullOrEmpty($Matcher)) { $entry['matcher'] = $Matcher }
                     $found = $true
                 }
             }
@@ -119,8 +121,8 @@ $json = if (Test-Path -LiteralPath $claudeSettings) {
 if (-not $json.ContainsKey('hooks')) { $json['hooks'] = @{} }
 $claudeHooks = $json['hooks']
 
-$null = Add-NestedJsonHook -Hooks $claudeHooks -Event 'PreToolUse'       -Matcher 'Bash|Read|Write|Edit|MultiEdit|Glob|Grep|WebFetch|WebSearch|NotebookEdit|Task|MCP__' -Command $claudeCmd -Status ' Scanning command for secrets...'
-$null = Add-NestedJsonHook -Hooks $claudeHooks -Event 'PostToolUse'      -Matcher 'Bash|Read|Write|Edit|Glob|Grep|WebFetch|WebSearch|MCP__'                        -Command $claudeCmd -Status ' Checking output for secrets...'
+$null = Add-NestedJsonHook -Hooks $claudeHooks -Event 'PreToolUse'       -Matcher 'Bash|Read|Write|Edit|MultiEdit|Glob|Grep|WebFetch|WebSearch|NotebookEdit|Task|mcp__' -Command $claudeCmd -Status ' Scanning command for secrets...'
+$null = Add-NestedJsonHook -Hooks $claudeHooks -Event 'PostToolUse'      -Matcher 'Bash|Read|Write|Edit|MultiEdit|Glob|Grep|WebFetch|WebSearch|NotebookEdit|Task|mcp__' -Command $claudeCmd -Status ' Checking output for secrets...'
 $null = Add-NestedJsonHook -Hooks $claudeHooks -Event 'UserPromptSubmit' -Matcher ''                               -Command $claudeCmd -Status ' Scanning prompt for secrets...'
 
 $json['hooks'] = $claudeHooks
@@ -154,16 +156,24 @@ if ($t -notmatch '(?m)^\s*\[features\]\s*$') {
     Add-Content -LiteralPath $codexConfig -Value "$nl[features]`nhooks = true`n" -Encoding utf8
     Write-Host '[OK] Codex config.toml 已启用 hooks' -ForegroundColor Green
 } elseif ($t -match $featuresBlockRegex) {
-    $block = $Matches[2]
-    if ($block -notmatch '(?mi)^\s*hooks\s*=') {
-        # 块内无 hooks 键：在块尾追加
-        $newBlock = ($block.TrimEnd()) + "`nhooks = true`n"
-        $t = $t.Replace($block, $newBlock)
+    # 捕获整个 [features] 块（含表头到下一表头前的全部内容）做锚定替换，避免 .Replace('',..) 空块崩溃
+    # 和全文误替换。
+    $wholeBlock = $Matches[0]          # 含 [features] 表头 + 内容（截至下一表头或文末）
+    $block      = $Matches[2]          # 表头之后、下一个表头之前的内容
+    # 块内是否有 hooks 键（探测用，须以 hooks 起始 + 行尾语义，容空格与 =）
+    $hasHook    = [bool]($block -match '(?mi)^[ \t]*hooks[ \t]*=')
+    $hookFalse  = [bool]($block -match '(?mi)^[ \t]*hooks[ \t]*=\s*false(?:[ \t]*(?:#.*)?)?\r?$')
+    if (-not $hasHook) {
+        # 块内无 hooks 键：在块尾追加 hooks=true（空块也安全：追加到表头行后）
+        $insert = if ([string]::IsNullOrWhiteSpace($block)) { "hooks = true`n" } else { ($block.TrimEnd()) + "`nhooks = true`n" }
+        $updatedBlock = ($wholeBlock -replace "(?m)^(\[features\]\s*$)", "`$1`n$insert")
+        $t = $t.Replace($wholeBlock, $updatedBlock)
         Set-Content -LiteralPath $codexConfig -Value $t -Encoding utf8
         Write-Host '[OK] Codex config.toml 已启用 hooks' -ForegroundColor Green
-    } elseif ($block -match '(?mi)^\s*hooks\s*=\s*false') {
-        # 块内有 hooks=false：改为 true（避免追加重复键）
-        $t = $t -replace '(?m)^(\s*hooks\s*=\s*)false\s*$', '$1true'
+    } elseif ($hookFalse) {
+        # 块内 hooks=false（含带行尾注释的 false）：限定在块内翻 true
+        $updatedBlock = $wholeBlock -replace '(?m)^([ \t]*hooks[ \t]*=[ \t]*)false([ \t]*(?:#.*)?)?[ \t]*\r?$', '$1true'
+        $t = $t.Replace($wholeBlock, $updatedBlock)
         Set-Content -LiteralPath $codexConfig -Value $t -Encoding utf8
         Write-Host '[OK] Codex config.toml hooks 已改为 true' -ForegroundColor Green
     } else {

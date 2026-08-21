@@ -17,3 +17,7 @@ keys.txt
 
 # SOPS 密文可提交，明文禁止
 .secrets/*.env
+
+# Python 字节码缓存（guard hook 运行产生，不入库/不入部署包）
+__pycache__/
+*.pyc

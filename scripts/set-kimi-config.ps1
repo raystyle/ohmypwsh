@@ -29,12 +29,12 @@ if ($Update -and (Test-Path -LiteralPath $kimiBin)) {
     if ($Version) { $env:KIMI_VERSION = $Version } else { Remove-Item Env:KIMI_VERSION -ErrorAction SilentlyContinue }
     # 降险：不从远端未知内容直接 irm|iex。先落盘官方安装脚本供审计，校验来源与文件有效性后再执行。
     $installerUrl = 'https://code.kimi.com/kimi-code/install.ps1'
-    if (-not $installerUrl -match '^https://code\.kimi\.com/') { throw "拒绝执行非官方安装源: $installerUrl" }
+    if ($installerUrl -notmatch '^https://code\.kimi\.com/') { throw "拒绝执行非官方安装源: $installerUrl" }
     $installerPath = Join-Path $env:TEMP 'kimi-code-install.ps1'
     $installerText = (Invoke-WebRequest -Uri $installerUrl -UseBasicParsing).Content
     if ([string]::IsNullOrWhiteSpace($installerText)) { throw 'kimi 官方安装脚本为空，中止执行' }
     [System.IO.File]::WriteAllText($installerPath, $installerText, [System.Text.UTF8Encoding]::new($true))
-    Write-Warn "已下载官方安装脚本供审计: $installerPath（$([math]::Round((Get-Item $installerPath).Length/1KB,1)) KB）"
+    Write-Warning "已下载官方安装脚本供审计: $installerPath（$([math]::Round((Get-Item $installerPath).Length/1KB,1)) KB）"
     & (Get-Process -Id $PID).Path -NoProfile -ExecutionPolicy Bypass -File $installerPath
     if ($LASTEXITCODE -ne 0) { throw "kimi 官方安装脚本执行失败（exit=$LASTEXITCODE）" }
     if (-not (Test-Path -LiteralPath $kimiBin)) { throw 'kimi 安装失败：未找到 kimi.exe' }

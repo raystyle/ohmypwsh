@@ -800,6 +800,15 @@ function Install-ToolVersion {
         return
     }
 
+    # ── pwsh 自更新守卫（必须在 sha 回填 / 下载之前）──
+    # pwsh 不能替换运行中的自身：msiexec 会因文件占用返回 3010（被当成功但实需重启），且 upgrade 链路
+    # 在下载后 return 会把 $d.Sha256 改成新版、Tag 仍旧，污染 env.psd1。故在函数入口即拦截。
+    if ($isMsi -and $t -eq 'pwsh' -and $PSVersionTable.PSEdition -eq 'Core') {
+        Write-Host "[HINT] 正在 pwsh7 内更新 pwsh，会因文件占用失效。请关闭所有 PowerShell 后，用 PS5.1 独立运行:" -ForegroundColor Yellow
+        Write-Host "       powershell.exe -NoProfile -ExecutionPolicy Bypass -File $(Join-Path $PSScriptRoot 'set-pwsh.ps1')" -ForegroundColor Yellow
+        return
+    }
+
     # 优先官方校验源（统一清单 / 逐资产 .sha256），缺失时才回退锁定 sha（同 tag 缓存复用）
     # Offline（unpack 离线还原）时不联网取官方 sha，直接信任缓存/锁定 sha —— 离线场景不允许网络
     if (-not $Offline) {
@@ -812,7 +821,20 @@ function Install-ToolVersion {
         Write-Host "[WARN] $t 无官方校验源，仅依赖 sha256 回填 + 安装后版本校验兜底" -ForegroundColor Yellow
     }
     $forceDownload = ($Resolution.Tag -ne $d.Tag)
-    Save-ReleaseAsset -Url $Resolution.AssetUrl -OutFile $cachePath -ExpectedSha256 $expectedSha -Force:$forceDownload
+    if ($Offline) {
+        # 离线：主资产必须已随部署包归档到 cache，缺失即报错（不解 net 下载；AssetUrl 在 unpack 场景为 null）
+        if (-not (Test-Path -LiteralPath $cachePath)) {
+            throw "$t 离线还原缺少主资产缓存: $($Resolution.AssetName)（部署包中未含或未拷贝到 cache）"
+        }
+        if ($forceDownload) {
+            # 缓存 tag 与锁定不一致，离线无法校验，若带期望 sha 则校验缓存本身，否则报错避免用错资产
+            if ($expectedSha -and (Get-FileHash -LiteralPath $cachePath -Algorithm SHA256).Hash -ne $expectedSha) {
+                throw "$t 离线缓存 sha256 与清单不符，无法离线还原（需联网或重新打包）"
+            }
+        }
+    } else {
+        Save-ReleaseAsset -Url $Resolution.AssetUrl -OutFile $cachePath -ExpectedSha256 $expectedSha -Force:$forceDownload
+    }
 
     # 额外 bootstrap 资产（如 7z 的 7zr.exe：先下载最小解压器，用于解压主资产 extra.7z）
     if ($d.BootstrapAsset) {
@@ -854,13 +876,7 @@ function Install-ToolVersion {
     switch ($d.Extract) {
         'msi' {
             # 安装包：per-machine 静默安装（与 set-pwsh.ps1 一致），不绿色解压；MSI 自行注册 PATH
-            # 自更新守卫：pwsh 不能替换运行中的自身，会因文件占用返回 3010（被当成功但实需重启），
-            # 造成「装完版本没变」的困惑。运行在 pwsh7 里时直接提示用 set-pwsh.ps1（独立终端 PS5.1 跑）。
-            if ($t -eq 'pwsh' -and $PSVersionTable.PSEdition -eq 'Core') {
-                Write-Host "[HINT] 正在 pwsh7 内更新 pwsh，会因文件占用失效。请关闭所有 PowerShell 后，用 PS5.1 独立运行:" -ForegroundColor Yellow
-                Write-Host "       powershell.exe -NoProfile -ExecutionPolicy Bypass -File $(Join-Path $PSScriptRoot 'set-pwsh.ps1')" -ForegroundColor Yellow
-                return
-            }
+            # （pwsh 自更新守卫已上移到函数入口，见上方 ── pwsh 自更新守卫 ──）
             $msiArgs = "/i `"$cachePath`" /qn /norestart DISABLE_TELEMETRY=1"
             $p = Start-Process -FilePath 'msiexec.exe' -ArgumentList $msiArgs -Wait -PassThru
             if ($p.ExitCode -notin @(0, 3010)) { throw "$t MSI 安装失败（exit=$($p.ExitCode)）" }
@@ -1114,8 +1130,10 @@ function Invoke-EnvPack {
     if (Test-Path -LiteralPath $ps5Profile) { Copy-Item -LiteralPath $ps5Profile -Destination (Join-Path $configDir 'profile-ps5.ps1') -Force }
     Write-Host '[打包] config: codex/claude/kimi/starship/profile 配置' -ForegroundColor Cyan
 
-    # 部署器脚本（ohmyenv 自身，用于目标机 unpack）
-    Copy-Item -Path (Join-Path $PSScriptRoot '*') -Destination $scriptsDir -Recurse -Force
+    # 部署器脚本（ohmyenv 自身，用于目标机 unpack）；排除 __pycache__ 字节码缓存（无意义 + 膨胀）
+    Get-ChildItem -LiteralPath $PSScriptRoot -Force |
+        Where-Object { $_.Name -ne '__pycache__' } |
+        Copy-Item -Destination $scriptsDir -Recurse -Force
 
     # portable 目录完整性清单：相对路径 -> sha256（unpack 时校验防篡改/传输损坏）
     foreach ($t in $script:ToolNames) {
@@ -1212,23 +1230,22 @@ function Invoke-EnvUnpack {
                     continue
                 }
                 $dst = Join-Path $envRoot $d.Dir
-                if (Test-Path -LiteralPath $dst) { Remove-Item -LiteralPath $dst -Recurse -Force }
-                Copy-Item -LiteralPath $src -Destination $dst -Recurse -Force
-                # 包内完整性校验：对照 manifest.PortableHashes（若清单存在）防篡改/传输损坏
+                # 包内完整性校验：在「部署前」对 stage 内/zip 解出的 portable/<dir> 对照
+                # manifest.PortableHashes；不匹配则中止（旧安装不得先被销毁、可疑内容不得落盘）。
                 $expectedHashes = $manifest.PortableHashes.$t
                 if ($expectedHashes) {
                     $mismatch = 0
                     foreach ($hf in $expectedHashes.PSObject.Properties) {
-                        $target = Join-Path $dst $hf.Name
+                        $target = Join-Path $src $hf.Name
                         if (-not (Test-Path -LiteralPath $target)) { $mismatch++; continue }
                         if (($expectedHashes.($hf.Name)) -ne (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash) { $mismatch++ }
                     }
                     if ($mismatch -gt 0) {
-                        Write-Host "[WARN] $t portable 校验 $mismatch 个文件与清单不符（可能被篡改/损坏）" -ForegroundColor Yellow
-                    } else {
-                        Write-Host "[OK] $t portable 完整性校验通过" -ForegroundColor DarkGray
+                        throw "$t portable 校验失败：$mismatch 个文件与清单不符（包可能被篡改/损坏），拒绝部署"
                     }
                 }
+                if (Test-Path -LiteralPath $dst) { Remove-Item -LiteralPath $dst -Recurse -Force }
+                Copy-Item -LiteralPath $src -Destination $dst -Recurse -Force
                 if ($d.Bin) { Add-EnvPath -Dir (Join-Path $envRoot $d.Bin) }
                 $verify = Get-InstalledVersion -ExePath (Join-Path $envRoot $d.Exe) -Tool $t
                 Write-Host "[OK] $t 部署完成: $verify" -ForegroundColor Green
