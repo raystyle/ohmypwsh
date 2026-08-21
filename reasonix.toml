@@ -1,5 +1,0 @@
-[permissions]
-allow = []
-
-[sandbox]
-allow_write = ["${HOME}/AppData/Local/Temp", "${HOME}/.claude/skills/win-rmux", "D:\\win-rmux\\skills\\win-rmux", "D:\\win-rmux\\reviews", "D:\\win-rmux"]

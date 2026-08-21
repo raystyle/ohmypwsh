@@ -73,7 +73,7 @@ function Set-FnmProfileBlock {
     $start = "# BEGIN $mark"
     $end   = "# END $mark"
     $line1 = 'if (Get-Command fnm -ErrorAction SilentlyContinue) {'
-    $line2 = '    fnm env --use-on-cd --version-file-strategy=recursive --shell powershell | Out-String | Invoke-Expression'
+    $line2 = '    fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression'
     $line3 = '}'
     $block = "$start`r`n$line1`r`n$line2`r`n$line3`r`n$end"
 

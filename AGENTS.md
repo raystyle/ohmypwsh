@@ -44,9 +44,9 @@ PowerShell 7，部署完整 PowerShell 模块 CLI，再安装 / 管理工具与 
 | --- | --- | --- |
 | 脚本/代码 | `scripts\` | ohmyenv CLI（`ohmyenv.ps1`）、模块函数（`helpers.ps1`）、工具定义与锁定清单（`env.psd1`）、环境脚本（密钥/交接验证/状态栏等） |
 | 文档 | `docs\`（`plans\` + `research\`）+ 根目录 README/AGENTS/CHANGELOG/ROADMAP.md | 见「文档规范」 |
-| 配置 | `.sops.yaml`、`scripts\env.psd1`、`scripts\modules.psd1`、根目录 agent 配置（`reasonix.toml`/`bunfig.toml`/`.nvmrc` 等） | SOPS 加密策略 / 工具版本锁定清单 / PowerShell 模块锁定清单（唯一 pin 来源，代码不得硬编码版本）/ 各 agent 本地配置（随仓库管理，可提交） |
+| 配置 | `.sops.yaml`、`scripts\env.psd1`、`scripts\modules.psd1`、根目录 agent 配置（`bunfig.toml`/`.nvmrc` 等） | SOPS 加密策略 / 工具版本锁定清单 / PowerShell 模块锁定清单（唯一 pin 来源，代码不得硬编码版本）/ 各 agent 静态配置（随仓库管理，可提交） |
 | 密钥数据 | `.secrets\` | SOPS 加密副本（可提交）；明文密钥/凭据绝不入库（`.gitignore` 兜底） |
-| 运行数据 | `.reasonix\` 等（不入库） | agent/工具运行时产生的会话、任务、元数据，一律加入 `.gitignore`，不进版本控制 |
+| 运行数据 | `.reasonix\`、`reasonix.toml` 等（不入库） | agent/工具运行时产生的会话、任务、元数据、本地权限配置（如 reasonix 的 `[permissions] allow` 随每次会话批准漂移、`[sandbox]` 含本机路径），一律加入 `.gitignore`，不进版本控制 |
 | 环境目录 | `D:\ohmyenv` | 工具安装根（git 之外），由 ohmyenv 管理（query / deploy / install / update / pin） |
 
 要点：
