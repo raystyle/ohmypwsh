@@ -171,6 +171,24 @@
 
 ### Fixed
 
+- **三 agent 交叉 review 第二轮**（修复引入的回归 + 安全/正确性缺口）：
+  - `set-kimi-config.ps1`：未定义 `Write-Warn` 改 `Write-Warning`（EAP=Stop 下原必断）；
+    域名白名单 `-not $url -match` 运算符优先级致死代码 → `-notmatch`（恶意 URL 现在会被拦）
+  - `set-agent-secret-guard.ps1`：`[features]` 空块 `.Replace('',..)` 抛异常中断后续 install →
+    块级锚定替换；`hooks=false` 替换限定块内 + 容忍 `\r`/行尾注释（修越块误改 + 假成功）；
+    `Add-NestedJsonHook` 命中有 hook 时同步 `matcher`（存量安装应用扩充）；
+    `MCP__`→`mcp__`（Claude 工具实际小写）+ PostToolUse matcher 对称
+  - `secret-guard.py`：password 拆引号版(可含空格)+裸值版（修空格密码漏报回归）；统一
+    `guard_self_file`（guard 本体按部署语义/研究文档限定 docs/research）+ PostToolUse/Reasonix
+    豁免（修 Read/PostToolUse 仍误拦）
+  - `psmodule.ps1`：PSModulePath 读取改 `DoNotExpandEnvironmentNames`（修 `%USERPROFILE%`
+    被展开，REG_EXPAND_SZ 保留不完整）
+  - `helpers.ps1`：pwsh 自更新守卫上移函数入口（修下载后 return 污染 env.psd1 + daily 白下
+    MSI）；Offline 主资产 null URL 显式报错；portable 校验改部署前对 stage 校验 + 不匹配中断；
+    pack 复制脚本排除 `__pycache__`
+  - `.gitignore`：加 `__pycache__/` + `*.pyc`；`set-*-key.ps1` `Read-Host -MaskInput` 需 PS7.1
+    → `#Requires -Version 7.1`
+
 - **unpack 版本解析崩溃**：新增 `Test-VersionAtLeast` 稳健版本比较，`Invoke-EnvUnpack` 不再用
   `[version]` 强转——git `2.55.0.windows.4` 等含后缀版本号可正确比较，跨机还原不再因
   `InvalidCastException` 中断（`scripts\helpers.ps1`）
