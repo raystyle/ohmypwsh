@@ -182,6 +182,8 @@
     `Add/Remove-EnvPath` 比较改展开后再比（`%USERPROFILE%` 与字面路径不匹配→重复/删不掉）；
     Offline 跨 tag 且无 `expectedSha` 时显式报错（不静默用错 tag 缓存）
   - `psmodule.ps1`：PSModulePath 添加/移除比较改双方 `ExpandEnvironmentVariables` 后比
+  - Offline 跨 tag 校验改用 `$d.Sha256`（claude 指出 `$expectedSha` 因 Tag 互斥恒空不可达；
+    unpack 已注入包内清单 sha 至 `$d.Sha256`）
 
 - **三 agent 交叉 review 第二轮**（修复引入的回归 + 安全/正确性缺口）：
   - `set-kimi-config.ps1`：未定义 `Write-Warn` 改 `Write-Warning`（EAP=Stop 下原必断）；
