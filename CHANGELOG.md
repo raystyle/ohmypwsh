@@ -79,6 +79,7 @@
 - WSL 镜像导入/部署：`scripts\set-wsl-distro.ps1`（参考 `D:\ohmywsl2\scripts\import.ps1`，`.wsl` 产物 → `wsl --import` distro，自适应 `.wslconfig`，冲突 `-Force`，时区 Asia/Singapore；默认镜像目录 `D:\ohmyenv\images\wsl`，回退参考 `D:\ohmywsl2\images`）
 - ohmywsl WSL 镜像构建迁移接管：`scripts\build-wsl-image.ps1` + `scripts\wsl\`（base/base-config apt-sources git、dev/node bun rust uv go zig、clean.sh、tool-versions.sh 已从 `D:\ohmywsl2` 迁入）；官方 Ubuntu 24.04.4 下载/校验到 EnvRoot 缓存，构建 distro `ohmyenv-wsl-build`，产物 `.wsl` + 报告落 `D:\ohmyenv\images\wsl`，不再依赖 `D:\ohmywsl2\images\wsl`
 - WSL 基础镜像首次构建成功：`ohmywsl-0.1.0-wsl-amd64.wsl`（1.65 GB，dev 变体，SHA256 `987fd91b…`）；node v24.19.0(fnm)/bun 1.4.0/rust 1.98.0/uv 0.12.5/go 1.27.0/zig 0.16.0 + rust-analyzer/gopls/zls；研究文档 `docs\research\wsl-image-build.md`
+- Reasonix Desktop 接管：`scripts\set-reasonix.ps1`（`esengine/DeepSeek-Reasonix` desktop-v1.31.0，`Reasonix-windows-amd64.zip` sha256 校验 → `D:\ohmyenv\reasonix`，写入 `%APPDATA%\reasonix\config.toml`（DeepSeek preset，`api_key_env=DEEPSEEK_API_KEY`）与 `.env`（复用用户 `DEEPSEEK_API_KEY`，不回显），PATH 前置 + 桌面快捷方式）；实测 reasonix-cli v1.31.0
 
 ### Changed
 

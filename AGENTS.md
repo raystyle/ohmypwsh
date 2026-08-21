@@ -88,6 +88,7 @@ pwsh -NoProfile -File scripts\set-deepseek-key.ps1         # DeepSeek API Key �
 pwsh -NoProfile -File scripts\set-starship-config.ps1      # starship PowerShell 配置（全模板幂等，-Force 覆盖）
 pwsh -NoProfile -File scripts\set-claude-key.ps1           # Claude Code (GLM) API Key 交互式设置（用户环境变量 + SOPS 加密备份）
 pwsh -NoProfile -File scripts\set-claude-config.ps1        # Claude Code 配置（安装 + settings.json env 幂等合并 + omc 残留清理）
+pwsh -NoProfile -File scripts\set-reasonix.ps1             # Reasonix Desktop 接管（DeepSeek 密钥复用，config.toml + .env + 桌面快捷方式，幂等）
 pwsh -NoProfile -File scripts\set-claude-statusline.ps1    # Claude Code 状态栏幂等合并（statusLine 块，纯 PowerShell）
 pwsh -NoProfile -File scripts\set-fnm-config.ps1           # fnm/Node 接管（FNM_DIR/镜像/PATH/profile/.npmrc，幂等）
 pwsh -NoProfile -File scripts\set-bun-config.ps1           # bun 镜像源（全局 ~/.bunfig.toml + 局部 bunfig.toml，幂等）
