@@ -42,8 +42,9 @@ ohmyenv 一致（按工具 pin/update/deploy）。
 - **WSL DNS 代理 `10.255.255.254` 不解析**：`.wslconfig` 的 `dnsTunneling=true` 会强制 WSL
   用该代理；本机该代理解析超时。改为 `dnsTunneling=false` 后 WSL 直接继承网卡 DHCP DNS
   （本机 192.168.88.1），`apt update` 恢复。镜像不硬编码 DNS。
-- **releases.ubuntu.com 对 aria2 TLS 握手失败/降速**：Ubuntu WSL 镜像下载改 `curl.exe`
-  （schannel）优先，失败再回退 `Save-ReleaseAsset`（aria2）。
+- **releases.ubuntu.com 之前 aria2 TLS 失败是网络不稳定，非 aria2 本身**：网络稳定后 aria2
+  实测 18MiB/s 下载 373MB Ubuntu 镜像成功（部分连接报 schannel handle 错误但整体 OK）；
+  下载保持 `Save-ReleaseAsset`（aria2 主通道）优先。
 - **WSL 命令输出 UTF-16 乱码**：`wsl --import` 的 stderr 警告（VHD 非稀疏 / 过时配置）需
   `2>$null` 抑制，并在导入后 `wsl --manage <distro> --set-sparse true --allow-unsafe`。
 - **`fnm current` 无节点时返回 `none` 且退出码 0**：不能用 exit code 判断是否已装，须比较
