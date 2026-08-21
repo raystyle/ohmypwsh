@@ -146,7 +146,12 @@ function Invoke-Omp {
             $report.Add($summary)
             $report | Add-Content -Path $logFile -Encoding utf8
             Write-Host "[LOG] $logFile" -ForegroundColor DarkGray
-            if ($held -gt 0) { return 2 }
+            # 注：omp 是模块函数，无法可靠设置宿主进程退出码；跨主版本保留项用提示告知，
+            #     需要退出码语义的自动化请用脚本入口 `ohmyenv.ps1 daily`（其 `exit 2`）。
+            if ($held -gt 0) {
+                Write-Host "[!] 有 $held 个跨主版本更新被保留，需人工确认（-IncludeBreaking 强制）" -ForegroundColor Yellow
+                return [pscustomobject]@{ Held = $held; Updated = $updated }
+            }
         }
         'pack' { Invoke-EnvPack -Lock $lock }
         'unpack' {

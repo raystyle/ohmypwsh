@@ -75,13 +75,13 @@ function Save-ModuleLock {
 function Add-PSModulePathEntry {
     param([Parameter(Mandatory)][string]$Dir)
     $user = [Environment]::GetEnvironmentVariable('PSModulePath', 'User')
-    $parts = @($user -split ';' | Where-Object { $_ })
+    $parts = @(if ($null -ne $user) { $user -split ';' | Where-Object { $_ } })
     if ($parts -contains $Dir) {
         Write-Host "[INFO] PSModulePath 已存在: $Dir" -ForegroundColor DarkGray
         return
     }
     $new = (@($Dir) + $parts) -join ';'
-    [Environment]::SetEnvironmentVariable('PSModulePath', $new, 'User')
+    Set-UserEnvVar -Name 'PSModulePath' -Value $new
     $env:PSModulePath = "$Dir;$env:PSModulePath"
     Write-Host "[OK] PSModulePath 已注册（前置）: $Dir" -ForegroundColor Green
 }
@@ -89,8 +89,8 @@ function Add-PSModulePathEntry {
 function Remove-PSModulePathEntry {
     param([Parameter(Mandatory)][string]$Dir)
     $user = [Environment]::GetEnvironmentVariable('PSModulePath', 'User')
-    $parts = @($user -split ';' | Where-Object { $_ -and $_ -ne $Dir })
-    [Environment]::SetEnvironmentVariable('PSModulePath', ($parts -join ';'), 'User')
+    $parts = @(if ($null -ne $user) { $user -split ';' | Where-Object { $_ -and $_ -ne $Dir } })
+    Set-UserEnvVar -Name 'PSModulePath' -Value ($parts -join ';')
     $env:PSModulePath = (($env:PSModulePath -split ';') | Where-Object { $_ -and $_ -ne $Dir }) -join ';'
     Write-Host "[OK] PSModulePath 已移除: $Dir" -ForegroundColor Green
 }

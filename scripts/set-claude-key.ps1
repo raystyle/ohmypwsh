@@ -6,7 +6,7 @@
 
 Write-Host '=== Claude Code (GLM/bigmodel) API Key 设置 ===' -ForegroundColor Cyan
 Write-Host '请在 open.bigmodel.cn 申请 API Key（形如 xxxx.yyyy），粘贴到下面输入框：' -ForegroundColor Yellow
-$key = Read-Host 'ANTHROPIC_API_KEY'
+$key = Read-Host 'ANTHROPIC_API_KEY' -MaskInput
 $key = ($key -as [string]).Trim()
 
 if ($key -notmatch '^[A-Za-z0-9]+\.[A-Za-z0-9]+$') {

@@ -119,8 +119,8 @@ $json = if (Test-Path -LiteralPath $claudeSettings) {
 if (-not $json.ContainsKey('hooks')) { $json['hooks'] = @{} }
 $claudeHooks = $json['hooks']
 
-$null = Add-NestedJsonHook -Hooks $claudeHooks -Event 'PreToolUse'       -Matcher 'Bash|Read|Write|Edit|Glob|Grep' -Command $claudeCmd -Status ' Scanning command for secrets...'
-$null = Add-NestedJsonHook -Hooks $claudeHooks -Event 'PostToolUse'      -Matcher 'Bash|Read|Glob|Grep'           -Command $claudeCmd -Status ' Checking output for secrets...'
+$null = Add-NestedJsonHook -Hooks $claudeHooks -Event 'PreToolUse'       -Matcher 'Bash|Read|Write|Edit|MultiEdit|Glob|Grep|WebFetch|WebSearch|NotebookEdit|Task|MCP__' -Command $claudeCmd -Status ' Scanning command for secrets...'
+$null = Add-NestedJsonHook -Hooks $claudeHooks -Event 'PostToolUse'      -Matcher 'Bash|Read|Write|Edit|Glob|Grep|WebFetch|WebSearch|MCP__'                        -Command $claudeCmd -Status ' Checking output for secrets...'
 $null = Add-NestedJsonHook -Hooks $claudeHooks -Event 'UserPromptSubmit' -Matcher ''                               -Command $claudeCmd -Status ' Scanning prompt for secrets...'
 
 $json['hooks'] = $claudeHooks

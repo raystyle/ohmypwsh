@@ -33,10 +33,12 @@ foreach ($f in @('omp.psm1', 'omp.psd1', 'helpers.ps1', 'env.psd1')) {
 }
 
 # ── 2. 注册 PSModulePath（EnvRoot\modules）──
-$psmp  = [Environment]::GetEnvironmentVariable('PSModulePath', 'User')
-$parts = @($psmp -split ';' | Where-Object { $_ })
+$regPSMP = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
+$psmp  = $regPSMP.GetValue('PSModulePath', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+$regPSMP.Close()
+$parts = @(if ($null -ne $psmp) { $psmp -split ';' | Where-Object { $_ } })
 if ($parts -notcontains $moduleRoot) {
-    [Environment]::SetEnvironmentVariable('PSModulePath', (@($moduleRoot) + $parts) -join ';', 'User')
+    Set-UserEnvVar -Name 'PSModulePath' -Value ((@($moduleRoot) + $parts) -join ';')
     $env:PSModulePath = "$moduleRoot;$env:PSModulePath"
     Write-Host "[OK] PSModulePath 已注册: $moduleRoot" -ForegroundColor Green
 } else {

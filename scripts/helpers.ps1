@@ -958,29 +958,55 @@ function Install-ToolVersion {
     }
 }
 
+function Set-UserEnvVar {
+    <#
+    .SYNOPSIS
+        写用户环境变量，保留 REG_EXPAND_SZ 类型（避免 %...% 引用被降级为字面路径）。
+        SetEnvironmentVariable 始终写 REG_SZ，重写含 %USERPROFILE% 等引用的 PATH/PSModulePath 会静默损坏。
+    #>
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [string]$Value
+    )
+    $reg = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
+    if ($null -eq $Value) {
+        $reg.DeleteValue($Name, $false)
+    } else {
+        $reg.SetValue($Name, $Value, [Microsoft.Win32.RegistryValueKind]::ExpandString)
+    }
+    $reg.Close()
+}
+
 function Add-EnvPath {
     <#
     .SYNOPSIS
         用户 PATH 幂等前置注册（保证优先于旧条目），并同步当前进程。
+        用注册表直写并保留 REG_EXPAND_SZ 类型，避免 SetEnvironmentVariable 把 %...% 引用降级成
+        字面路径（review 实测：%USERPROFILE% 类条目会静默失效）。
     #>
     param([Parameter(Mandatory)][string]$Dir)
-    $user = [Environment]::GetEnvironmentVariable('Path', 'User')
-    $parts = $user -split ';' | Where-Object { $_ }
+    $reg = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
+    $user = $reg.GetValue('Path', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+    $parts = @(if ($null -ne $user) { $user -split ';' | Where-Object { $_ } })
     if ($parts -contains $Dir) {
         Write-Host "[INFO] PATH 已存在，跳过: $Dir" -ForegroundColor DarkGray
+        $reg.Close()
         return
     }
     $new = (@($Dir) + $parts) -join ';'
-    [Environment]::SetEnvironmentVariable('Path', $new, 'User')
+    $reg.SetValue('Path', $new, [Microsoft.Win32.RegistryValueKind]::ExpandString)
+    $reg.Close()
     $env:Path = "$Dir;$env:Path"
     Write-Host "[OK] PATH 已注册（前置）: $Dir" -ForegroundColor Green
 }
 
 function Remove-EnvPath {
     param([Parameter(Mandatory)][string]$Dir)
-    $user = [Environment]::GetEnvironmentVariable('Path', 'User')
-    $parts = $user -split ';' | Where-Object { $_ -and $_ -ne $Dir }
-    [Environment]::SetEnvironmentVariable('Path', ($parts -join ';'), 'User')
+    $reg = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
+    $user = $reg.GetValue('Path', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+    $parts = @(if ($null -ne $user) { $user -split ';' | Where-Object { $_ -and $_ -ne $Dir } })
+    $reg.SetValue('Path', ($parts -join ';'), [Microsoft.Win32.RegistryValueKind]::ExpandString)
+    $reg.Close()
     $env:Path = (($env:Path -split ';') | Where-Object { $_ -and $_ -ne $Dir }) -join ';'
     Write-Host "[OK] PATH 已移除: $Dir" -ForegroundColor Green
 }
