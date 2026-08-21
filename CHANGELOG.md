@@ -184,19 +184,25 @@
   运行文件）；同步 `AGENTS.md` 目录分类表，从「配置（可提交）」归入「运行数据（不入库）」。
 
 - **bunx 命令缺失**：bun 是单二进制部署（`D:\ohmyenv\bun\bun.exe`），Windows 上无官方 `bunx`
-  入口，`bunx <pkg>` 在 PATH 中不可用。`Install-ToolVersion` 在 zip 解压分支（`t -eq 'bun'`）
-  与跳过快速路径均调用新增 `Ensure-BunxShim`：同目录创建 `bunx.exe` 硬链接指向 `bun.exe`
-  （bun 按 `argv[0]` 切换到 bunx 模式，与官方 Windows 安装器一致），硬链接失败回退
-  `bunx.cmd` shim；实测 `bunx prettier --version` / `bunx cowsay` 正常，幂等
+  入口，`bunx <pkg>` 在 PATH 中不可用。`Install-ToolVersion` 在 zip 解压分支（`t -eq 'bun'`）、
+  跳过快速路径**与 `Invoke-EnvUnpack` 离线还原路径**均调用新增 `Ensure-BunxShim`：同目录创建
+  `bunx.exe` 硬链接指向 `bun.exe`（bun 按 `argv[0]` 切换到 bunx 模式，与官方 Windows 安装器
+  一致；离线还原在 `Copy-Item` 之后、完整性校验之后、`Add-EnvPath` 之前补建，否则新机还原后
+  bunx 不可用），硬链接失败回退 `bunx.cmd` shim；实测 `bunx prettier --version` /
+  `bunx cowsay` 正常，幂等
 - **bunx.cmd 兜底 shim 带空格路径缺陷**：原 shim 用 `@%~dp0bun.exe x %*`（无引号），部署目录
   含空格时 Windows 把路径拆成多个 token、把 `bun` 当命令导致失败。改为 `"%~dp0bun.exe" x %*`
-  （引号包裹），满足项目可重定位原则（换机到带空格路径仍可用）；实测带空格临时目录下该
-  shim 正常执行、无引号版本复现 `'bun' is not recognized`
+  （引号包裹），满足项目可重定位原则（换机到带空格路径仍可用）；同时以**无 BOM 的 UTF-8**
+  写入（`[System.IO.File]::WriteAllText` + `UTF8Encoding($false)`）——原 UTF-8 BOM 使 cmd.exe
+  把首行读成 `<BOM>@echo off`，老 cmd 会报 `'@echo'` 不是命令并回显噪声；实测带空格临时目录下
+  该 shim 正常执行、无引号版本复现 `'bun' is not recognized`
 
 - **`set-reasonix.ps1`**：移除幂等替换对里的 `Bash(git push*)` deny 规则（保留 `Bash(rm -rf*)` 防误删）；消除脚本重跑时把 `git push` 放回 `config.toml` deny 列表、导致无法推送的隐患
 - **仓库归类清理**：根目录 agent 运行时数据 `.reasonix\` 加入 `.gitignore`（会话/任务不入库）；
   `AGENTS.md` 目录分类表新增「运行数据（不入库）」类别，并将 `reasonix.toml` 归入该运行数据类；
   `reasonix.toml` 随 20a0a62 从版本控制移除、保留本地文件（清理长期 untracked 干扰）
+- **`.rmux_tasks\` 不入库**：rmux 任务产物（review/research 会话归档，含历史任务会话记录）
+  加入 `.gitignore`，按「运行数据（不入库）」约定与 `.reasonix\` 同类
 
 - **三 agent 交叉 review 第三轮**（codex/kimi 独立实测复现的回归 + 边界收口）：
   - `set-agent-secret-guard.ps1`：`[features]` **非空块无 hooks 时整段重复**（表头锚定+插入，

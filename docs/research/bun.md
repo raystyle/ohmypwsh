@@ -33,9 +33,10 @@ registry = "https://registry.npmmirror.com"
 - bun 单二进制部署到 `D:\ohmyenv\bun\bun.exe` 后，**Windows 上默认没有 `bunx` 命令**
   （Linux 发行包自带 `bunx` 符号链接；Windows zip 不含）。官方 Windows PowerShell 安装器会额外
   创建 `bunx.exe`（bun 内部按 `argv[0]` 是否 `bunx` 切换到 bunx 模式）。
-- 方案：`Install-ToolVersion` 新增 `Ensure-BunxShim`，在 zip 解压分支 + 跳过快速路径为 bun
-  部署目录创建 `bunx.exe` **硬链接 → bun.exe**（NTFS 支持），`bunx` 即 `bun x`。实测
-  `bunx prettier --version` → 3.9.6、`bunx cowsay` 正常。
+- 方案：`Install-ToolVersion` 新增 `Ensure-BunxShim`，在 zip 解压分支 + 跳过快速路径**及
+  `Invoke-EnvUnpack` 离线还原路径**（还原在 `Copy-Item` 之后、完整性校验之后、`Add-EnvPath`
+  之前补建，否则新机还原后 bunx 不可用）为 bun 部署目录创建 `bunx.exe` **硬链接 → bun.exe**
+  （NTFS 支持），`bunx` 即 `bun x`。实测 `bunx prettier --version` → 3.9.6、`bunx cowsay` 正常。
 - 硬链接失败（非 NTFS）回退 `bunx.cmd`：`@echo off` + `"%~dp0bun.exe" x %*`。
 
 ## 踩坑
@@ -45,3 +46,7 @@ registry = "https://registry.npmmirror.com"
 - bunx.cmd 兜底 shim 中 `%~dp0bun.exe` 必须加引号：可重定位环境下部署目录可能含空格，无引号时
   cmd 把路径拆成多个 token、把 `bun` 当命令报 `'bun' is not recognized`；`"%~dp0bun.exe" x %*`
   实测在带空格临时目录下正常。
+- bunx.cmd 兜底 shim 必须以**无 BOM 的 UTF-8** 写入（`[System.IO.File]::WriteAllText` +
+  `UTF8Encoding($false)`）：若带 UTF-8 BOM，cmd.exe 会把首行读成 `<BOM>@echo off`，老 cmd
+  报 `'@echo'` 不是命令并回显噪声。注意与 AGENTS 规则 4（PS5 文件须带 BOM）相反——cmd.exe
+  解析 .cmd 时遇到 BOM 首行会踩坑，故此处必须无 BOM。

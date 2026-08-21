@@ -25,5 +25,8 @@ __pycache__/
 # Agent/工具运行数据（会话、任务、元数据，不入库）
 .reasonix/
 
+# rmux 任务产物（review/research 会话归档，运行时产物，不入库）
+.rmux_tasks/
+
 # Agent 本地运行时配置（权限 allow 随会话批准漂移、sandbox 含本机路径，不入库）
 reasonix.toml
