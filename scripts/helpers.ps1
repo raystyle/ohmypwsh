@@ -824,6 +824,14 @@ function Install-ToolVersion {
         } else {
             Save-ReleaseAsset -Url $bootUrl -OutFile $bootPath
         }
+        # 完整性最小护栏：bootstrap（如 7zr.exe）将被「直接执行」去解压主资产，须是有效 PE 且非空
+        if (-not (Test-Path -LiteralPath $bootPath) -or (Get-Item -LiteralPath $bootPath).Length -eq 0) {
+            throw "$t BootstrapAsset 缺失或为空: $($d.BootstrapAsset)"
+        }
+        $bootBom = [System.IO.File]::ReadAllBytes($bootPath)[0..1]
+        if ($bootBom[0] -ne 0x4D -or $bootBom[1] -ne 0x5A) {  # MZ 头
+            throw "$t BootstrapAsset 不是有效 Windows 可执行文件: $($d.BootstrapAsset)"
+        }
     }
 
     $sha = (Get-FileHash -LiteralPath $cachePath -Algorithm SHA256).Hash
