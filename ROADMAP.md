@@ -97,6 +97,13 @@
   config.toml + .env + 桌面快捷方式；reasonix-cli v1.31.0）
 - 已完成：Agent 密钥泄露防护统一（`set-agent-secret-guard.ps1` + `hooks\secret-guard.py` 覆盖
   Claude Code / Codex CLI / Kimi Code CLI / Reasonix；研究文档 `docs\research\agent-secret-guard.md`）
+- 已完成：扩展开发工具接管（`just` / `ast-grep` / `nushell` 部署到 EnvRoot + PATH，均已进
+  `env.psd1` 工具清单）
+- 已完成：Rust 接管（`set-rust.ps1`：rustup + stable + rsproxy.cn 镜像，幂等配置）
+- 已完成：Python3 命令别名（`set-python-config.ps1`：复制 `python.exe` → `python3.exe`，
+  与 Linux 对齐；实测 3.12.14）
+- 已完成：Kimi Code 接管（`set-kimi-config.ps1`：官方安装到 `~/.kimi-code` + config.toml
+  幂等合并 K3 模型 / 权限模式 / 关遥测 + 归档到 deploy 包）
 
 ## 阶段 5：项目重定位（进行中）
 

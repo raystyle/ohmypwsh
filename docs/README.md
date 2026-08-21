@@ -76,7 +76,8 @@ ohmypwsh/
 ├─ .gitignore                   忽略规则（备份/缓存/密钥明文兜底）
 │
 ├─ .secrets\                    密钥加密副本（可提交；明文禁止入库）
-│  └─ deepseek.env.enc          DeepSeek key 的 SOPS 加密备份
+│  ├─ deepseek.env.enc          DeepSeek key 的 SOPS 加密备份
+│  └─ anthropic.env.enc         ANTHROPIC_API_KEY 的 SOPS 加密备份
 │
 ├─ docs\                        文档总览与规范见本文件
 │  ├─ README.md                 文档地图、命名约定、变更流程、目录索引
@@ -89,6 +90,10 @@ ohmypwsh/
 │  │  ├─ 0005-starship-takeover.md starship 接管与 PowerShell 清理
 │  │  ├─ 0006-psmodule-manager.md PowerShell 模块管理器（在线/离线/双 shell）
 │  │  └─ 0007-uv-python-takeover.md uv/Python 接管（uv 最新 + Python 3.12 为准）
+│  │  ├─ 0008-claude-code-config.md Claude Code 配置接管（密钥/env/settings 幂等合并）
+│  │  ├─ 0009-claude-takeover.md   Claude Code 完全接管（YOLO/状态栏/env 收敛/omc 清理）
+│  │  ├─ 0010-portable-agent-env.md 项目本质重定位（EnvRoot 重定位 + bootstrap + omp + pack/unpack）
+│  │  └─ 0011-windows-agent-env-oneclick.md Windows 智能体环境一键部署/配置/备份/镜像平移
 │  └─ research\                 研究文档（工具能力 / 踩坑沉淀 / 实测记录）
 │     ├─ gh-cli.md              gh CLI 研究（现状/认证/API 兜底/命令地图）
 │     ├─ gh-git-https-ssh.md    gh 与 git 的 HTTPS/SSH 互相配置（本机实测）
@@ -96,7 +101,21 @@ ohmypwsh/
 │     ├─ ohmyenv-pitfalls.md    ohmyenv 踩坑沉淀
 │     ├─ codex-deepseek-config.md    Codex 接管记录（沙箱/密钥/状态栏）
 │     ├─ codex-statusline.md    Codex TUI 状态栏研究（全量可选项/样式/推荐配置）
-│     └─ powershell-encoding.md PS5/PS7 编码兼容研究（优先注意规则）
+│     ├─ powershell-encoding.md PS5/PS7 编码兼容研究（优先注意规则）
+│     ├─ starship-config.md     starship.toml 配置研究（PowerShell 专用提示行）
+│     ├─ powershell-dotnet-vsbuild.md PowerShell 模块 / .NET / VS Build Tools 现状
+│     ├─ omc-psmodule-management.md omc 的 PowerShell 模块管理机制
+│     ├─ claude-code-statusline-api.md Claude Code 状态栏（statusLine）API 契约研究
+│     ├─ claude-code-onboarding.md Claude Code onboarding 与安装警告踩坑
+│     ├─ node-fnm.md            Node.js/npm 接管（fnm，弃用 nvm-windows）
+│     ├─ bun.md                 Bun 接管（oven-sh/bun + bunfig.toml npmmirror）
+│     ├─ gsudo.md               gsudo 接管（gerardog/gsudo）
+│     ├─ oscdimg.md             oscdimg 接管（微软符号服务器固定 URL + FileVersion）
+│     ├─ wsl-image-build.md     ohmywsl WSL 基础镜像构建（流程/清单/踩坑）
+│     ├─ agent-secret-guard.md  Agent 密钥泄露防护统一（四套 hook 格式与阻断语义）
+│     ├─ agents-docs-benchmark.md  Agent 文档基准评估
+│     ├─ powershell-telemetry.md   PowerShell 遥测关闭研究
+│     └─ win-rmux-multi-agent-review.md win-rmux 三 agent 全仓代码审查（高风险/中/低 + 优先级）
 │
 └─ scripts\                     环境脚本（全部入口）
    ├─ ohmyenv.ps1               CLI：query / deploy / install / update / pin / status
@@ -119,8 +138,13 @@ ohmypwsh/
    ├─ set-wsl.ps1               WSL 安装/更新（microsoft/WSL 官方 x64 MSI，需提权）
    ├─ set-wsl-distro.ps1        WSL 镜像导入/部署（.wsl 产物 → distro，参考 ohmywsl2）
    ├─ build-wsl-image.ps1      构建 ohmywsl WSL 镜像模板（官方 Ubuntu → EnvRoot\images\wsl，组件脚本 scripts\wsl\）
-   ├─ set-claude-key.ps1        Claude Code (GLM) API Key 设置/迁移（-FromOmcProfile）
+   ├─ set-claude-key.ps1        Claude Code (GLM) API Key 交互式设置（用户环境变量 + SOPS 加密备份）
    ├─ set-claude-config.ps1     Claude Code 配置（安装 + env + settings.json 合并）
+   ├─ set-claude-statusline.ps1 Claude Code 状态栏幂等合并（statusLine 块，纯 PowerShell）
+   ├─ claude-statusline.ps1     Claude Code 状态栏系统（statusLine 生成器）
+   ├─ set-kimi-config.ps1       Kimi Code 安装/更新 + 配置（~/.kimi-code，auto 权限 + 关遥测）
+   ├─ set-fnm-config.ps1        fnm/Node 接管（FNM_DIR/镜像/PATH/profile/.npmrc，幂等）
+   ├─ set-bun-config.ps1        bun 镜像源（全局 ~/.bunfig.toml + 局部，幂等）
    ├─ set-reasonix.ps1          Reasonix Desktop 接管（DeepSeek 密钥复用 + 桌面快捷方式）
    ├─ set-agent-secret-guard.ps1 Agent 密钥泄露防护 hook（Claude Code / Codex / Kimi / Reasonix）
    ├─ sops-encrypt-anthropic.ps1 ANTHROPIC_API_KEY SOPS 加密备份

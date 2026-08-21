@@ -18,9 +18,9 @@ PowerShell 7，部署完整 PowerShell 模块 CLI，再安装 / 管理工具与 
    执行命令前先感知系统环境；默认使用 PowerShell 7（`pwsh`），不要使用 Windows PowerShell 5.1（`powershell.exe`）。
 
    - 运行环境：Windows 10 Enterprise LTSC 2024（Build 26100，64 位）
-   - `pwsh`：`C:\Program Files\PowerShell\7\pwsh.exe`，版本 7.6.4
-   - `gh`：GitHub CLI，版本 2.91.0
-   - `git`：Git for Windows，版本 2.54.0.windows.1
+   - `pwsh`：`C:\Program Files\PowerShell\7\pwsh.exe`，版本 7.6.5
+   - `gh`：GitHub CLI，版本 2.97.0
+   - `git`：Git for Windows，版本 2.55.0.windows.4
 
 3. **文档规范**
 
@@ -105,6 +105,10 @@ pwsh -NoProfile -File scripts\deploy-omp.ps1               # 部署 omp 模块�
 pwsh -NoProfile -File scripts\sops-encrypt-anthropic.ps1   # ANTHROPIC_API_KEY SOPS 加密备份
 pwsh -NoProfile -File scripts\sops-test.ps1                # SOPS 冒烟测试
 pwsh -NoProfile -File scripts\verify-codex-handover.ps1    # codex 原生版交接验证（PASS/FAIL）
+pwsh -NoProfile -File scripts\verify-tools-handover.ps1    # rg/jq/yq 交接验证（解析/版本 PASS/FAIL）
+pwsh -NoProfile -File scripts\set-kimi-config.ps1          # Kimi Code 安装/更新 + 配置（~/.kimi-code，幂等）
+pwsh -NoProfile -File scripts\psmodule.ps1                 # PowerShell 模块管理器（list/pin/install/update/pack）
+pwsh -NoProfile -File scripts\claude-statusline.ps1        # Claude Code 状态栏生成器（纯 PowerShell）
 ```
 
 ## 提交约定
