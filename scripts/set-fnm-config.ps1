@@ -88,7 +88,8 @@ function Set-FnmProfileBlock {
     $sep = if ($without.Trim().Length -gt 0) { "`r`n`r`n" } else { '' }
     $result = $without.TrimEnd("`r", "`n") + $sep + $block + "`r`n"
     if ($result -ne $existing) {
-        [System.IO.File]::WriteAllText($Path, $result, (New-Object System.Text.UTF8Encoding $false))
+        # 规则 4：profile 会被 PS5.1 读取，含非 ASCII 时须 UTF-8 带 BOM
+        [System.IO.File]::WriteAllText($Path, $result, [System.Text.UTF8Encoding]::new($true))
         Write-Host "[OK] profile 已更新: $Path" -ForegroundColor Green
     } else {
         Write-Host "[INFO] profile 已是最新: $Path" -ForegroundColor DarkGray

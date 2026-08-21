@@ -62,7 +62,8 @@ function Save-ModuleLock {
     }
     $lines.Add('    }')
     $lines.Add('}')
-    $lines | Set-Content -Path $script:ModuleLockPath -Encoding utf8
+    # 规则 4：modules.psd1 含中文说明，统一 UTF-8 带 BOM（与 env.psd1 一致，防 PS 非 pwsh7 读乱码）
+    $lines | Set-Content -Path $script:ModuleLockPath -Encoding utf8BOM
     Write-Host "[OK] 模块锁定清单已写入: $script:ModuleLockPath" -ForegroundColor Green
 }
 
