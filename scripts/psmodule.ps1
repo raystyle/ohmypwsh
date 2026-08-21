@@ -12,6 +12,7 @@ param(
     [string]$Name,
 
     [string]$Version,
+    [switch]$Latest,         # pin 到最新版：psmodule.ps1 pin <模块> -Latest
     [string]$File,             # 离线 nupkg 路径（install）
     [string]$Out,              # pack 输出目录
     [switch]$Force,
