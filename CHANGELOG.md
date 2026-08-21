@@ -6,6 +6,8 @@
 
 ### Added
 
+- Python3 命令别名：新增 `scripts\set-python-config.ps1`（复制 `EnvRoot\python\python.exe` →
+  `python3.exe`，与 Linux 命令对齐，幂等；`python3 --version` 实测 3.12.14）
 - oscdimg 接管：研究文档 `docs\research\oscdimg.md`；`New-ToolDef` 新增 `oscdimg`（微软符号
   服务器固定 `CdnUrl`，`Extract='copy'` 单二进制）；`Get-InstalledVersion` 对 oscdimg 读
   `FileVersion`（无 `--version`）；pin 2.56 → deploy 到 `D:\ohmyenv\oscdimg`（140KB）+ PATH
@@ -85,6 +87,16 @@
 
 ### Changed
 
+- Agent 密钥泄露防护统一为四个 CLI：`scripts\hooks\secret-guard.py` 改为单一脚本自动识别
+  Claude Code / Codex CLI / Kimi Code CLI / Reasonix 的 stdin JSON 信封（`event`=Reasonix、
+  `hook_event_name`=Claude/Kimi、其余=Codex）；`set-agent-secret-guard.ps1` 扩展部署到四个工具
+  （Claude settings.json / Codex hooks.json + `[features] hooks=true` / Kimi config.toml
+  `[[hooks]]` / Reasonix settings.json），按 command 精确去重实现真正幂等；新增研究文档
+  `docs\research\agent-secret-guard.md` 与回归测试 `scripts\hooks\_test_secret_guard.py`
+  （9 例四类 payload PASS，含 Reasonix `match`/`toolResult`/毫秒与 Codex `hooks=true` 修正；
+  hook 命令统一 `python3`，便于 WSL/Linux 复用同一 secret-guard.py）
+- Reasonix 关闭 pro planner：`set-reasonix.ps1` 将 `planner_model = "deepseek-pro"` 注释回默认
+  （正则仅命中未注释行，幂等不叠加 `#`），只保留主模型 deepseek-v4-flash
 - 残留硬编码清理（可重定位）：`set-claude-config.ps1`（`$toolBin`/wheel 缓存/`CLAUDE_CODE_GIT_BASH_PATH`/`$mainProject` 改为 EnvRoot 与项目根派生）、`set-claude-statusline.ps1`（statusLine command 从 `$PSScriptRoot` 派生，不再写死 `D:/ohmypwsh`）、`verify-codex-handover.ps1`（`$expected` 走 EnvRoot 派生，codex 版本改读 `env.psd1` 不再硬编码）、`set-pwsh.ps1`（cache 目录 EnvRoot 派生，PS5.1 兼容内联解析）、`psmodule.ps1`（`$script:EnvRoot = Get-DefaultEnvRoot`）
 - Claude Code 状态栏微调：移除成本（`$0.14`）显示；目录显示完整路径（如 `D:\ohmypwsh`）而非叶子名
 - Claude Code 安装与配置完全移交 ohmyenv：omc 侧 `.scripts\base\claude.ps1`（安装器/Profile 系统）、`.config\claude\`（GLM/DeepSeek/Zyun 明文 profile）、`~/.local\bin\claude.exe`（旧 2.1.187）删除；omc.ps1 `$BaseScripts` 清空、CLAUDE.md 与 `.claude\rules\claude-config.md` 同步标注接管

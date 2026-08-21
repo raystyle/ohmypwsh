@@ -10,7 +10,7 @@ Windows 智能体环境一键部署、配置、备份与镜像平移 CLI。
 - **一键 Bootstrap**：PS5.1 → pwsh7 → `omp` 模块
 - **工具管理**：pin / deploy / update / status / daily，官方哈希校验
 - **Agent 配置**：Codex / Claude Code / Kimi Code / Reasonix / starship，幂等
-- **安全防护**：Claude Code / Codex 密钥泄露 hook
+- **安全防护**：Claude Code / Codex / Kimi Code / Reasonix 密钥泄露 hook
 - **Windows 容器**：Docker Engine 官方二进制接管
 - **WSL**：引擎更新 + ohmywsl 基础镜像构建 / 导入
 - **备份迁移**：`pack` / `unpack` + `.wsl` + Docker 数据

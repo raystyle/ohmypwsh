@@ -89,12 +89,13 @@ pwsh -NoProfile -File scripts\set-starship-config.ps1      # starship PowerShell
 pwsh -NoProfile -File scripts\set-claude-key.ps1           # Claude Code (GLM) API Key 交互式设置（用户环境变量 + SOPS 加密备份）
 pwsh -NoProfile -File scripts\set-claude-config.ps1        # Claude Code 配置（安装 + settings.json env 幂等合并 + omc 残留清理）
 pwsh -NoProfile -File scripts\set-reasonix.ps1             # Reasonix Desktop 接管（DeepSeek 密钥复用，config.toml + .env + 桌面快捷方式，幂等）
-pwsh -NoProfile -File scripts\set-agent-secret-guard.ps1   # Agent 密钥泄露防护 hook（Claude Code + Codex CLI，幂等合并）
+pwsh -NoProfile -File scripts\set-agent-secret-guard.ps1   # Agent 密钥泄露防护 hook（Claude Code / Codex / Kimi / Reasonix，幂等合并，命令用 python3）
 pwsh -NoProfile -File scripts\set-claude-statusline.ps1    # Claude Code 状态栏幂等合并（statusLine 块，纯 PowerShell）
 pwsh -NoProfile -File scripts\set-fnm-config.ps1           # fnm/Node 接管（FNM_DIR/镜像/PATH/profile/.npmrc，幂等）
 pwsh -NoProfile -File scripts\set-bun-config.ps1           # bun 镜像源（全局 ~/.bunfig.toml + 局部 bunfig.toml，幂等）
 pwsh -NoProfile -File scripts\set-nushell-config.ps1       # 官方 nushell 插件注册（nu_plugin_* 逐个 plugin add，幂等）
 pwsh -NoProfile -File scripts\set-rust.ps1                 # Rust 接管（rustup + stable + rsproxy.cn 镜像，幂等）
+pwsh -NoProfile -File scripts\set-python-config.ps1        # Python3 命令别名（python.exe → python3.exe，与 Linux 对齐，幂等）
 pwsh -NoProfile -File scripts\set-vsbuild.ps1              # VS Build Tools 接管（离线布局 --noWeb 安装，需提权，幂等）
 pwsh -NoProfile -File scripts\set-docker.ps1               # Windows 容器 Docker Engine 接管（官方 static 二进制 + 服务注册，需提权）
 pwsh -NoProfile -File scripts\set-wsl.ps1                  # WSL 安装/更新（microsoft/WSL 官方 x64 MSI，需提权）

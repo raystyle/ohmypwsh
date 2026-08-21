@@ -69,7 +69,6 @@ $repl = @(
     @('telemetry = true', 'telemetry = false'),
     @('metrics = true', 'metrics = false'),
     @('# display_currency = "auto"', 'display_currency = "CNY"'),
-    @('# planner_model = "deepseek-pro"', 'planner_model = "deepseek-pro"'),
     @('# prefer = "auto"', 'prefer = "pwsh"'),
     @('mode  = "ask"', 'mode  = "yolo"'),
     @('# deny = ["Bash(rm -rf*)", "Bash(git push*)"]', 'deny = ["Bash(rm -rf*)", "Bash(git push*)"]'),
@@ -79,9 +78,14 @@ $changed = $false
 foreach ($r in $repl) {
     if ($text.Contains($r[0])) { $text = $text.Replace($r[0], $r[1]); $changed = $true }
 }
+# 关闭 pro planner：仅注释未注释的 planner_model 行（正则，幂等不叠加 #）
+if ($text -match '(?m)^[ \t]*planner_model\s*=\s*"deepseek-pro"') {
+    $text = [regex]::Replace($text, '(?m)^([ \t]*)planner_model\s*=\s*"deepseek-pro"', '$1# planner_model = "deepseek-pro"')
+    $changed = $true
+}
 if ($changed) {
     [System.IO.File]::WriteAllText($config, $text, (New-Object System.Text.UTF8Encoding $false))
-    Write-Host '[OK] Reasonix 优化配置已应用（yolo/telemetry off/deny/forbid_read/planner/pwsh/CNY）' -ForegroundColor Green
+    Write-Host '[OK] Reasonix 优化配置已应用（yolo/telemetry off/deny/forbid_read/planner off/pwsh/CNY）' -ForegroundColor Green
 } else {
     Write-Host '[INFO] Reasonix 优化配置已是最新' -ForegroundColor DarkGray
 }

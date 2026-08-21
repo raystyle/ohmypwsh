@@ -61,6 +61,7 @@
 - `research\gsudo.md`：gsudo 接管（gerardog/gsudo，命令统一叫 `gsudo`，避开 Windows 内置 sudo）
 - `research\oscdimg.md`：oscdimg 接管（微软符号服务器固定 URL + FileVersion，ISO 制作工具）
 - `research\wsl-image-build.md`：ohmywsl WSL 基础镜像构建（流程/清单/踩坑沉淀）
+- `research\agent-secret-guard.md`：Agent 密钥泄露防护统一（Claude Code / Codex / Kimi / Reasonix 四套 hook 格式与阻断语义）
 
 ## 项目目录索引
 
@@ -111,6 +112,7 @@ ohmypwsh/
    ├─ set-starship-config.ps1   starship PowerShell 配置（全模板幂等，-Force 覆盖）
    ├─ set-nushell-config.ps1    官方 nushell 插件注册（nu_plugin_* 逐个 plugin add，幂等）
    ├─ set-rust.ps1              Rust 接管（rustup + stable + rsproxy.cn 镜像，幂等）
+   ├─ set-python-config.ps1     Python3 命令别名（python.exe → python3.exe，与 Linux 对齐，幂等）
    ├─ set-vsbuild.ps1           VS Build Tools 接管（离线布局 --noWeb 安装，需提权，幂等）
    ├─ set-docker.ps1            Windows 容器 Docker Engine 接管（官方 static 二进制 + 服务注册，需提权）
    ├─ set-wsl.ps1               WSL 安装/更新（microsoft/WSL 官方 x64 MSI，需提权）
@@ -119,7 +121,7 @@ ohmypwsh/
    ├─ set-claude-key.ps1        Claude Code (GLM) API Key 设置/迁移（-FromOmcProfile）
    ├─ set-claude-config.ps1     Claude Code 配置（安装 + env + settings.json 合并）
    ├─ set-reasonix.ps1          Reasonix Desktop 接管（DeepSeek 密钥复用 + 桌面快捷方式）
-   ├─ set-agent-secret-guard.ps1 Agent 密钥泄露防护 hook（Claude Code + Codex CLI）
+   ├─ set-agent-secret-guard.ps1 Agent 密钥泄露防护 hook（Claude Code / Codex / Kimi / Reasonix）
    ├─ sops-encrypt-anthropic.ps1 ANTHROPIC_API_KEY SOPS 加密备份
    ├─ sops-encrypt-deepseek.ps1 SOPS 重加密/回读验证
    ├─ sops-test.ps1             SOPS 冒烟测试

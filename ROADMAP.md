@@ -95,6 +95,8 @@
   `D:\ohmyenv\oscdimg`；`Get-InstalledVersion` 读 FileVersion；ISO 制作工具）
 - 已完成：Reasonix Desktop 接管（`set-reasonix.ps1`：desktop-v1.31.0，DeepSeek 密钥复用，
   config.toml + .env + 桌面快捷方式；reasonix-cli v1.31.0）
+- 已完成：Agent 密钥泄露防护统一（`set-agent-secret-guard.ps1` + `hooks\secret-guard.py` 覆盖
+  Claude Code / Codex CLI / Kimi Code CLI / Reasonix；研究文档 `docs\research\agent-secret-guard.md`）
 
 ## 阶段 5：项目重定位（进行中）
 

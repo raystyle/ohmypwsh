@@ -1,117 +1,149 @@
 #Requires -Version 7.0
-# set-agent-secret-guard.ps1 - Agent 密钥泄露防护 hook（Claude Code + Codex CLI，幂等合并）
+# set-agent-secret-guard.ps1 - 统一密钥泄露防护 hook（Claude Code / Codex CLI / Kimi Code CLI / Reasonix，幂等）
 # 用法: pwsh -NoProfile -File scripts\set-agent-secret-guard.ps1
-# 说明: 部署 secret-guard.py 到 ~/.claude/hooks 与 ~/.codex/hooks，并合并 hooks 配置（保留已有 hooks）。
+# 说明: 部署统一 secret-guard.py 到四个 CLI 的 hooks 目录，并按各自格式幂等合并 hooks 配置
+#       （保留已有 hooks，不重复追加 secret-guard）。
+#       hook 命令统一使用 python3（Windows 由 set-python-config.ps1 建立别名；WSL/Linux 原生 python3）。
+#
+# 各 CLI hook 格式差异（已按官方文档核实）:
+#   Claude Code : ~/.claude/settings.json         JSON, matcher, timeout 秒
+#   Codex CLI   : ~/.codex/hooks.json + [features] hooks=true, matcher, timeout 秒
+#   Kimi Code   : ~/.kimi-code/config.toml        TOML [[hooks]], matcher(可选), timeout 秒
+#   Reasonix    : %APPDATA%\reasonix\settings.json JSON, match, timeout 毫秒
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'helpers.ps1')
 
 $envRoot = Get-DefaultEnvRoot
-$python  = Join-Path $envRoot 'python\python.exe'
 $srcHook = Join-Path $PSScriptRoot 'hooks\secret-guard.py'
 
-if (-not (Test-Path -LiteralPath $python)) {
-    throw "未找到 python: $python（先 ohmyenv deploy python）"
+$python3Exe = Join-Path $envRoot 'python\python3.exe'
+if (-not (Test-Path -LiteralPath $python3Exe)) {
+    throw "未找到 python3 别名: $python3Exe（先 ohmyenv deploy python + set-python-config.ps1）"
+}
+if (-not (Test-Path -LiteralPath $srcHook)) {
+    throw "未找到统一 hook 脚本: $srcHook"
 }
 
-$claudeDir = Join-Path $env:USERPROFILE '.claude\hooks'
-$codexDir  = Join-Path $env:USERPROFILE '.codex\hooks'
-$claudeHook = Join-Path $claudeDir 'secret-guard.py'
-$codexHook  = Join-Path $codexDir 'secret-guard.py'
+$claudeHome   = Join-Path $env:USERPROFILE '.claude'
+$codexHome    = Join-Path $env:USERPROFILE '.codex'
+$kimiHome     = Join-Path $env:USERPROFILE '.kimi-code'
+$reasonixHome = Join-Path $env:APPDATA 'reasonix'
 
-foreach ($dir in @($claudeDir, $codexDir)) {
-    New-Item -ItemType Directory -Path $dir -Force | Out-Null
+$claudeHook   = Join-Path $claudeHome   'hooks\secret-guard.py'
+$codexHook    = Join-Path $codexHome    'hooks\secret-guard.py'
+$kimiHook     = Join-Path $kimiHome     'hooks\secret-guard.py'
+$reasonixHook = Join-Path $reasonixHome 'hooks\secret-guard.py'
+
+# ── 0. 部署统一 hook 脚本副本 ──
+foreach ($h in @($claudeHook, $codexHook, $kimiHook, $reasonixHook)) {
+    New-Item -ItemType Directory -Path (Split-Path -Parent $h) -Force | Out-Null
+    Copy-Item -LiteralPath $srcHook -Destination $h -Force
 }
-Copy-Item -LiteralPath $srcHook -Destination $claudeHook -Force
-Copy-Item -LiteralPath $srcHook -Destination $codexHook -Force
-Write-Host "[OK] secret-guard.py 已部署到 Claude/Codex hooks 目录" -ForegroundColor Green
+Write-Host '[OK] secret-guard.py 已部署到 Claude / Codex / Kimi / Reasonix hooks 目录' -ForegroundColor Green
 
-function New-SecretGuardEntry {
-    param([string]$Matcher, [string]$Status)
-    @{
-        matcher = $Matcher
-        hooks = @(
-            @{
-                type = 'command'
-                command = "`"$python`" `"$claudeHook`""
-                timeout = 10
-                statusMessage = $Status
+$claudeCmd   = "python3 `"$claudeHook`""
+$codexCmd    = "python3 `"$codexHook`""
+$reasonixCmd = "python3 `"$reasonixHook`""
+
+# ── 通用: JSON hooks 幂等 upsert（Claude/Codex 嵌套结构；按 secret-guard.py 定位并更新命令）──
+function Add-NestedJsonHook {
+    param(
+        [hashtable]$Hooks,
+        [string]$Event,
+        [string]$Matcher,
+        [string]$Command,
+        [string]$Status
+    )
+    if (-not $Hooks.ContainsKey($Event)) { $Hooks[$Event] = @() }
+    $found = $false
+    foreach ($entry in @($Hooks[$Event])) {
+        if ($entry -is [hashtable] -and $entry.ContainsKey('hooks')) {
+            foreach ($h in @($entry['hooks'])) {
+                if ($h -is [hashtable] -and ($h['command'] -like '*secret-guard.py*')) {
+                    $h['command'] = $Command
+                    $h['timeout'] = 10
+                    $h['statusMessage'] = $Status
+                    $found = $true
+                }
             }
+        }
+    }
+    if ($found) { return $false }
+    $newEntry = @{
+        hooks = @(
+            @{ type = 'command'; command = $Command; timeout = 10; statusMessage = $Status }
         )
     }
+    if (-not [string]::IsNullOrEmpty($Matcher)) { $newEntry['matcher'] = $Matcher }
+    $list = [System.Collections.Generic.List[object]]::new()
+    foreach ($e in @($Hooks[$Event])) { $list.Add($e) }
+    $list.Add($newEntry)
+    $Hooks[$Event] = $list.ToArray()
+    return $true
 }
 
-function New-SecretGuardEntryCodex {
-    param([string]$Matcher, [string]$Status)
-    @{
-        matcher = $Matcher
-        hooks = @(
-            @{
-                type = 'command'
-                command = "`"$python`" `"$codexHook`""
-                timeout = 10
-                statusMessage = $Status
-            }
-        )
+# ── 通用: JSON hooks 幂等 upsert（Reasonix 扁平结构，match + timeout 毫秒）──
+function Add-FlatJsonHook {
+    param(
+        [hashtable]$Hooks,
+        [string]$Event,
+        [string]$Match,
+        [string]$Command,
+        [int]$Timeout
+    )
+    if (-not $Hooks.ContainsKey($Event)) { $Hooks[$Event] = @() }
+    $found = $false
+    foreach ($entry in @($Hooks[$Event])) {
+        if ($entry -is [hashtable] -and ($entry['command'] -like '*secret-guard.py*')) {
+            $entry['command'] = $Command
+            $entry['timeout'] = $Timeout
+            $found = $true
+        }
     }
+    if ($found) { return $false }
+    $newEntry = @{ command = $Command; timeout = $Timeout }
+    if (-not [string]::IsNullOrEmpty($Match)) { $newEntry['match'] = $Match }
+    $list = [System.Collections.Generic.List[object]]::new()
+    foreach ($e in @($Hooks[$Event])) { $list.Add($e) }
+    $list.Add($newEntry)
+    $Hooks[$Event] = $list.ToArray()
+    return $true
 }
 
-# ── 1. Claude Code：合并 ~/.claude/settings.json hooks ──
-$claudeSettings = Join-Path $env:USERPROFILE '.claude\settings.json'
+# ── 1. Claude Code: ~/.claude/settings.json ──
+$claudeSettings = Join-Path $claudeHome 'settings.json'
 $json = if (Test-Path -LiteralPath $claudeSettings) {
     Get-Content -LiteralPath $claudeSettings -Raw | ConvertFrom-Json -AsHashtable
 } else { @{} }
-
 if (-not $json.ContainsKey('hooks')) { $json['hooks'] = @{} }
-$hooks = $json['hooks']
+$claudeHooks = $json['hooks']
 
-function Add-ClaudeEvent {
-    param([string]$Event, [string]$Matcher, [string]$Status)
-    if (-not $hooks.ContainsKey($Event)) { $hooks[$Event] = @() }
-    $arr = [System.Collections.Generic.List[object]]::new()
-    foreach ($e in @($hooks[$Event])) { $arr.Add($e) }
-    $arr.Add((New-SecretGuardEntry -Matcher $Matcher -Status $Status))
-    $hooks[$Event] = $arr.ToArray()
-}
+$null = Add-NestedJsonHook -Hooks $claudeHooks -Event 'PreToolUse'       -Matcher 'Bash|Read|Write|Edit|Glob|Grep' -Command $claudeCmd -Status ' Scanning command for secrets...'
+$null = Add-NestedJsonHook -Hooks $claudeHooks -Event 'PostToolUse'      -Matcher 'Bash|Read|Glob|Grep'           -Command $claudeCmd -Status ' Checking output for secrets...'
+$null = Add-NestedJsonHook -Hooks $claudeHooks -Event 'UserPromptSubmit' -Matcher ''                               -Command $claudeCmd -Status ' Scanning prompt for secrets...'
 
-Add-ClaudeEvent -Event 'PreToolUse'      -Matcher 'Bash|Read|Write|Edit|Glob|Grep' -Status ' Scanning command for secrets...'
-Add-ClaudeEvent -Event 'PostToolUse'     -Matcher 'Bash|Read|Glob|Grep' -Status ' Checking output for secrets...'
-Add-ClaudeEvent -Event 'UserPromptSubmit' -Matcher '*' -Status ' Scanning prompt for secrets...'
-
-$json['hooks'] = $hooks
-$json | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $claudeSettings -Encoding utf8
+$json['hooks'] = $claudeHooks
+$json | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $claudeSettings -Encoding utf8
 Write-Host "[OK] Claude Code hooks 已合并: $claudeSettings" -ForegroundColor Green
 
-# ── 2. Codex CLI：合并 ~/.codex/hooks.json ──
-$codexHooksFile = Join-Path $env:USERPROFILE '.codex\hooks.json'
+# ── 2. Codex CLI: ~/.codex/hooks.json + [features] hooks=true ──
+$codexHooksFile = Join-Path $codexHome 'hooks.json'
 $codexJson = if (Test-Path -LiteralPath $codexHooksFile) {
     Get-Content -LiteralPath $codexHooksFile -Raw | ConvertFrom-Json -AsHashtable
 } else { @{ hooks = @{} } }
-
 if (-not $codexJson.ContainsKey('hooks')) { $codexJson['hooks'] = @{} }
-$chooks = $codexJson['hooks']
+$codexHooks = $codexJson['hooks']
 
-function Add-CodexEvent {
-    param([string]$Event, [string]$Matcher, [string]$Status)
-    if (-not $chooks.ContainsKey($Event)) { $chooks[$Event] = @() }
-    $arr = [System.Collections.Generic.List[object]]::new()
-    foreach ($e in @($chooks[$Event])) { $arr.Add($e) }
-    $entry = New-SecretGuardEntryCodex -Matcher $Matcher -Status $Status
-    if ([string]::IsNullOrEmpty($Matcher)) { $entry.Remove('matcher') }
-    $arr.Add($entry)
-    $chooks[$Event] = $arr.ToArray()
-}
+$null = Add-NestedJsonHook -Hooks $codexHooks -Event 'PreToolUse'       -Matcher 'Bash' -Command $codexCmd -Status ' Scanning command for secrets...'
+$null = Add-NestedJsonHook -Hooks $codexHooks -Event 'PostToolUse'      -Matcher 'Bash' -Command $codexCmd -Status ' Checking output for secrets...'
+$null = Add-NestedJsonHook -Hooks $codexHooks -Event 'UserPromptSubmit' -Matcher ''     -Command $codexCmd -Status ' Scanning prompt for secrets...'
 
-Add-CodexEvent -Event 'PreToolUse'       -Matcher 'Bash' -Status ' Scanning command for secrets...'
-Add-CodexEvent -Event 'PostToolUse'      -Matcher 'Bash' -Status ' Checking output for secrets...'
-Add-CodexEvent -Event 'UserPromptSubmit' -Matcher '' -Status ' Scanning prompt for secrets...'
-
-$codexJson['hooks'] = $chooks
-$codexJson | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $codexHooksFile -Encoding utf8
+$codexJson['hooks'] = $codexHooks
+$codexJson | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $codexHooksFile -Encoding utf8
 Write-Host "[OK] Codex hooks 已合并: $codexHooksFile" -ForegroundColor Green
 
-# ── 3. 确保 Codex hooks 特性开启（config.toml [features] hooks=true）──
-$codexConfig = Join-Path $env:USERPROFILE '.codex\config.toml'
+$codexConfig = Join-Path $codexHome 'config.toml'
 $t = if (Test-Path -LiteralPath $codexConfig) { Get-Content -LiteralPath $codexConfig -Raw } else { '' }
 if ($t -notmatch '(?m)^\s*\[features\]\s*$') {
     Add-Content -LiteralPath $codexConfig -Value "`n[features]`nhooks = true`n" -Encoding utf8
@@ -124,4 +156,61 @@ if ($t -notmatch '(?m)^\s*\[features\]\s*$') {
     Write-Host '[INFO] Codex hooks 特性已启用' -ForegroundColor DarkGray
 }
 
-Write-Host '[完成] Agent 密钥泄露防护已就绪（Claude Code + Codex CLI）。' -ForegroundColor Cyan
+# ── 3. Kimi Code CLI: ~/.kimi-code/config.toml（[[hooks]]，timeout 秒）──
+$kimiConfig = Join-Path $kimiHome 'config.toml'
+New-Item -ItemType Directory -Path $kimiHome -Force | Out-Null
+if (-not (Test-Path -LiteralPath $kimiConfig)) {
+    [System.IO.File]::WriteAllText($kimiConfig, '', (New-Object System.Text.UTF8Encoding $false))
+}
+$kimiRaw = [System.IO.File]::ReadAllText($kimiConfig, [System.Text.Encoding]::UTF8)
+
+if ($kimiRaw.Contains('secret-guard.py')) {
+    $kimiOld = $kimiRaw
+    $kimiRaw = [regex]::Replace($kimiRaw, '(?m)^command\s*=\s*.*secret-guard\.py.*$', "command = 'python3 `"$kimiHook`"'")
+    if ($kimiRaw -ne $kimiOld) {
+        [System.IO.File]::WriteAllText($kimiConfig, $kimiRaw, (New-Object System.Text.UTF8Encoding $false))
+        Write-Host '[OK] Kimi secret-guard 命令已更新为 python3' -ForegroundColor Green
+    } else {
+        Write-Host '[INFO] Kimi secret-guard 命令已是 python3' -ForegroundColor DarkGray
+    }
+} else {
+    if ($kimiRaw.Length -gt 0 -and -not $kimiRaw.EndsWith("`n")) { $kimiRaw += "`n" }
+    $kimiBlock = @"
+
+[[hooks]]
+event = "PreToolUse"
+command = 'python3 "$kimiHook"'
+timeout = 10
+
+[[hooks]]
+event = "PostToolUse"
+command = 'python3 "$kimiHook"'
+timeout = 10
+
+[[hooks]]
+event = "UserPromptSubmit"
+command = 'python3 "$kimiHook"'
+timeout = 10
+"@
+    $kimiRaw += $kimiBlock
+    [System.IO.File]::WriteAllText($kimiConfig, $kimiRaw, (New-Object System.Text.UTF8Encoding $false))
+    Write-Host "[OK] Kimi hooks 已追加（PreToolUse / PostToolUse / UserPromptSubmit）" -ForegroundColor Green
+}
+
+# ── 4. Reasonix: %APPDATA%\reasonix\settings.json（match + timeout 毫秒）──
+$reasonixSettings = Join-Path $reasonixHome 'settings.json'
+$rxJson = if (Test-Path -LiteralPath $reasonixSettings) {
+    Get-Content -LiteralPath $reasonixSettings -Raw | ConvertFrom-Json -AsHashtable
+} else { @{} }
+if (-not $rxJson.ContainsKey('hooks')) { $rxJson['hooks'] = @{} }
+$rxHooks = $rxJson['hooks']
+
+$null = Add-FlatJsonHook -Hooks $rxHooks -Event 'PreToolUse'       -Match '*' -Command $reasonixCmd -Timeout 5000
+$null = Add-FlatJsonHook -Hooks $rxHooks -Event 'PostToolUse'      -Match '*' -Command $reasonixCmd -Timeout 10000
+$null = Add-FlatJsonHook -Hooks $rxHooks -Event 'UserPromptSubmit' -Match ''  -Command $reasonixCmd -Timeout 5000
+
+$rxJson['hooks'] = $rxHooks
+$rxJson | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $reasonixSettings -Encoding utf8
+Write-Host "[OK] Reasonix hooks 已合并: $reasonixSettings" -ForegroundColor Green
+
+Write-Host '[完成] 统一密钥泄露防护已就绪（Claude Code + Codex CLI + Kimi Code CLI + Reasonix）。' -ForegroundColor Cyan
