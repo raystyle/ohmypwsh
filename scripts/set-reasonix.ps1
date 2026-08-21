@@ -54,11 +54,36 @@ api_key_env = "DEEPSEEK_API_KEY"
 web_search  = true
 '@
 $existingConfig = if (Test-Path -LiteralPath $config) { [System.IO.File]::ReadAllText($config) } else { '' }
-if ($existingConfig -ne $configContent) {
+if (-not $existingConfig) {
     [System.IO.File]::WriteAllText($config, $configContent, (New-Object System.Text.UTF8Encoding $false))
     Write-Host "[OK] config.toml 已写入: $config" -ForegroundColor Green
 } else {
-    Write-Host '[INFO] config.toml 已是最新' -ForegroundColor DarkGray
+    Write-Host '[INFO] config.toml 已存在，保留 Reasonix 生成的完整配置' -ForegroundColor DarkGray
+}
+
+# ── 2.5 优化配置（幂等字符串替换）──
+$text = [System.IO.File]::ReadAllText($config)
+$repl = @(
+    @('default_tool_approval_mode = "auto"', 'default_tool_approval_mode = "yolo"'),
+    @('check_updates = true', 'check_updates = false'),
+    @('telemetry = true', 'telemetry = false'),
+    @('metrics = true', 'metrics = false'),
+    @('# display_currency = "auto"', 'display_currency = "CNY"'),
+    @('# planner_model = "deepseek-pro"', 'planner_model = "deepseek-pro"'),
+    @('# prefer = "auto"', 'prefer = "pwsh"'),
+    @('mode  = "ask"', 'mode  = "yolo"'),
+    @('# deny = ["Bash(rm -rf*)", "Bash(git push*)"]', 'deny = ["Bash(rm -rf*)", "Bash(git push*)"]'),
+    @('# forbid_read = []', 'forbid_read = ["${USERPROFILE}\\.ssh", "${USERPROFILE}\\.aws"]')
+)
+$changed = $false
+foreach ($r in $repl) {
+    if ($text.Contains($r[0])) { $text = $text.Replace($r[0], $r[1]); $changed = $true }
+}
+if ($changed) {
+    [System.IO.File]::WriteAllText($config, $text, (New-Object System.Text.UTF8Encoding $false))
+    Write-Host '[OK] Reasonix 优化配置已应用（yolo/telemetry off/deny/forbid_read/planner/pwsh/CNY）' -ForegroundColor Green
+} else {
+    Write-Host '[INFO] Reasonix 优化配置已是最新' -ForegroundColor DarkGray
 }
 
 # ── 3. .env：复用用户环境变量 DEEPSEEK_API_KEY（不回显）──

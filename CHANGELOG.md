@@ -81,6 +81,7 @@
 - WSL 基础镜像首次构建成功：`ohmywsl-0.1.0-wsl-amd64.wsl`（1.65 GB，dev 变体，SHA256 `987fd91b…`）；node v24.19.0(fnm)/bun 1.4.0/rust 1.98.0/uv 0.12.5/go 1.27.0/zig 0.16.0 + rust-analyzer/gopls/zls；研究文档 `docs\research\wsl-image-build.md`
 - Reasonix Desktop 接管：`scripts\set-reasonix.ps1`（`esengine/DeepSeek-Reasonix` desktop-v1.31.0，`Reasonix-windows-amd64.zip` sha256 校验 → `D:\ohmyenv\reasonix`，写入 `%APPDATA%\reasonix\config.toml`（DeepSeek preset，`api_key_env=DEEPSEEK_API_KEY`）与 `.env`（复用用户 `DEEPSEEK_API_KEY`，不回显），PATH 前置 + 桌面快捷方式）；实测 reasonix-cli v1.31.0
 - Agent 密钥泄露防护：`scripts\set-agent-secret-guard.ps1` + `scripts\hooks\secret-guard.py`（Claude Code + Codex CLI 通用 hook，PreToolUse/PostToolUse/UserPromptSubmit 扫描并阻断 API key/密钥/私钥/JWT/数据库 URI 及环境变量真实值泄露；幂等合并到 `~/.claude/settings.json` 与 `~/.codex/hooks.json`，保留既有 win-rmux hooks；Codex `[features] hooks=true` 已启用）；实测干净输入 exit 0、密钥输入 exit 2 阻断
+- Reasonix 优化配置：`set-reasonix.ps1` 增加幂等优化——桌面 telemetry/metrics/check_updates 关闭、权限默认 `yolo` + 高危 `Bash(rm -rf*)/Bash(git push*)` deny、`forbid_read` 隐藏 `.ssh/.aws`、`prefer=pwsh`、`planner_model=deepseek-pro`、`display_currency=CNY`；并修复 config.toml 存在时不再被最小模板覆盖
 
 ### Changed
 
