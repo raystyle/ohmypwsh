@@ -575,12 +575,14 @@ function Save-ReleaseAsset {
                 Write-Host "[OK] 命中缓存（sha256 一致）: $OutFile" -ForegroundColor Green
                 return
             } catch {
-                Write-Host "[WARN] 缓存 sha256 不匹配，重新下载: $($_.Exception.Message)" -ForegroundColor Yellow
+                Write-Host "[WARN] 缓存 sha256 不匹配，删除后重新下载: $($_.Exception.Message)" -ForegroundColor Yellow
                 Remove-Item -LiteralPath $OutFile -Force
+                # 已删文件：必须落到下方下载流程，不能走「复用缓存」分支（return 会谎报复用导致 Get-FileHash 报错）
             }
+        } else {
+            Write-Host "[INFO] 已有缓存但无 sha256 基准，复用: $OutFile" -ForegroundColor DarkGray
+            return
         }
-        Write-Host "[INFO] 已有缓存但无 sha256 基准，复用: $OutFile" -ForegroundColor DarkGray
-        return
     }
 
     $aria2 = (Get-Command aria2c.exe -ErrorAction SilentlyContinue).Source
