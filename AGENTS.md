@@ -117,6 +117,13 @@ pwsh -NoProfile -File scripts\claude-statusline.ps1        # Claude Code 状态�
 - 前缀 `feat:`（功能/脚本）/ `docs:`（仅文档）/ `fix:`（修坑）/ `chore:`（杂项）+ 中文描述，如 `feat: Codex 状态栏升级专业组合`
 - 一次提交只做一件事，先维护在本地 `main` 分支；远端推送按用户指示进行
 
+## 版本发布
+
+- 项目版本号采用 SemVer，形式 `vMAJOR.MINOR.PATCH`，通过 annotated git tag 建立（首个版本 `v0.1.0`，2026-08-21）
+- 版本发布流程：把 CHANGELOG 顶部 `[Unreleased]` 翻转成 `[X.Y.Z] - <date>` 发布条目（新建空 `[Unreleased]` 段）→ 提交 → `git tag -a vX.Y.Z -m <描述>` → 推送 main 与 tag
+- 远端通道：origin 走 HTTPS + gh credential helper（`gh auth git-credential`）；SSH 22 端口在受限网络常超时，改用 HTTPS
+- 何时升 MAJOR/MINOR/PATCH 按下述默认：破坏性变更/大里程碑升 MAJOR，新增功能升 MINOR，纯修复升 PATCH（首个 `0.x` 阶段默认取 MINOR）
+
 ## 设计原则
 
 - **引导安装不依赖 gh（bootstrap 自举）**：首次安装或恢复环境时，不得把已装好的 gh 当作先决条件；通过 `api.github.com` REST API 查询发布资产并直连下载（带 User-Agent、按 tag 查询、失败重试）。

@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- 版本发布约定：AGENTS.md 新增「版本发布」节——项目版本号采用 SemVer（`vMAJOR.MINOR.PATCH`，首个 `v0.1.0` 于 2026-08-21 建立），沉淀发布流程（CHANGELOG 翻转 → 提交 → annotated tag → 推送）、远端 HTTPS + gh credential 通道、版本号升级规则
+
 ## [0.1.0] - 2026-08-21
 
 ### Added
