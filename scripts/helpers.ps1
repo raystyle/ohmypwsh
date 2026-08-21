@@ -774,8 +774,9 @@ function Ensure-BunxShim {
     } catch {
         # 非 NTFS 等不支持硬链接时，回退 cmd shim（bunx 实为 `bun x`）。
         # `%~dp0bun.exe` 必须加引号：可重定位环境下目录可能含空格，否则会被拆成多个 token。
-        $cmdBom = "`@echo off`r`n`"`%~dp0bun.exe`" x `%*`r`n"
-        [System.IO.File]::WriteAllText((Join-Path $BunDir 'bunx.cmd'), $cmdBom, (New-Object System.Text.UTF8Encoding $true))
+        # 内容纯 ASCII，禁止 BOM（cmd.exe 不识别，会把首行读成 `<BOM>@echo off`）。
+        $cmdBody = "`@echo off`r`n`"`%~dp0bun.exe`" x `%*`r`n"
+        [System.IO.File]::WriteAllText((Join-Path $BunDir 'bunx.cmd'), $cmdBody, (New-Object System.Text.UTF8Encoding $false))
         Write-Host "[OK] bunx shim 已创建（bunx.cmd 兜底）: $(Join-Path $BunDir 'bunx.cmd')" -ForegroundColor Green
     }
 }
@@ -1291,6 +1292,8 @@ function Invoke-EnvUnpack {
                 }
                 if (Test-Path -LiteralPath $dst) { Remove-Item -LiteralPath $dst -Recurse -Force }
                 Copy-Item -LiteralPath $src -Destination $dst -Recurse -Force
+                # bun：离线还原后 bun.exe 已就位但 bunx.exe 不在包内 -> 就地补 shim（硬链接，失败走 bunx.cmd）
+                if ($t -eq 'bun') { Ensure-BunxShim -BunDir $dst }
                 if ($d.Bin) { Add-EnvPath -Dir (Join-Path $envRoot $d.Bin) }
                 $verify = Get-InstalledVersion -ExePath (Join-Path $envRoot $d.Exe) -Tool $t
                 Write-Host "[OK] $t 部署完成: $verify" -ForegroundColor Green

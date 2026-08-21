@@ -171,10 +171,10 @@
 
 ### Fixed
 
-- **fnm profile 对齐官方写法**：`set-fnm-config.ps1` profile 块移除非标准自定义参数
-  `--version-file-strategy=recursive`，改用官方推荐 `fnm env --use-on-cd --shell powershell`
-  （显式 `--shell powershell` 避免运行时 shell 推断、加快启动）；PS5/PS7 实测 node
-  `v24.19.0` / npm / npx 均可用，保持 fnm 动态注入（不静态化 node）。
+- **fnm profile 对齐官方写法**：`set-fnm-config.ps1` profile 块保留官方选项
+  `--version-file-strategy=recursive`（fnm 文档化选项，默认 `local`；移除会导致项目子目录丢失
+  根 `.nvmrc` 递归命中，回退 default），并显式 `--shell powershell`（避免运行时 shell 推断、
+  加快启动）；PS5/PS7 实测 node `v24.19.0` / npm / npx 均可用，保持 fnm 动态注入（不静态化 node）。
 - **研究文档同步 + 作用域取舍确认**：`docs/research/node-fnm.md` 更新 profile 块示例为官方
   写法，并在「接管决策」明确记录——node 命令可用于仅经 profile 的 `fnm env` 注入到交互会话；
   用户注册表仅静态含 fnm 本体与 `FNM_DIR` / `FNM_NODE_DIST_MIRROR`，非交互会话（
@@ -195,8 +195,8 @@
 
 - **`set-reasonix.ps1`**：移除幂等替换对里的 `Bash(git push*)` deny 规则（保留 `Bash(rm -rf*)` 防误删）；消除脚本重跑时把 `git push` 放回 `config.toml` deny 列表、导致无法推送的隐患
 - **仓库归类清理**：根目录 agent 运行时数据 `.reasonix\` 加入 `.gitignore`（会话/任务不入库）；
-  `AGENTS.md` 目录分类表新增「运行数据（不入库）」类别，并将 `reasonix.toml`/`bunfig.toml`/`.nvmrc`
-  等根目录配置纳入「配置」类；`reasonix.toml` 纳入版本控制（清理长期 untracked 干扰）
+  `AGENTS.md` 目录分类表新增「运行数据（不入库）」类别，并将 `reasonix.toml` 归入该运行数据类；
+  `reasonix.toml` 随 20a0a62 从版本控制移除、保留本地文件（清理长期 untracked 干扰）
 
 - **三 agent 交叉 review 第三轮**（codex/kimi 独立实测复现的回归 + 边界收口）：
   - `set-agent-secret-guard.ps1`：`[features]` **非空块无 hooks 时整段重复**（表头锚定+插入，

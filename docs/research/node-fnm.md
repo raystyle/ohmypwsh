@@ -29,7 +29,7 @@
 ```powershell
 # BEGIN ohmypwsh: fnm
 if (Get-Command fnm -ErrorAction SilentlyContinue) {
-    fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression
+    fnm env --use-on-cd --version-file-strategy=recursive --shell powershell | Out-String | Invoke-Expression
 }
 # END ohmypwsh: fnm
 ```
@@ -38,9 +38,10 @@ if (Get-Command fnm -ErrorAction SilentlyContinue) {
   `fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression`。
 - `--use-on-cd`：`cd` 进目录自动按 `.nvmrc` / `.node-version` 切换 node。
 - **显式 `--shell powershell`**（官方建议）：避免运行时 shell 推断 / process tree 检测，更快。
-- 移除自定义参数 `--version-file-strategy=recursive`，与官方标准保持一致
-  （默认 `local` 策略；默认 node 即 lock `FNM_DIR` 内 default 版本 v24，子目录不命中 .nvmrc
-  时回退 default 仍一致）。
+- 保留官方选项 `--version-file-strategy=recursive`（fnm 文档化选项，默认 `local`）：
+  从项目子目录（如 `scripts\`）开 shell 时向上递归命中根 `.nvmrc`，而非只查当前目录。
+  注意：子目录不命中 `.nvmrc` 时仍回退 `fnm default`（当前锁 v24.19.0）；将来 `.nvmrc`
+  与 default 不一致时，子目录会拿 default——两者需保持同步。
 - `Get-Command fnm` 守卫：fnm 尚未部署时 profile 静默跳过，不报错。
 - profile 文件：PS5 `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1`、
   PS7 `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`。
