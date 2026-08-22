@@ -4,7 +4,10 @@
 # 用法: pwsh -NoProfile -File scripts\set-docker.ps1 [-Version 29.7.1]
 # 说明: 需管理员；会卸载旧的 rxshell docker 服务，注册到 D:\ohmyenv\docker\bin。
 
-param([string]$Version = '29.7.1')
+param(
+    [string]$Version = '29.7.1',
+    [string]$ComposeVersion = 'v5.5.0'
+)
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -13,9 +16,13 @@ $ProgressPreference = 'SilentlyContinue'
 $envRoot    = Get-DefaultEnvRoot
 $dockerDir  = Join-Path $envRoot 'docker'
 $binDir     = Join-Path $dockerDir 'bin'
+$cliPlugins = Join-Path $dockerDir 'cli-plugins'
 $dataRoot   = Join-Path $envRoot 'docker-data'
 $cacheZip   = Join-Path $envRoot "cache\docker-$Version.zip"
 $dlUrl      = "https://download.docker.com/win/static/stable/x86_64/docker-$Version.zip"
+$composeExe = Join-Path $cliPlugins 'docker-compose.exe'
+$composeAsset = "docker-compose-windows-x86_64.exe"
+$composeUrl = "https://github.com/docker/compose/releases/download/${ComposeVersion}/${composeAsset}"
 $daemonJson = 'C:\ProgramData\docker\config\daemon.json'
 $group      = 'docker-users'
 $service    = 'docker'
@@ -34,7 +41,7 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
 if (-not $isAdmin) {
     Write-Host '[INFO] 需要管理员权限，正在提权重启本脚本...' -ForegroundColor Cyan
     $p = Start-Process (Get-Command pwsh).Source -Verb RunAs -Wait -PassThru -ArgumentList @(
-        '-NoProfile','-ExecutionPolicy','Bypass','-File',$PSCommandPath,'-Version',$Version
+        '-NoProfile','-ExecutionPolicy','Bypass','-File',$PSCommandPath,'-Version',$Version,'-ComposeVersion',$ComposeVersion
     )
     if ($p.ExitCode -ne 0) {
         if (Test-Path -LiteralPath $logFile) { Get-Content -LiteralPath $logFile | ForEach-Object { Write-Host $_ } }
@@ -131,6 +138,50 @@ try {
     Write-Log "[INFO] docker 服务状态:`n$state"
     if ($state -notmatch 'RUNNING') {
         Write-Log '[WARN] docker 服务未运行，可能刚启用 Windows 功能需重启'
+    }
+
+    # ── 5.5 compose 插件（cli-plugins）：Docker CLI 插件发现走 ~/.docker/cli-plugins（config dir）
+    #       + config.json 的 cliPluginsExtraDirs + 系统默认目录，不读任何环境变量；
+    #       用 cliPluginsExtraDirs 指向 EnvRoot 下插件目录（可重定位换机随 pack 带走）
+    New-Item -ItemType Directory -Path $cliPlugins -Force | Out-Null
+    if (-not (Test-Path -LiteralPath $composeExe)) {
+        $cacheCompose = Join-Path $envRoot "cache\docker-compose-${ComposeVersion}.exe"
+        if (-not (Test-Path -LiteralPath $cacheCompose)) {
+            Write-Log "[INFO] 下载 compose ${ComposeVersion}: $composeUrl"
+            Save-ReleaseAsset -Url $composeUrl -OutFile $cacheCompose
+        }
+        $shaExe = Join-Path $envRoot "cache\docker-compose-${ComposeVersion}.exe.sha256"
+        if (-not (Test-Path -LiteralPath $shaExe)) {
+            Save-ReleaseAsset -Url "$composeUrl.sha256" -OutFile $shaExe
+        }
+        $shaLine = (Get-Content -LiteralPath $shaExe -Raw).Trim()
+        $shaMatch = [regex]::Match($shaLine, '[0-9a-fA-F]{64}')
+        if (-not $shaMatch.Success) { throw "无法解析 $shaExe 中的 sha256" }
+        $sha = $shaMatch.Value
+        Assert-Sha256 -File $cacheCompose -Expected $sha
+        Copy-Item -LiteralPath $cacheCompose -Destination $composeExe -Force
+        Write-Log "[OK] compose 插件（sha256=$($sha.Substring(0,12))...）就绪: $composeExe"
+    }
+
+    # 把 EnvRoot 插件目录追加进 ~/.docker/config.json 的 cliPluginsExtraDirs（幂等）
+    $configDir = Join-Path $env:USERPROFILE '.docker'
+    $configFile = Join-Path $configDir 'config.json'
+    New-Item -ItemType Directory -Path $configDir -Force | Out-Null
+    [string]$configPath  = $cliPlugins
+    $dockerConfig = [ordered]@{}
+    if (Test-Path -LiteralPath $configFile) {
+        try { $dockerConfig = Get-Content -LiteralPath $configFile -Raw | ConvertFrom-Json -AsHashtable } catch {}
+        if ($null -eq $dockerConfig) { $dockerConfig = [ordered]@{} }
+    }
+    $extra = @($dockerConfig['cliPluginsExtraDirs']) | Where-Object { $_ -is [string] -and $_.Length -gt 0 }
+    if (-not ($extra -contains $configPath)) {
+        $extra += $configPath
+        $dockerConfig['cliPluginsExtraDirs'] = $extra
+        $json = $dockerConfig | ConvertTo-Json -Depth 8
+        [System.IO.File]::WriteAllText($configFile, $json + "`n", (New-Object System.Text.UTF8Encoding $false))
+        Write-Log "[OK] ~/.docker/config.json 追加 cliPluginsExtraDirs=$configPath"
+    } else {
+        Write-Log "[INFO] cliPluginsExtraDirs 已含 $configPath"
     }
 
     # ── 6. PATH（机器级前置 docker bin）──
