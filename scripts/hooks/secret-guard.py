@@ -19,6 +19,8 @@ import json
 import os
 import re
 import sys
+import tempfile
+import time
 
 
 SECRET_PATTERNS = [
@@ -223,14 +225,109 @@ def build_block_message(findings, context):
     return "\n".join(lines)
 
 
+def _log_path():
+    """日志路径：SECRET_GUARD_LOG 覆盖 > 平台默认；'off' 关闭日志。
+    只记元数据/判定/命中类型，绝不记录被扫描文本或密钥明文（排查误报用）。"""
+    v = os.environ.get("SECRET_GUARD_LOG", "").strip()
+    if v.lower() in ("off", "0", "false", "none"):
+        return None
+    if v:
+        return v
+    if os.name == "nt":
+        base = os.environ.get("LOCALAPPDATA") or tempfile.gettempdir()
+        return os.path.join(base, "ohmyenv", "secret-guard.log")
+    base = os.environ.get("XDG_STATE_HOME") or os.path.join(os.path.expanduser("~"), ".local", "state")
+    return os.path.join(base, "ohmyenv", "secret-guard.log")
+
+
+def log_run(verdict, cli_format, event_type, text_len, hit_types=(), error=None, extra=None):
+    """写一条单行 JSON 日志（append）。任何异常都静默忽略，日志绝不反噬 hook 判定。"""
+    path = _log_path()
+    if not path:
+        return
+    try:
+        d = os.path.dirname(path)
+        if d:
+            os.makedirs(d, exist_ok=True)
+        rec = {
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "verdict": verdict,          # pass | block | warn | error
+            "cli": cli_format,
+            "event": event_type,
+            "text_len": text_len,
+            "hits": list(hit_types),     # 只记命中类型（如 'OpenAI API Key'），不记匹配文本
+        }
+        if error is not None:
+            rec["error"] = str(error)
+        if extra:
+            rec.update(extra)
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+
+def _read_raw_stdin():
+    """读 hook stdin 的 raw bytes；读不到返回 None。"""
+    try:
+        return sys.stdin.buffer.read()
+    except Exception:
+        try:
+            return sys.stdin.read().encode("utf-8", errors="replace")
+        except Exception:
+            return None
+
+
+def _decode_candidates(data):
+    """按优先级返回 (encoding, text) 候选：编码自愈。
+    优先 BOM 精确判定，其次常见编码；调用方逐个尝试 json 解析，成功即用。"""
+    if not data:
+        return
+    # BOM 精确优先（命中 BOM 就不要再去试其它）
+    if data[:3] == b"\xef\xbb\xbf":
+        yield ("utf-8-sig", data[3:].decode("utf-8-sig", errors="strict"))
+        return
+    if data[:2] == b"\xff\xfe":     # UTF-16 LE BOM
+        yield ("utf-16-le", data[2:].decode("utf-16-le", errors="strict"))
+        return
+    if data[:2] == b"\xfe\xff":     # UTF-16 BE BOM
+        yield ("utf-16-be", data[2:].decode("utf-16-be", errors="strict"))
+        return
+    # 无 BOM：一级备选就这几个编码（严格解码失败则跳过，不引入 latin-1 这种全量通过候选）
+    for enc in ("utf-8", "utf-16-le", "utf-16-be", "gbk"):
+        try:
+            yield (enc, data.decode(enc, errors="strict"))
+        except UnicodeDecodeError:
+            continue
+
+
 def main():
     try:
-        stdin_text = sys.stdin.read()
-        if not stdin_text.strip():
+        raw = _read_raw_stdin()
+        if not raw or not raw.strip():
+            log_run("pass", "unknown", "empty", 0)
             sys.exit(0)
 
-        payload = json.loads(stdin_text)
+        # 编码自愈：候选编码逐个 decode + json.loads，成功即用；全部失败才 fail-open
+        payload = None
+        used_enc = None
+        stdin_text = ""
+        parse_errors = []
+        for enc, text in _decode_candidates(raw):
+            if not text.strip():
+                continue
+            try:
+                obj = json.loads(text)
+                payload = obj
+                used_enc = enc
+                stdin_text = text
+                break
+            except Exception as exc:
+                parse_errors.append(f"{enc}: {exc}")
+        if payload is None:
+            raise ValueError("stdin JSON 解析失败（各编码均失败）: " + "; ".join(parse_errors[-3:]))
         if not isinstance(payload, dict):
+            log_run("pass", "unknown", "non-dict", len(stdin_text))
             sys.exit(0)
 
         cli_format = detect_cli_format(payload)
@@ -241,18 +338,22 @@ def main():
         findings.extend(check_env_leak(text_to_scan))
 
         if not findings:
+            log_run("pass", cli_format, event_type, len(text_to_scan))
             sys.exit(0)
 
         message = build_block_message(findings, context)
         print(message, file=sys.stderr)
+        hit_types = [f["type"] for f in findings]
 
         # Codex PostToolUse is observation-only; replace its output with the warning.
         if cli_format == "codex" and event_type == "PostToolUse":
+            log_run("warn", cli_format, event_type, len(text_to_scan), hit_types)
             print(json.dumps({"output": message, "secret_scan_blocked": True}))
             sys.exit(0)
 
         # Codex PreToolUse / UserPromptSubmit also expect an explicit deny decision.
         if cli_format == "codex" and event_type in ("PreToolUse", "UserPromptSubmit"):
+            log_run("block", cli_format, event_type, len(text_to_scan), hit_types)
             print(json.dumps({
                 "permissionDecision": "deny",
                 "permissionDecisionReason": message,
@@ -264,9 +365,12 @@ def main():
 
         # exit 2 blocks for PreToolUse/UserPromptSubmit in every CLI and is a
         # warning for observation-only events (Reasonix/Kimi/Claude PostToolUse).
+        verdict = "block" if event_type in ("PreToolUse", "UserPromptSubmit") else "warn"
+        log_run(verdict, cli_format, event_type, len(text_to_scan), hit_types)
         sys.exit(2)
 
     except Exception as exc:  # noqa: BLE001 - fail-open by design
+        log_run("error", "unknown", "unknown", 0, error=exc)
         print(f"Secret Guard encountered an error: {exc}", file=sys.stderr)
         print("Allowing operation to proceed (fail-open policy).", file=sys.stderr)
         sys.exit(0)

@@ -42,9 +42,14 @@ foreach ($h in @($claudeHook, $codexHook, $kimiHook, $reasonixHook)) {
 }
 Write-Host '[OK] secret-guard.py 已部署到 Claude / Codex / Kimi / Reasonix hooks 目录' -ForegroundColor Green
 
-$claudeCmd   = "python3 `"$claudeHook`""
-$codexCmd    = "python3 `"$codexHook`""
-$reasonixCmd = "python3 `"$reasonixHook`""
+# hook 命令统一用 python3 的绝对路径（不用裸 python3，避免桌面工具/子进程 PATH 解析不到导致的
+# hook 执行失败——Reasonix 桌面程序曾因此报 context canceled）。$python3Exe = D:\ohmyenv\python\python3.exe
+$claudeCmd   = "`"$python3Exe`" `"$claudeHook`""
+# Codex 0.149.0 在 Windows 用 cmd /C 逐字执行 command 并做 argv 拆分，带内嵌双引号会被
+# 字面量传入导致进程启动失败（hook exited with code 1）。python3Exe/codexHook 均无空格，
+# 因此 Codex 专键去引号；Claude/Reasonix 各自 CLI 需要引号包裹路径，保持原样。
+$codexCmd    = "$python3Exe $codexHook"
+$reasonixCmd = "`"$python3Exe`" `"$reasonixHook`""
 
 # ── 通用: JSON hooks 幂等 upsert（Claude/Codex 嵌套结构；按 secret-guard.py 定位并更新命令）──
 function Add-NestedJsonHook {
@@ -193,12 +198,13 @@ $kimiRaw = [System.IO.File]::ReadAllText($kimiConfig, [System.Text.Encoding]::UT
 
 if ($kimiRaw.Contains('secret-guard.py')) {
     $kimiOld = $kimiRaw
-    $kimiRaw = [regex]::Replace($kimiRaw, '(?m)^command\s*=\s*.*secret-guard\.py.*$', "command = 'python3 `"$kimiHook`"'")
+    $kimiCmdLine = "'`"$python3Exe`" `"$kimiHook`"'"
+    $kimiRaw = [regex]::Replace($kimiRaw, '(?m)^command\s*=\s*.*secret-guard\.py.*$', "command = $kimiCmdLine")
     if ($kimiRaw -ne $kimiOld) {
         [System.IO.File]::WriteAllText($kimiConfig, $kimiRaw, (New-Object System.Text.UTF8Encoding $false))
-        Write-Host '[OK] Kimi secret-guard 命令已更新为 python3' -ForegroundColor Green
+        Write-Host '[OK] Kimi secret-guard 命令已更新为 python3 绝对路径' -ForegroundColor Green
     } else {
-        Write-Host '[INFO] Kimi secret-guard 命令已是 python3' -ForegroundColor DarkGray
+        Write-Host '[INFO] Kimi secret-guard 命令已是 python3 绝对路径' -ForegroundColor DarkGray
     }
 } else {
     if ($kimiRaw.Length -gt 0 -and -not $kimiRaw.EndsWith("`n")) { $kimiRaw += "`n" }
@@ -206,19 +212,20 @@ if ($kimiRaw.Contains('secret-guard.py')) {
 
 [[hooks]]
 event = "PreToolUse"
-command = 'python3 "$kimiHook"'
+command = '$python3Exe "$kimiHook"'
 timeout = 10
 
 [[hooks]]
 event = "PostToolUse"
-command = 'python3 "$kimiHook"'
+command = '$python3Exe "$kimiHook"'
 timeout = 10
 
 [[hooks]]
 event = "UserPromptSubmit"
-command = 'python3 "$kimiHook"'
+command = '$python3Exe "$kimiHook"'
 timeout = 10
 "@
+
     $kimiRaw += $kimiBlock
     [System.IO.File]::WriteAllText($kimiConfig, $kimiRaw, (New-Object System.Text.UTF8Encoding $false))
     Write-Host "[OK] Kimi hooks 已追加（PreToolUse / PostToolUse / UserPromptSubmit）" -ForegroundColor Green

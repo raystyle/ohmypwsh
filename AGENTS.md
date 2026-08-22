@@ -13,6 +13,12 @@ PowerShell 7，部署完整 PowerShell 模块 CLI，再安装 / 管理工具与 
 
    踩过的坑、错误、反复试出来的可行命令，必须当场沉淀为脚本（`scripts\`）或文档命令，禁止反复手写、反复试错。
 
+   其中一条铁律：**改了 `scripts\hooks\secret-guard.py`（或任何会被复制部署的 hook/模块源码），
+   必须当场重跑对应部署脚本**（`set-agent-secret-guard.ps1` / `set-wsl-secret-guard.ps1` /
+   `deploy-omp.ps1` 等）把新副本推到各 agent hooks 目录（**Windows 与 WSL 双侧都要**），并以
+   「副本与源码 sha256 一致」为准。已部署副本是复制而非软链，不重部署则各 agent 继续跑旧版
+   —— 已多次实踩（2026-08-21 三次，含一次只更新 Windows 漏掉 WSL）。
+
 2. **环境感知，默认使用 pwsh**
 
    执行命令前先感知系统环境；默认使用 PowerShell 7（`pwsh`），不要使用 Windows PowerShell 5.1（`powershell.exe`）。
@@ -90,7 +96,7 @@ pwsh -NoProfile -File scripts\set-starship-config.ps1      # starship PowerShell
 pwsh -NoProfile -File scripts\set-claude-key.ps1           # Claude Code (GLM) API Key 交互式设置（用户环境变量 + SOPS 加密备份）
 pwsh -NoProfile -File scripts\set-claude-config.ps1        # Claude Code 配置（安装 + settings.json env 幂等合并 + omc 残留清理）
 pwsh -NoProfile -File scripts\set-reasonix.ps1             # Reasonix Desktop 接管（DeepSeek 密钥复用，config.toml + .env + 桌面快捷方式，幂等）
-pwsh -NoProfile -File scripts\set-agent-secret-guard.ps1   # Agent 密钥泄露防护 hook（Claude Code / Codex / Kimi / Reasonix，幂等合并，命令用 python3）
+pwsh -NoProfile -File scripts\set-agent-secret-guard.ps1   # Agent 密钥泄露防护 hook（Claude Code / Codex / Kimi / Reasonix，幂等合并，命令用 python3 绝对路径）
 pwsh -NoProfile -File scripts\set-claude-statusline.ps1    # Claude Code 状态栏幂等合并（statusLine 块，纯 PowerShell）
 pwsh -NoProfile -File scripts\set-fnm-config.ps1           # fnm/Node 接管（FNM_DIR/镜像/PATH/profile/.npmrc，幂等）
 pwsh -NoProfile -File scripts\set-bun-config.ps1           # bun 镜像源（全局 ~/.bunfig.toml + 局部 bunfig.toml，幂等）
