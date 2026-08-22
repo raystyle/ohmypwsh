@@ -46,7 +46,7 @@ log_ok "sudoers: $USERNAME 免密码"
 # 对非交互 shell 也生效。
 USER_HOME=$(getent passwd "$USERNAME" | cut -d: -f6)
 BASHRC_D="$USER_HOME/.bashrc.d"
-MARKER="# >>> ohmywsl2 dev env >>>"
+MARKER="# >>> ohmywsl dev env >>>"
 
 install -d -o "$USERNAME" -g "$USERNAME" -m 0755 "$BASHRC_D"
 
@@ -54,11 +54,11 @@ if ! sudo -u "$USERNAME" grep -q "$MARKER" "$USER_HOME/.bashrc" 2>/dev/null; the
     sudo -u "$USERNAME" bash -c '
         BASHRC="'"$USER_HOME"'/.bashrc"
         BLOCK=""
-        BLOCK+="# >>> ohmywsl2 dev env >>>\n"
+        BLOCK+="# >>> ohmywsl dev env >>>\n"
         BLOCK+="# 守卫前 source 所有片段：非交互 shell（bash -lc）也能拿到 dev PATH\n"
         BLOCK+="for __f in \"\$HOME/.bashrc.d\"/*.sh; do [ -r \"\$__f\" ] && . \"\$__f\"; done\n"
         BLOCK+="unset __f\n"
-        BLOCK+="# <<< ohmywsl2 dev env <<<\n"
+        BLOCK+="# <<< ohmywsl dev env <<<\n"
         if grep -q "^case \$- " "$BASHRC" 2>/dev/null; then
             sed -i "/^case \$- /i \\
 $BLOCK" "$BASHRC"

@@ -1,11 +1,11 @@
 #Requires -Version 7.0
 # set-wsl-distro.ps1 - WSL 镜像导入/部署（参考 D:\ohmywsl2\scripts\import.ps1，EnvRoot 派生）
-# 用法: pwsh -NoProfile -File scripts\set-wsl-distro.ps1 [-Image <路径|URL>] [-Distro ohmywsl2] [-Force] [-SkipWslConfig]
+# 用法: pwsh -NoProfile -File scripts\set-wsl-distro.ps1 [-Image <路径|URL>] [-Distro ohmywsl] [-Force] [-SkipWslConfig]
 # 说明: 导入官方 .wsl 产物为 WSL distro；默认镜像目录 D:\ohmyenv\images\wsl，回退参考 D:\ohmywsl2\images。
 
 param(
     [string]$Image = '',
-    [string]$Distro = 'ohmywsl2',
+    [string]$Distro = 'ohmywsl',
     [string]$InstallDir = '',
     [switch]$Force,
     [switch]$SkipWslConfig
