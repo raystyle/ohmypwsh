@@ -9,7 +9,7 @@ param(
     [string]$Command = 'help',
 
     [Parameter(Position = 1)]
-    [ValidateSet('pwsh', 'gh', 'git', 'age', 'sops', 'codex', 'aria2', '7z', 'gsudo', 'oscdimg', 'dotnet', 'fnm', 'bun', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship', 'just', 'ast-grep', 'nushell', 'all')]
+    [ValidateSet('pwsh', 'gh', 'git', 'age', 'sops', 'vault', 'codex', 'aria2', '7z', 'gsudo', 'oscdimg', 'dotnet', 'fnm', 'bun', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship', 'just', 'ast-grep', 'nushell', 'herdr', 'all')]
     [string]$Tool = 'all',
 
     [switch]$Latest,

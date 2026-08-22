@@ -10,7 +10,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [En
 $script:LockPath = Join-Path $PSScriptRoot 'env.psd1'
 # 工具分层：核心基础工具（密钥 key / 智能体环境 agent / 项目管理 project / 基础工具 base）
 #           + 扩展工具 extras；ToolNames 顺序 = 引导安装/展示/日常更新顺序（核心先装齐，再稳定扩展）
-$script:ToolNames = @('pwsh', 'age', 'sops', 'codex', 'git', 'gh', 'aria2', '7z', 'gsudo', 'oscdimg', 'dotnet', 'fnm', 'bun', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship', 'just', 'ast-grep', 'nushell')
+$script:ToolNames = @('pwsh', 'age', 'sops', 'vault', 'codex', 'git', 'gh', 'aria2', '7z', 'gsudo', 'oscdimg', 'dotnet', 'fnm', 'bun', 'uv', 'python', 'rg', 'jq', 'yq', 'rmux', 'starship', 'just', 'ast-grep', 'nushell', 'herdr')
 $script:ToolCategories = @{
     key     = '密钥'
     agent   = '智能体环境'
@@ -61,6 +61,17 @@ function New-ToolDef {
                 Bin          = 'sops'
                 Exe          = 'sops\sops.exe'
                 Extract      = 'copy'
+            }
+        }
+        'vault' {
+            @{
+                Category        = 'key'
+                CdnIndexUrl     = 'https://releases.hashicorp.com/vault/index.json'
+                CdnAssetPattern = '^vault_{version}_windows_amd64\.zip$'
+                Dir             = 'vault'
+                Bin             = 'vault'
+                Exe             = 'vault\vault.exe'
+                Extract         = 'zip'
             }
         }
         'codex' {
@@ -320,6 +331,18 @@ function New-ToolDef {
                 Extract      = 'zip'
             }
         }
+        'herdr' {
+            @{
+                Category     = 'extras'
+                TagPrefix    = 'v'
+                Repo         = 'herdrdev/herdr'
+                AssetPattern = '^herdr-windows-x86_64\.zip$'
+                Dir          = 'herdr'
+                Bin          = 'herdr'
+                Exe          = 'herdr\herdr.exe'
+                Extract      = 'zip'
+            }
+        }
         default { throw "未知工具: $Tool" }
     }
 }
@@ -395,6 +418,9 @@ function Save-EnvLock {
         $lines.Add("            Bin          = '$($d.Bin)'")
         $lines.Add("            Exe          = '$($d.Exe)'")
         $lines.Add("            Extract      = '$($d.Extract)'")
+        if ($d.CdnUrl)   { $lines.Add("            CdnUrl   = '$($d.CdnUrl)'") }
+        if ($d.CdnIndexUrl)     { $lines.Add("            CdnIndexUrl     = '$($d.CdnIndexUrl)'") }
+        if ($d.CdnAssetPattern) { $lines.Add("            CdnAssetPattern = '$($d.CdnAssetPattern)'") }
         if ($d.Kind) { $lines.Add("            Kind         = '$($d.Kind)'") }
         if ($d.BootstrapAsset) { $lines.Add("            BootstrapAsset = '$($d.BootstrapAsset)'") }
         if ($d.AssetShaSuffix) { $lines.Add("            AssetShaSuffix = '$($d.AssetShaSuffix)'") }
@@ -474,6 +500,50 @@ function Find-ReleaseAsset {
     $asset
 }
 
+function Get-HashiCorpIndex {
+    <#
+    .SYNOPSIS
+        查询 HashiCorp releases CDN 的 index.json，返回指定版本（或 latest OSS）的构建信息。
+        HashiCorp 产品（vault 等）的二进制不走 GitHub release assets，只发布在
+        releases.hashicorp.com/<product>/index.json（含 versions/builds/shasums）。
+    #>
+    param(
+        [Parameter(Mandatory)][string]$IndexUrl,
+        [string]$Version,
+        [switch]$Latest
+    )
+    $attempt = 0
+    while ($true) {
+        $attempt++
+        try {
+            $index = Invoke-RestMethod -Uri $IndexUrl -UserAgent 'ohmypwsh-bootstrap' -TimeoutSec 30
+            break
+        } catch {
+            if ($attempt -ge 3) {
+                throw "HashiCorp index.json 查询失败（$attempt 次）: $IndexUrl`n$($_.Exception.Message)"
+            }
+            Start-Sleep -Seconds ([math]::Pow(2, $attempt))
+        }
+    }
+
+    $versions = $index.versions
+    $verNames = @($versions.PSObject.Properties.Name)
+    if ($Latest) {
+        # 只取纯 OSS 版本（排除 +ent / +ent.hsm / +ent.fips1403 等企业变体），按语义版本取最大
+        $ossNames = @($verNames | Where-Object { $_ -notmatch '\+' })
+        if (-not $ossNames) { throw "index.json 无 OSS 版本: $IndexUrl" }
+        $ver = $ossNames | ForEach-Object { "$_" } |
+               Sort-Object { [System.Version]($_ -replace '[^0-9.].*$', '') } -Descending |
+               Select-Object -First 1
+    } else {
+        $ver = $Version
+    }
+    if (-not $versions.PSObject.Properties[$ver]) {
+        throw "HashiCorp index.json 无版本 $ver"
+    }
+    $versions.PSObject.Properties[$ver].Value
+}
+
 function Resolve-ToolVersion {
     <#
     .SYNOPSIS
@@ -487,6 +557,31 @@ function Resolve-ToolVersion {
         [string]$Version
     )
     $d = $Lock.Tools[$Tool]
+    if ($d.CdnIndexUrl) {
+        # HashiCorp CDN 来源（index.json 查版本与构建，非 GitHub release，如 vault）
+        $ver = if ($Version) { $Version } elseif ($Latest) { '' } elseif ($d.Version) { $d.Version } else { throw "$Tool 需 -Version 或先 pin（HashiCorp 来源）" }
+        $info = if ($Latest) {
+            Get-HashiCorpIndex -IndexUrl $d.CdnIndexUrl -Latest
+        } else {
+            Get-HashiCorpIndex -IndexUrl $d.CdnIndexUrl -Version $ver
+        }
+        $ver = $info.version
+        $pattern = $d.CdnAssetPattern.Replace('{version}', [regex]::Escape($ver))
+        $build = $info.builds | Where-Object { $_.filename -match $pattern } | Select-Object -First 1
+        if (-not $build) { throw "$Tool $ver 在 index.json 中未找到匹配构建: $($d.CdnAssetPattern)" }
+        return @{
+            Tool      = $Tool
+            Tag       = $ver
+            Version   = $ver
+            AssetName = $build.filename
+            AssetSize = 0
+            AssetUrl  = $build.url
+            Release   = $null
+            Shasums   = $info.shasums
+            ShasumsUrl = $build.url.Replace($build.filename, $info.shasums)
+            IndexUrl  = $info
+        }
+    }
     if ($d.CdnUrl) {
         # CDN 直链来源（非 GitHub release，如 dotnet SDK）
         $ver = if ($Version) { $Version } elseif ($d.Version) { $d.Version } elseif ($Tag) { $Tag.TrimStart('v') } else { throw "$Tool 需 -Version 指定版本（CDN 来源）" }
@@ -631,6 +726,17 @@ function Get-OfficialSha256 {
     $tag = $Resolution.Tag
     $ver = $Resolution.Version
 
+    # HashiCorp 来源：官方 SHA256SUMS 清单（分辨率里带了 ShasumsUrl）
+    if ($d.CdnIndexUrl -and $Resolution.ShasumsUrl) {
+        $sumsName = Split-Path $Resolution.ShasumsUrl -Leaf
+        $sumsPath = Join-Path $envRoot "cache\$sumsName"
+        if (Test-Path -LiteralPath $sumsPath) { Remove-Item -LiteralPath $sumsPath -Force }
+        $null = Save-ReleaseAsset -Url $Resolution.ShasumsUrl -OutFile $sumsPath -Force
+        $sumLine = Get-Content -LiteralPath $sumsPath | Where-Object { $_ -match [regex]::Escape($Resolution.AssetName) } | Select-Object -First 1
+        if ($sumLine -match '([0-9a-fA-F]{64})') { return $Matches[1].ToUpperInvariant() }
+        throw "$t 官方 SHA256SUMS 未找到匹配资产: $($Resolution.AssetName)"
+    }
+
     if ($d.SumsAsset) {
         $sumsName = $d.SumsAsset.Replace('{version}', $ver).Replace('{tag}', $tag)
         $sumsPath = Join-Path $envRoot "cache\$sumsName"
@@ -680,6 +786,7 @@ function Get-InstalledVersion {
         'git'  { if ($line -match 'git version (\S+)') { return $Matches[1] } }
         'age'  { if ($line -match '^v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'sops' { if ($line -match 'sops[ -]v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'vault' { if ($line -match 'Vault\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'codex' { if ($line -match 'codex-cli\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'aria2' { if ($line -match 'aria2 version (\d+\.\d+\.\d+)') { return $Matches[1] } }
         '7z'    { if ($line -match '7-Zip[^\r\n]*?(\d+\.\d+)') { return $Matches[1] } }
@@ -697,6 +804,7 @@ function Get-InstalledVersion {
         'just'    { if ($line -match 'just\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'ast-grep' { if ($line -match '(\d+\.\d+\.\d+)') { return $Matches[1] } }
         'nushell' { if ($line -match '^(\d+\.\d+\.\d+)') { return $Matches[1] } }
+        'herdr'   { if ($line -match '^herdr\s+v?(\d+\.\d+\.\d+)') { return $Matches[1] } }
     }
     $null
 }

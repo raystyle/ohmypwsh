@@ -19,26 +19,57 @@ $kimiHome = Join-Path $env:USERPROFILE '.kimi-code'
 $kimiBin  = Join-Path $kimiHome 'bin\kimi.exe'
 
 # ── 1. 安装 / 更新（官方 installer，装到默认 ~/.kimi-code） ──
+# 2026-08-21 改造：上/升级改为「GitHub 直下 win32-x64.zip + 官方 sha256 校验 + 替换 kimi.exe」，
+# 替代 fragil 的 `kimi upgrade`（联网查更新无重试、网络抖动即失败）。与 WSL 侧 kimi 同源同校验。
+function Install-KimiBinary {
+    param([string]$TargetVersion)
+    Write-Host '[INFO] 下载 kimi-code win32-x64 并替换 kimi.exe ...' -ForegroundColor Cyan
+    # 复用 helpers.ps1 的 GitHub 查询与下载/校验
+    $repo = 'MoonshotAI/kimi-code'
+    $release = if ($TargetVersion) {
+        Get-GitHubRelease -Repo $repo -Tag "@moonshot-ai/kimi-code@$TargetVersion"
+    } else {
+        Get-GitHubRelease -Repo $repo -Latest
+    }
+    $asset = Find-ReleaseAsset -Release $release -Pattern '^kimi-code-win32-x64\.zip$'
+    $tag = $release.tag_name
+    $ver = $tag -replace '^@moonshot-ai/kimi-code@', ''
+    $cachePath = Join-Path (Join-Path (Get-DefaultEnvRoot) 'cache') $asset.name
+    # 官方 sha256：逐资产 .sha256
+    $shaUrl = ($asset.browser_download_url + '.sha256')
+    $shaText = (Invoke-RestMethod -Uri $shaUrl -TimeoutSec 30 -UseBasicParsing).Trim()
+    $expectedSha = $null
+    if ($shaText -match '([0-9a-fA-F]{64})') { $expectedSha = $Matches[1].ToUpperInvariant() }
+    Save-ReleaseAsset -Url $asset.browser_download_url -OutFile $cachePath -ExpectedSha256 $expectedSha -Force
+    if ($expectedSha) { Assert-Sha256 -File $cachePath -Expected $expectedSha }
+
+    # 解出 kimi.exe 替换（保留用户数据：config.toml / fd.exe / workspaces 等均不动）
+    $tmpZip = Join-Path $env:TEMP ("kimi-win32-" + [guid]::NewGuid().ToString('N').Substring(0,8) + '.zip')
+    Copy-Item -LiteralPath $cachePath -Destination $tmpZip -Force
+    $tmpDir = Join-Path $env:TEMP ("kimi-extract-" + [guid]::NewGuid().ToString('N').Substring(0,8))
+    try {
+        Expand-Archive -LiteralPath $tmpZip -DestinationPath $tmpDir -Force
+        $newExe = Join-Path $tmpDir 'kimi.exe'
+        if (-not (Test-Path -LiteralPath $newExe)) { throw '解压后未找到 kimi.exe' }
+        # kimi.exe 可能被运行中会话占用：先尝试停掉本用户 kimi 进程（无感无痛）
+        Get-Process -Name kimi -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Milliseconds 500
+        $kimiBinDir = Split-Path $kimiBin -Parent
+        New-Item -ItemType Directory -Path $kimiBinDir -Force | Out-Null
+        Copy-Item -LiteralPath $newExe -Destination $kimiBin -Force
+        Write-Host "[OK] kimi 已更新: $((& $kimiBin --version 2>&1 | Select-Object -First 1))" -ForegroundColor Green
+    } finally {
+        Remove-Item -LiteralPath $tmpZip -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $tmpDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
 if ($Update -and (Test-Path -LiteralPath $kimiBin)) {
-    Write-Host '[INFO] 升级 kimi 到最新（kimi upgrade）...' -ForegroundColor Cyan
-    & $kimiBin upgrade
-    if ($LASTEXITCODE -ne 0) { throw 'kimi upgrade 失败' }
-    Write-Host "[OK] kimi 已升级: $((& $kimiBin --version))" -ForegroundColor Green
+    Install-KimiBinary -TargetVersion $Version
 } elseif (-not (Test-Path -LiteralPath $kimiBin)) {
-    Write-Host '[INFO] 运行官方安装脚本（目标 %USERPROFILE%\.kimi-code）...' -ForegroundColor Cyan
-    if ($Version) { $env:KIMI_VERSION = $Version } else { Remove-Item Env:KIMI_VERSION -ErrorAction SilentlyContinue }
-    # 降险：不从远端未知内容直接 irm|iex。先落盘官方安装脚本供审计，校验来源与文件有效性后再执行。
-    $installerUrl = 'https://code.kimi.com/kimi-code/install.ps1'
-    if ($installerUrl -notmatch '^https://code\.kimi\.com/') { throw "拒绝执行非官方安装源: $installerUrl" }
-    $installerPath = Join-Path $env:TEMP 'kimi-code-install.ps1'
-    $installerText = (Invoke-WebRequest -Uri $installerUrl -UseBasicParsing).Content
-    if ([string]::IsNullOrWhiteSpace($installerText)) { throw 'kimi 官方安装脚本为空，中止执行' }
-    [System.IO.File]::WriteAllText($installerPath, $installerText, [System.Text.UTF8Encoding]::new($true))
-    Write-Warning "已下载官方安装脚本供审计: $installerPath（$([math]::Round((Get-Item $installerPath).Length/1KB,1)) KB）"
-    & (Get-Process -Id $PID).Path -NoProfile -ExecutionPolicy Bypass -File $installerPath
-    if ($LASTEXITCODE -ne 0) { throw "kimi 官方安装脚本执行失败（exit=$LASTEXITCODE）" }
-    if (-not (Test-Path -LiteralPath $kimiBin)) { throw 'kimi 安装失败：未找到 kimi.exe' }
-    Write-Host "[OK] kimi 已安装: $kimiBin" -ForegroundColor Green
+    # 全新安装也走 GitHub 直下（比官方 install.ps1 更可控：有 sha256 校验 + 重试）
+    Write-Host '[INFO] 全新安装 kimi-code（GitHub 直下 0.38.0）...' -ForegroundColor Cyan
+    Install-KimiBinary -TargetVersion $Version
 } else {
     Write-Host "[OK] kimi 已存在: $kimiBin（-Update 升级到最新）" -ForegroundColor Green
 }

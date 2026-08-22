@@ -20,8 +20,21 @@ if (-not (Test-Path -LiteralPath $claudeExe)) {
     $whlDir = Join-Path (Join-Path $envRoot 'cache') ("claude-whl-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
     New-Item -ItemType Directory -Path $whlDir -Force | Out-Null
     try {
-        & uv run --no-project --python 3.12 python -m pip download --no-deps --only-binary :all: -d $whlDir claude-agent-sdk
-        if ($LASTEXITCODE -ne 0) { throw 'claude-agent-sdk 下载失败' }
+        # 下载稳健性（无感无痛）：带重试，并按镜像优先级回退（aliyun → nju → tsinghua → 官方 PyPI）
+        $mirrors = @(
+            'https://mirrors.aliyun.com/pypi/simple',
+            'https://mirror.nju.edu.cn/pypi/simple',
+            'https://pypi.tuna.tsinghua.edu.cn/simple',
+            'https://pypi.org/simple'
+        )
+        $done = $false
+        foreach ($mirror in $mirrors) {
+            Write-Host "[INFO] 尝试镜像: $mirror" -ForegroundColor DarkGray
+            & uv run --no-project --python 3.12 python -m pip download --no-deps --only-binary :all: --retries 3 --timeout 60 --index-url $mirror -d $whlDir claude-agent-sdk
+            if ($LASTEXITCODE -eq 0 -and (Get-ChildItem -LiteralPath $whlDir -Filter *.whl -ErrorAction SilentlyContinue)) { $done = $true; break }
+            Write-Host "[WARN] 镜像 $mirror 下载失败（exit=$LASTEXITCODE），换下一个" -ForegroundColor Yellow
+        }
+        if (-not $done) { throw 'claude-agent-sdk 下载失败（所有镜像均失败）' }
         $whl = Get-ChildItem -LiteralPath $whlDir -Filter *.whl | Select-Object -First 1
         if (-not $whl) { throw '未找到 wheel 文件' }
         $zip = Join-Path $whlDir ($whl.BaseName + '.zip')

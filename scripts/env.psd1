@@ -48,9 +48,26 @@
             Extract      = 'copy'
             Sha256       = 'A4A9A398858FE8B2EF72D9686D930BF7C5CECE9BE74AD83AC3B53CFDD70E6B1C'
         }
+        'vault' = @{
+            Version      = '2.0.4'
+            Tag          = '2.0.4'
+            TagPrefix    = ''
+            Repo         = ''
+            AssetPattern = ''
+            Asset        = 'vault_2.0.4_windows_amd64.zip'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'vault'
+            Bin          = 'vault'
+            Exe          = 'vault\vault.exe'
+            Extract      = 'zip'
+            CdnIndexUrl     = 'https://releases.hashicorp.com/vault/index.json'
+            CdnAssetPattern = '^vault_{version}_windows_amd64\.zip$'
+            Sha256       = '5E6357E52F75657F9A51F2655D42811B8B129166402ECF2D2DC630FFCD3C8D8F'
+        }
         'codex' = @{
-            Version      = '0.148.0'
-            Tag          = 'rust-v0.148.0'
+            Version      = '0.149.0'
+            Tag          = 'rust-v0.149.0'
             TagPrefix    = 'rust-v'
             Repo         = 'openai/codex'
             AssetPattern = '^codex-package-x86_64-pc-windows-msvc\.tar\.gz$'
@@ -62,7 +79,7 @@
             Exe          = 'codex\bin\codex.exe'
             Extract      = 'targz'
             Kind         = 'installer'
-            Sha256       = 'CC09F725B8ED133B76A2882FDA750B3F1672B10701E8172C9680B5AB79B861FF'
+            Sha256       = 'BC470B4B90654C38EE52716056D6D5FC19A49AFD08F419328034F4F324536459'
         }
         'git' = @{
             Version      = '2.55.0.windows.4'
@@ -155,6 +172,7 @@
             Bin          = 'oscdimg'
             Exe          = 'oscdimg\oscdimg.exe'
             Extract      = 'copy'
+            CdnUrl   = 'https://msdl.microsoft.com/download/symbols/oscdimg.exe/688CABB065000/oscdimg.exe'
             Sha256       = '2000160B2C5044691B2F9A0AC308E5207F273D4880A572457AF16D05886BA861'
         }
         'dotnet' = @{
@@ -170,6 +188,7 @@
             Bin          = 'dotnet'
             Exe          = 'dotnet\dotnet.exe'
             Extract      = 'zip'
+            CdnUrl   = 'https://dotnetcli.azureedge.net/dotnet/Sdk/{version}/dotnet-sdk-{version}-win-x64.zip'
             Sha256       = '83FBF0699A984D08063579B06EDFC8C327AF62234B1AAEEADC5D7AE7F5A0514A'
         }
         'fnm' = @{
@@ -354,6 +373,21 @@
             Exe          = 'nushell\nu.exe'
             Extract      = 'zip'
             Sha256       = '4F6A0BCBBC2975CF46F3FF93AECC7093C91FA59ACA28020E4294906DB13ACE23'
+        }
+        'herdr' = @{
+            Version      = '0.8.2'
+            Tag          = 'v0.8.2'
+            TagPrefix    = 'v'
+            Repo         = 'herdrdev/herdr'
+            AssetPattern = '^herdr-windows-x86_64\.zip$'
+            Asset        = 'herdr-windows-x86_64.zip'
+            SumsAsset    = ''
+            SumsPattern  = ''
+            Dir          = 'herdr'
+            Bin          = 'herdr'
+            Exe          = 'herdr\herdr.exe'
+            Extract      = 'zip'
+            Sha256       = '0AB3D0FE1434D55757997542B978C771D642987BB15A7130F4160F0DB38821D5'
         }
     }
 }
