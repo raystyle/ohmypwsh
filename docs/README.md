@@ -41,6 +41,7 @@
 - `0009-claude-takeover.md`：Claude Code 完全接管（YOLO/状态栏/env 收敛/omc 清理；rmux skill 已迁至 win-rmux 独立仓库）
 - `0010-portable-agent-env.md`：项目本质重定位为「可迁移 Agent 环境部署与管理模块 CLI」（EnvRoot 重定位、bootstrap、omp 模块、pack/unpack）
 - `0011-windows-agent-env-oneclick.md`：Windows 智能体环境一键部署/配置/备份/镜像平移（工具 + agent + WSL + Windows 容器）
+- `0012-wsl-software-deploy.md`：WSL 软件部署（ohmywsl.ps1 CLI + wsl-env.psd1 独立 pin + tools 组件脚本，distro 统一 ohmywsl，按需逐个接管）
 
 ## 研究文档
 
@@ -60,7 +61,9 @@
 - `research\bun.md`：Bun 接管（oven-sh/bun + `bunfig.toml` npmmirror）
 - `research\gsudo.md`：gsudo 接管（gerardog/gsudo，命令统一叫 `gsudo`，避开 Windows 内置 sudo）
 - `research\oscdimg.md`：oscdimg 接管（微软符号服务器固定 URL + FileVersion，ISO 制作工具）
+- `research\docker-compose.md`：docker compose 插件接入（CLI 插件发现机制 + 不读环境变量的踩坑沉淀）
 - `research\wsl-image-build.md`：ohmywsl WSL 基础镜像构建（流程/清单/踩坑沉淀）
+- `research\wsl-software-deploy.md`：WSL 软件部署（ohmywsl.ps1 框架 / 密钥平移 / 三 agent 配置平移，踩坑沉淀）
 - `research\agent-secret-guard.md`：Agent 密钥泄露防护统一（Claude Code / Codex / Kimi / Reasonix 四套 hook 格式与阻断语义）
 - `research\win-rmux-multi-agent-review.md`：ohmyenv 全仓代码审查（win-rmux 三 agent review，高风险/中/低问题 + 修复优先级）
 
@@ -68,7 +71,8 @@
 
 ```text
 ohmypwsh/
-├─ AGENTS.md                    协作规则（最高约束）：规则 1-4、目录分类、设计原则
+├─ AGENTS.md                    协作规则（最高约束）：规则 1-4、目录分类、设计原则（唯一权威源）
+├─ CLAUDE.md                    一行 `@AGENTS.md` import 桥接（不维护第二份，权威源见 AGENTS.md）
 ├─ README.md                    项目入口（一句话定位 + 文档/脚本链接）
 ├─ CHANGELOG.md                 可交付变更记录（先维护在 [Unreleased]）
 ├─ ROADMAP.md                   阶段与里程碑状态（未开始/进行中/已完成/挂起）
@@ -93,7 +97,8 @@ ohmypwsh/
 │  │  ├─ 0008-claude-code-config.md Claude Code 配置接管（密钥/env/settings 幂等合并）
 │  │  ├─ 0009-claude-takeover.md   Claude Code 完全接管（YOLO/状态栏/env 收敛/omc 清理）
 │  │  ├─ 0010-portable-agent-env.md 项目本质重定位（EnvRoot 重定位 + bootstrap + omp + pack/unpack）
-│  │  └─ 0011-windows-agent-env-oneclick.md Windows 智能体环境一键部署/配置/备份/镜像平移
+│  │  ├─ 0011-windows-agent-env-oneclick.md Windows 智能体环境一键部署/配置/备份/镜像平移
+│  │  └─ 0012-wsl-software-deploy.md WSL 软件部署（ohmywsl.ps1 + wsl-env.psd1 + tools 组件脚本）
 │  └─ research\                 研究文档（工具能力 / 踩坑沉淀 / 实测记录）
 │     ├─ gh-cli.md              gh CLI 研究（现状/认证/API 兜底/命令地图）
 │     ├─ gh-git-https-ssh.md    gh 与 git 的 HTTPS/SSH 互相配置（本机实测）
@@ -111,7 +116,9 @@ ohmypwsh/
 │     ├─ bun.md                 Bun 接管（oven-sh/bun + bunfig.toml npmmirror）
 │     ├─ gsudo.md               gsudo 接管（gerardog/gsudo）
 │     ├─ oscdimg.md             oscdimg 接管（微软符号服务器固定 URL + FileVersion）
+│     ├─ docker-compose.md      docker compose 插件接入（CLI 插件发现机制 + 踩坑）
 │     ├─ wsl-image-build.md     ohmywsl WSL 基础镜像构建（流程/清单/踩坑）
+│     ├─ wsl-software-deploy.md WSL 软件部署（ohmywsl.ps1 / 密钥平移 / 三 agent 配置平移）
 │     ├─ agent-secret-guard.md  Agent 密钥泄露防护统一（四套 hook 格式与阻断语义）
 │     ├─ agents-docs-benchmark.md  Agent 文档基准评估
 │     ├─ powershell-telemetry.md   PowerShell 遥测关闭研究
@@ -138,6 +145,11 @@ ohmypwsh/
    ├─ set-wsl.ps1               WSL 安装/更新（microsoft/WSL 官方 x64 MSI，需提权）
    ├─ set-wsl-distro.ps1        WSL 镜像导入/部署（.wsl 产物 → distro，参考 ohmywsl2）
    ├─ build-wsl-image.ps1      构建 ohmywsl WSL 镜像模板（官方 Ubuntu → EnvRoot\images\wsl，组件脚本 scripts\wsl\）
+   ├─ ohmywsl.ps1               WSL 软件部署 CLI（query/pin/install/update/status，清单 wsl-env.psd1）
+   ├─ wsl-env.psd1              WSL（Linux）软件 pin 清单（唯一 pin 来源）
+   ├─ set-wsl-keys.ps1          WSL 密钥平移（age 私钥 + sops 惰性解密两条 API Key，明文不落盘）
+   ├─ set-wsl-agent-config.ps1  WSL 三 agent 配置平移（codex/claude/kimi，Linux 专属幂等）
+   ├─ set-wsl-secret-guard.ps1  WSL 密钥泄露防护 hook 同步（secret-guard.py 进三 agent，Linux 格式幂等）
    ├─ set-claude-key.ps1        Claude Code (GLM) API Key 交互式设置（用户环境变量 + SOPS 加密备份）
    ├─ set-claude-config.ps1     Claude Code 配置（安装 + env + settings.json 合并）
    ├─ set-claude-statusline.ps1 Claude Code 状态栏幂等合并（statusLine 块，纯 PowerShell）

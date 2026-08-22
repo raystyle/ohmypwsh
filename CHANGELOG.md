@@ -6,7 +6,97 @@
 
 ### Added
 
+- 文档单一权威源：新增 `CLAUDE.md` 一行 `@AGENTS.md` import 桥接（Claude Code 的 issue #6235
+  已 2026-08-17 关闭，社区主流实践 eggjs/SeleniumHQ/meltano/traefik 均一行桥接 AGENTS.md）；
+  `AGENTS.md` 定为唯一权威源，不再维护第二份（`docs\README.md` 目录索引同步）
 - 版本发布约定：AGENTS.md 新增「版本发布」节——项目版本号采用 SemVer（`vMAJOR.MINOR.PATCH`，首个 `v0.1.0` 于 2026-08-21 建立），沉淀发布流程（CHANGELOG 翻转 → 提交 → annotated tag → 推送）、远端 HTTPS + gh credential 通道、版本号升级规则
+- WSL 软件部署方案：`docs\plans\0012-wsl-software-deploy.md`（已批准）——新增
+  `scripts\ohmywsl.ps1`（query/pin/install/update/status，语义对齐 ohmyenv）+ 独立
+  `scripts\wsl-env.psd1` pin 清单 + `scripts\wsl\tools\<tool>.sh` 组件脚本；文件命名统一
+  ohmywsl，按需逐个接管增量软件
+- WSL 密钥接管：age/sops 接入 `wsl-env.psd1`（Linux 资产 + 官方 sha256 实测回填）+
+  `tools\age.sh` / `tools\sops.sh` 组件脚本（`ohmywsl.ps1 install age|sops` 实测：aria2
+  下载 + sha256 校验 + `~/.local/bin` 安装 + 幂等）；`scripts\set-wsl-keys.ps1` 把 Windows
+  age 私钥平移到 WSL `~/.config/sops/age/keys.txt`（chmod 600）并经 `sops` 惰性解密
+  `DEEPSEEK_API_KEY` / `ANTHROPIC_API_KEY` 注入 shell 环境（明文不落盘）
+- WSL 三 agent 配置平移：`scripts\set-wsl-agent-config.ps1` 在 WSL 内生成 Linux 专属配置
+  —— `~/.codex/config.toml`（DeepSeek 模型/env_key + Linux 状态栏，去 `[windows]` 段与
+  Windows 绝对路径/hook state）、`~/.claude/settings.json`（GLM-5.3[1m] 1M 窗口 + YOLO，
+  剔除 `CLAUDE_CODE_GIT_BASH_PATH`/`CLAUDE_CODE_USE_POWERSHELL_TOOL`/`DISABLE_INSTALLATION_CHECKS`）、
+  `~/.claude.json`（onboarding 跳过 + 工作区信任）、`~/.kimi-code/config.toml`（kimi-code/k3 +
+  权限模式 + 关遥测）；幂等 + JSON parse 校验通过
+- WSL codex 二进制接入：`wsl-env.psd1` 新增 `codex`（rust-v0.148.0，
+  `codex-package-x86_64-unknown-linux-musl.tar.gz` + 官方 `codex-package_SHA256SUMS` 校验）+
+  `tools\codex.sh` 组件脚本（解包单二进制 cp 到 `~/.local/bin`，幂等）；实测 aria2 下载 +
+  校验 + `wsl -d ohmywsl codex --version` = 0.148.0，DeepSeek 配置生效
+- WSL claude/kimi 二进制接入：`wsl-env.psd1` 新增 `claude`（v2.1.238，
+  `claude-linux-x64.tar.gz` + 官方 `SHASUMS256.txt` 校验）与 `kimi`（0.38.0，
+  `kimi-code-linux-x64.zip` + 逐资产 `.sha256` 校验）+ `tools\claude.sh` / `tools\kimi.sh`
+  组件脚本；`ohmywsl.ps1 Save-WslLock` 补 `AssetShaSuffix` 字段；实测 aria2 下载 + 校验 +
+  `wsl -d ohmywsl claude --version` = 2.1.238、`kimi --version` = 0.38.0，配置平移均生效
+- Windows 侧 agent 升级 + 稳健性：codex 0.148.0 → 0.149.0（`ohmyenv update codex`，自动停占用
+  进程后重装）；`set-claude-config.ps1` wheel 下载增加重试 + 四镜像回退（aliyun/nju/tsinghua/
+  官方 PyPI），claude 2.1.233 → 2.1.237；`set-kimi-config.ps1` 上/升级改为 GitHub 直下 +
+  官方 sha256 校验 + 替换 kimi.exe（替代脆弱无重试的 `kimi upgrade`），kimi 0.35.0 → 0.38.0
+- WSL secret-guard 同步：`scripts\set-wsl-secret-guard.ps1` 把 `hooks\secret-guard.py` 同步进
+  WSL 三个 agent（Codex / Claude Code / Kimi Code）hooks 目录 + Linux 格式幂等合并 hooks 配置
+  （原生 python3），与 Windows 同源；官方测试套件 9/9 通过
+- herdr 双端接入：`herdrdev/herdr`（the runtime your coding agents live on，Rust 单二进制
+  agent 运行时）v0.8.2——Windows `ohmyenv` 新增 `herdr`（extras 层，`herdr-windows-x86_64.zip`
+  多文件整体部署，conpty 依赖保留，`Exe=herdr\herdr.exe`，`Get-InstalledVersion` 解析
+  `herdr X.Y.Z`）+ WSL `ohmywsl` 新增 `herdr`（`herdr-linux-x86_64` 单裸二进制 cp 到
+  `~/.local/bin`）；两侧实测 `herdr --version`=0.8.2
+- WSL 基础工具接管（ast-grep/rg/jq/yq）：`ohmywsl` 新增 `ast-grep`（0.45.1，zip 双二进制
+  ast-grep+sg，sha 实测回填）、`rg`（15.2.0，tar.gz + 官方 .sha256）、`jq`（1.8.2，单二进制 +
+  官方 sha256sum.txt）、`yq`（4.53.6，单二进制 + sha 实测回填，官方 checksums 为多哈希列格式
+  改走回填）；四个组件脚本均已接入，status 十工具全绿，功能实测（jq 解析 JSON / yq 解析 YAML /
+  rg 匹配）通过
+- WSL shellcheck 接入：`ohmywsl` 新增 `shellcheck`（koalaman/shellcheck v0.11.0，
+  `shellcheck-v0.11.0.linux.x86_64.tar.xz`，无官方 checksums 走 sha 实测回填）；组件脚本用
+  `tar -xJf` 解 tar.xz，`shellcheck --version` 的输出是「ShellCheck.../version: 0.11.0」两行，
+  版本识别锚定 `^version:`；status 十二工具全绿，实际 lint（SC2154/SC2086）通过
+- WSL just 接入：`ohmywsl` 新增 `just`（casey/just 1.58.0，
+  `just-1.58.0-x86_64-unknown-linux-musl.tar.gz`，官方 SHA256SUMS 校验）；tar.gz 顶层直接是
+  `just` 二进制（无单目录包裹），组件脚本直接 cp；status 十三工具全绿，实际 justfile recipe
+  执行通过
+- secret-guard 修复 + 日志：hook 命令从裸 `python3` 改为绝对路径
+  `D:\ohmyenv\python\python3.exe`（fix Reasonix 桌面程序子进程 PATH 解析不到导致的
+  context canceled，claude/codex/kimi 同步）；`secret-guard.py` 新增单行 JSON 日志
+  （`SECRET_GUARD_LOG` / 平台默认 `%LOCALAPPDATA%\ohmyenv\secret-guard.log`，pass/block/warn/error，
+  只记命中类型不记明文），用于事后排查误报
+- secret-guard 编码自愈：fix codex Windows 的 hook stdin 是 UTF-16（带/不带 BOM）导致的
+  `Expecting ',' delimiter` 解析失败（codex 显示 `PostToolUse hook (failed): hook exited
+  with code 1`）；改为读 raw bytes + BOM 精确优先 + 精简一级备选（utf-8/utf-16-le/utf-16-be/gbk）
+  严格解码逐个试探 json.loads，成功即用、全部失败才 fail-open；UTF-8 / UTF-16LE 无 BOM /
+  UTF-16LE 带 BOM 三种输入均实测自愈，密钥命中仍正常 block
+- 固化「修复后必须重部署」铁律：AGENTS.md 规则 1 新增——改 `scripts\hooks\secret-guard.py`
+  （或任何会复制部署的 hook/模块源码）必须当场重跑对应部署脚本并以「副本与源码 sha256 一致」
+  为准；本轮已重跑 `set-agent-secret-guard.ps1` + `set-wsl-secret-guard.ps1`，Windows 四副本与
+  WSL 三副本 sha256 全部一致
+- vault 双端接入：`hashicorp/vault`（secrets 管理/加密即服务）v2.0.4——vault 二进制不走
+  GitHub release，走 HashiCorp releases CDN（`index.json`）。新增「HashiCorp 来源」支持：
+  `New-ToolDef` 用 `CdnIndexUrl` + `CdnAssetPattern`，`Resolve-ToolVersion` 经
+  `Get-HashiCorpIndex` 动态查最新 OSS（排除 `+ent` 企业变体）并返回 `ShasumsUrl`，
+  `Get-OfficialSha256` 下载官方 `vault_X_SHA256SUMS` 校验；Windows `ohmyenv` + WSL `ohmywsl`
+  双端部署（zip 单文件 + PATH），两侧 `vault version`=v2.0.4，sha256 与官方清单一致
+- docker compose 插件接入：`set-docker.ps1` 新增 `ComposeVersion` 参数（默认 v5.5.0）+ compose
+  插件幂等部署段——`docker-compose-windows-x86_64.exe`（GitHub 资产 + 官方 `.sha256` 校验）部署到
+  `EnvRoot\docker\cli-plugins`，并经 `~/.docker/config.json` 的 `cliPluginsExtraDirs` 指向 EnvRoot
+  （可重定位随 pack 换机）。**踩坑沉淀**：docker CLI **不读 `DOCKER_CLI_PLUGINS_PATH` 环境变量**
+  （那是不存在的机制），插件发现只走 `~/.docker/cli-plugins`（config dir）+ `config.json` 的
+  `cliPluginsExtraDirs` + 平台默认系统目录；先误设该环境变量无效，改写入 config.json 后
+  `docker compose version`=v5.5.0 即生效。研究文档 `docs\research\docker-compose.md`
+
+### Fixed
+
+- **WSL claude 403 修复**：WSL `claude` 拿 bigmodel key 打官方 `api.anthropic.com` 报
+  `API Error: 403 Request not allowed`——根因是 `set-wsl-agent-config.ps1` 生成的
+  `~/.claude/settings.json` env 缺 `ANTHROPIC_BASE_URL`，且 `set-wsl-keys.ps1` 注入的 shell
+  环境也只有两条 API Key（Windows 侧该变量是用户环境变量，未同步到 WSL）。修复：settings.json
+  env 补 `ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic`，同时 secrets 注入脚本
+  加 `export ANTHROPIC_BASE_URL`（shell 级兜底，覆盖未走 settings 的 claude 进程）；已重跑
+  `set-wsl-agent-config.ps1` + `set-wsl-keys.ps1`，全新交互 shell 实测 `claude -p` 正常返回
+  PONG，403 消失（副本 sha 一致铁律）
 
 ## [0.1.0] - 2026-08-21
 
@@ -177,6 +267,12 @@
 
 ### Fixed
 
+- **codex hook `error: hook exited with code 1` 根因修复**：`secret-guard.py` 全部分支只有
+  exit 0 / exit 2（绝无 exit 1），故 codex 报 exit 1 是「进程启动失败」而非脚本判定——根因是
+  `set-agent-secret-guard.ps1` 给 codex 生成的 command 带内嵌双引号（`"...python3.exe" "...secret-guard.py"`），
+  codex 0.149.0 在 Windows 用 `cmd /C` 逐字执行 + argv 拆分时把引号字面量带入导致失败。修复：
+  codex 键改去引号（两路径均无空格），Claude/Reasonix 因各自 CLI 需要引号包裹路径保持不变；
+  已重跑 `set-agent-secret-guard.ps1` 把新 command 写入 `~/.codex/hooks.json`，副本 sha 一致
 - **fnm profile 对齐官方写法**：`set-fnm-config.ps1` profile 块保留官方选项
   `--version-file-strategy=recursive`（fnm 文档化选项，默认 `local`；移除会导致项目子目录丢失
   根 `.nvmrc` 递归命中，回退 default），并显式 `--shell powershell`（避免运行时 shell 推断、

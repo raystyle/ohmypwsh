@@ -97,8 +97,8 @@
   config.toml + .env + 桌面快捷方式；reasonix-cli v1.31.0）
 - 已完成：Agent 密钥泄露防护统一（`set-agent-secret-guard.ps1` + `hooks\secret-guard.py` 覆盖
   Claude Code / Codex CLI / Kimi Code CLI / Reasonix；研究文档 `docs\research\agent-secret-guard.md`）
-- 已完成：扩展开发工具接管（`just` / `ast-grep` / `nushell` 部署到 EnvRoot + PATH，均已进
-  `env.psd1` 工具清单）
+- 已完成：扩展开发工具接管（`just` / `ast-grep` / `nushell` / `herdr` 部署到 EnvRoot + PATH，
+  均已进 `env.psd1` 工具清单；herdr 同时接入 WSL `ohmywsl`）
 - 已完成：Rust 接管（`set-rust.ps1`：rustup + stable + rsproxy.cn 镜像，幂等配置）
 - 已完成：Python3 命令别名（`set-python-config.ps1`：复制 `python.exe` → `python3.exe`，
   与 Linux 对齐；实测 3.12.14）
@@ -146,6 +146,9 @@ pwsh7，部署模块 CLI，产物分安装包/部署包两类，支持压缩包�
 
 - 已完成：Windows 容器 Docker Engine 接管（`set-docker.ps1`：官方 static 二进制 → EnvRoot、
   daemon.json data-root、docker-users 组、服务注册/启动；旧 rxshell 宿主清理）
+- 已完成：docker compose 插件接入（`set-docker.ps1` 新增 ComposeVersion + 幂等部署段：compose
+  官方资产 → `EnvRoot\docker\cli-plugins`，`~/.docker/config.json` cliPluginsExtraDirs 指向 EnvRoot；
+  实测 v5.5.0；踩坑沉淀 docs\research\docker-compose.md）
 - 已完成：WSL 引擎安装/更新（`set-wsl.ps1`：microsoft/WSL 官方 MSI；实测 2.6.3.0 → 2.7.12.0）
 - 已完成：ohmywsl WSL 基础镜像构建迁移接管（`build-wsl-image.ps1` + `scripts\wsl\` 组件脚本；
   官方 Ubuntu 24.04.4 → dev 工具链 → clean → export/gzip；首次构建成功 1.65GB）
@@ -153,5 +156,13 @@ pwsh7，部署模块 CLI，产物分安装包/部署包两类，支持压缩包�
   `.wslconfig`）
 - 已完成：WSL 网络/DNS 坑修复（`.wslconfig` `dnsTunneling=false` 走系统 DNS；aria2 优先下载）
 - 已完成：WSL node 管理从 nvm 切换为 fnm（与主项目 Windows fnm 对齐）
-- 待办：WSL 扩展增量安装部署（在基础镜像上按工具 pin/update/deploy，与主项目一致）
+- 已完成：WSL 扩展增量安装部署框架 + 首批接管（`docs\plans\0012-wsl-software-deploy.md`）：
+  新增 `scripts\ohmywsl.ps1`（query/pin/install/update/status）+ `scripts\wsl-env.psd1` 独立
+  pin + `scripts\wsl\tools\<tool>.sh` 组件脚本；`set-wsl-distro.ps1` 默认 Distro 统一 ohmywsl；
+  首批落地 WSL 密钥接管（age/sops 二进制 + 私钥平移 + sops 惰性解密两条 API Key）与
+  三 agent 配置平移（codex/claude/kimi 的 Linux 专属幂等配置）；agent 二进制不进镜像、按需再装
+- 已完成：WSL 增量工具 continue 接管首批：codex（rust-v0.148.0）、claude（v2.1.238）、
+  kimi（0.38.0）三个 agent 二进制接入 `ohmywsl.ps1`（Linux 资产 + 官方 sha256 校验），
+  WSL 内版本与配置均验证通过
+- 待办：WSL 增量工具继续接管（rg/jq/yq/gh 等按需逐个 pin/install/update）
 - 待办：Docker 镜像/数据卷备份平移（`docker save` / data-root 归档随包还原）与换机实测
